@@ -18,7 +18,7 @@ export default function Notification({ type, message, isVisible, onClose }: Noti
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -50, scale: 0.9 }}
           transition={{ duration: 0.3 }}
-          className={`fixed top-4 right-4 z-50 max-w-sm w-full bg-white rounded-lg shadow-lg border-l-4 ${
+          className={`fixed top-4 right-4 z-50 max-w-sm w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg border-l-4 transition-colors duration-300 ${
             type === 'success' ? 'border-green-500' : 'border-red-500'
           }`}
         >
@@ -32,8 +32,8 @@ export default function Notification({ type, message, isVisible, onClose }: Noti
                 )}
               </div>
               <div className="ml-3 flex-1">
-                <p className={`text-sm font-medium ${
-                  type === 'success' ? 'text-green-800' : 'text-red-800'
+                <p className={`text-sm font-medium transition-colors duration-300 ${
+                  type === 'success' ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'
                 }`}>
                   {message}
                 </p>
@@ -41,7 +41,7 @@ export default function Notification({ type, message, isVisible, onClose }: Noti
               <div className="ml-4 flex-shrink-0">
                 <button
                   onClick={onClose}
-                  className={`inline-flex rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                  className={`inline-flex rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors duration-300 ${
                     type === 'success' 
                       ? 'text-green-400 hover:text-green-500 focus:ring-green-500' 
                       : 'text-red-400 hover:text-red-500 focus:ring-red-500'

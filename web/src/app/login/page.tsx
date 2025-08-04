@@ -5,6 +5,7 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { login } from "../api";
 import Notification from "../../components/Notification";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 function AnimatedBlobs() {
   return (
@@ -23,6 +24,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [notification, setNotification] = useState<{
     type: 'success' | 'error';
@@ -44,7 +46,7 @@ export default function LoginPage() {
       localStorage.setItem("token", data.token);
       setNotification({
         type: 'success',
-        message: 'Login successful! Redirecting...',
+        message: t('auth.loginSuccess'),
         isVisible: true
       });
       
@@ -55,7 +57,7 @@ export default function LoginPage() {
     } catch (err: any) {
       setNotification({
         type: 'error',
-        message: err.response?.data?.message || "Login failed",
+        message: err.response?.data?.message || t('auth.loginFailed'),
         isVisible: true
       });
     } finally {
@@ -68,20 +70,20 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-white relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-gray-800 relative overflow-hidden transition-colors duration-300">
       <AnimatedBlobs />
       <motion.div
-        className="relative z-10 bg-white/80 shadow-xl rounded-2xl p-8 w-full max-w-md border border-gray-100 backdrop-blur-lg"
+        className="relative z-10 bg-white/80 dark:bg-gray-800/80 shadow-xl rounded-2xl p-8 w-full max-w-md border border-gray-100 dark:border-gray-700 backdrop-blur-lg transition-colors duration-300"
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7 }}
       >
-        <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">Login to Wishlist</h1>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 text-center transition-colors duration-300">{t('auth.loginTitle')}</h1>
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <input 
             type="email" 
-            placeholder="Email" 
-            className="px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white/90 text-gray-700" 
+            placeholder={t('auth.email')}
+            className="px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-purple-400 bg-white/90 dark:bg-gray-700/90 text-gray-700 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300" 
             autoComplete="email" 
             required 
             value={email} 
@@ -89,8 +91,8 @@ export default function LoginPage() {
           />
           <input 
             type="password" 
-            placeholder="Password" 
-            className="px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white/90 text-gray-700" 
+            placeholder={t('auth.password')}
+            className="px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-purple-400 bg-white/90 dark:bg-gray-700/90 text-gray-700 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300" 
             autoComplete="current-password" 
             required 
             value={password} 
@@ -98,22 +100,22 @@ export default function LoginPage() {
           />
           <button 
             type="submit" 
-            className="mt-2 py-3 rounded-lg bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-semibold text-lg shadow-md hover:scale-105 transition-transform" 
+            className="mt-2 py-3 rounded-lg bg-gradient-to-r from-indigo-500 to-blue-500 dark:from-purple-500 dark:to-indigo-500 text-white font-semibold text-lg shadow-md hover:scale-105 transition-transform" 
             disabled={loading}
           >
-            {loading ? "Logging in..." : "Login"}
+            {loading ? t('auth.loggingIn') : t('navigation.login')}
           </button>
         </form>
         
         <div className="mt-4 text-center">
-          <Link href="/forgot-password" className="text-indigo-500 hover:underline text-sm">
-            Forgot your password?
+          <Link href="/forgot-password" className="text-indigo-500 dark:text-purple-400 hover:underline text-sm transition-colors duration-300">
+            {t('auth.forgotPassword')}
           </Link>
         </div>
         
-        <div className="mt-6 text-center text-gray-500 text-sm">
-          Don&apos;t have an account?{' '}
-          <Link href="/register" className="text-indigo-500 hover:underline font-medium">Sign Up</Link>
+        <div className="mt-6 text-center text-gray-500 dark:text-gray-400 text-sm transition-colors duration-300">
+          {t('auth.dontHaveAccount')}{' '}
+          <Link href="/register" className="text-indigo-500 dark:text-purple-400 hover:underline font-medium transition-colors duration-300">{t('navigation.signup')}</Link>
         </div>
       </motion.div>
       

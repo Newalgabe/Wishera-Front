@@ -5,6 +5,7 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { register } from "../api";
 import Notification from "../../components/Notification";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 function AnimatedBlobs() {
   return (
@@ -24,6 +25,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [notification, setNotification] = useState<{
     type: 'success' | 'error';
@@ -45,7 +47,7 @@ export default function RegisterPage() {
       localStorage.setItem("token", data.token);
       setNotification({
         type: 'success',
-        message: 'Account created successfully! Redirecting...',
+        message: t('auth.registerSuccess'),
         isVisible: true
       });
       
@@ -56,7 +58,7 @@ export default function RegisterPage() {
     } catch (err: any) {
       setNotification({
         type: 'error',
-        message: err.response?.data?.message || "Registration failed",
+        message: err.response?.data?.message || t('auth.registerFailed'),
         isVisible: true
       });
     } finally {
@@ -69,20 +71,20 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-50 to-white relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-50 to-white dark:from-gray-900 dark:to-gray-800 relative overflow-hidden transition-colors duration-300">
       <AnimatedBlobs />
       <motion.div
-        className="relative z-10 bg-white/80 shadow-xl rounded-2xl p-8 w-full max-w-md border border-gray-100 backdrop-blur-lg"
+        className="relative z-10 bg-white/80 dark:bg-gray-800/80 shadow-xl rounded-2xl p-8 w-full max-w-md border border-gray-100 dark:border-gray-700 backdrop-blur-lg transition-colors duration-300"
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7 }}
       >
-        <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">Create Your Account</h1>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 text-center transition-colors duration-300">{t('auth.registerTitle')}</h1>
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <input 
             type="text" 
             placeholder="Name" 
-            className="px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white/90 text-gray-700" 
+            className="px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 dark:focus:ring-orange-400 bg-white/90 dark:bg-gray-700/90 text-gray-700 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300" 
             autoComplete="name" 
             required 
             value={username} 
@@ -90,8 +92,8 @@ export default function RegisterPage() {
           />
           <input 
             type="email" 
-            placeholder="Email" 
-            className="px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white/90 text-gray-700" 
+            placeholder={t('auth.email')}
+            className="px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 dark:focus:ring-orange-400 bg-white/90 dark:bg-gray-700/90 text-gray-700 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300" 
             autoComplete="email" 
             required 
             value={email} 
@@ -99,8 +101,8 @@ export default function RegisterPage() {
           />
           <input 
             type="password" 
-            placeholder="Password" 
-            className="px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white/90 text-gray-700" 
+            placeholder={t('auth.password')}
+            className="px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 dark:focus:ring-orange-400 bg-white/90 dark:bg-gray-700/90 text-gray-700 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300" 
             autoComplete="new-password" 
             required 
             value={password} 
@@ -108,15 +110,15 @@ export default function RegisterPage() {
           />
           <button 
             type="submit" 
-            className="mt-2 py-3 rounded-lg bg-gradient-to-r from-yellow-400 to-orange-400 text-white font-semibold text-lg shadow-md hover:scale-105 transition-transform" 
+            className="mt-2 py-3 rounded-lg bg-gradient-to-r from-yellow-400 to-orange-400 dark:from-orange-500 dark:to-red-500 text-white font-semibold text-lg shadow-md hover:scale-105 transition-transform" 
             disabled={loading}
           >
-            {loading ? "Signing up..." : "Sign Up"}
+            {loading ? t('auth.signingUp') : t('navigation.signup')}
           </button>
         </form>
-        <div className="mt-6 text-center text-gray-500 text-sm">
-          Already have an account?{' '}
-          <Link href="/login" className="text-yellow-500 hover:underline font-medium">Login</Link>
+        <div className="mt-6 text-center text-gray-500 dark:text-gray-400 text-sm transition-colors duration-300">
+          {t('auth.alreadyHaveAccount')}{' '}
+          <Link href="/login" className="text-yellow-500 dark:text-orange-400 hover:underline font-medium transition-colors duration-300">{t('navigation.login')}</Link>
         </div>
       </motion.div>
       

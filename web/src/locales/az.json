@@ -1,0 +1,254 @@
+{
+  "common": {
+    "loading": "Yüklənir...",
+    "error": "Xəta",
+    "success": "Uğur",
+    "cancel": "Ləğv et",
+    "save": "Saxla",
+    "delete": "Sil",
+    "edit": "Redaktə et",
+    "add": "Əlavə et",
+    "share": "Paylaş",
+    "reserve": "Rezerv et",
+    "available": "Mövcuddur",
+    "reserved": "Rezerv edilib",
+    "public": "Açıq",
+    "private": "Şəxsi",
+    "scroll": "Sürüşdür"
+  },
+  "navigation": {
+    "home": "Ana səhifə",
+    "about": "Haqqımızda",
+    "contact": "Əlaqə",
+    "features": "Xüsusiyyətlər",
+    "login": "Daxil ol",
+    "signup": "Qeydiyyat",
+    "logout": "Çıxış",
+    "wishlistApp": "Arzu Siyahısı Tətbiqi"
+  },
+  "auth": {
+    "loginTitle": "Wishlist-ə daxil ol",
+    "registerTitle": "Hesab yarat",
+    "email": "E-poçt",
+    "password": "Şifrə",
+    "confirmPassword": "Şifrəni təsdiq et",
+    "forgotPassword": "Şifrəni unutmusunuz?",
+    "dontHaveAccount": "Hesabınız yoxdur?",
+    "alreadyHaveAccount": "Artıq hesabınız var?",
+    "loggingIn": "Daxil olunur...",
+    "signingUp": "Qeydiyyat...",
+    "loginSuccess": "Uğurlu giriş! Yönləndirilir...",
+    "loginFailed": "Giriş uğursuz",
+    "registerSuccess": "Uğurlu qeydiyyat! Yönləndirilir...",
+    "registerFailed": "Qeydiyyat uğursuz",
+    "resetPassword": "Şifrəni sıfırla",
+    "forgotPasswordTitle": "Şifrəni unutdum",
+    "resetPasswordTitle": "Şifrə sıfırlama",
+    "sendResetLink": "Sıfırlama linkini göndər",
+    "newPassword": "Yeni şifrə",
+    "resetPasswordSuccess": "Şifrə uğurla sıfırlandı!"
+  },
+  "home": {
+    "heroTitle": "Mükəmməl Arzu Siyahısı Təcrübəsi",
+    "heroSubtitle": "Dostlar və ailə ilə arzu siyahılarınızı yaradın, paylaşın və idarə edin. Bir daha eyni hədiyyələr almayın!",
+    "getStarted": "Başla",
+    "learnMore": "Daha çox öyrən",
+    "trustedBy": "Bizə güvənənlər",
+    "featuresTitle": "Ehtiyacınız olan hər şey",
+    "featuresSubtitle": "Hədiyyə vermək prosesini asan və əyləncəli etmək üçün güclü xüsusiyyətlər"
+  },
+  "features": {
+    "userAuth": {
+      "title": "İstifadəçi Doğrulaması",
+      "description": "Qeydiyyatdan keçin, daxil olun və arzu siyahınızı təhlükəsiz idarə edin.",
+      "benefit": "Məlumatlarınız həmişə qorunur və məxfidir."
+    },
+    "wishlistManagement": {
+      "title": "Arzu Siyahısı İdarəsi",
+      "description": "Arzu siyahınıza hədiyyələr əlavə edin, redaktə edin və silin.",
+      "benefit": "Arzularınızı mütəşəkkil və aktual saxlayın."
+    },
+    "giftReservations": {
+      "title": "Hədiyyə Rezervasiyaları",
+      "description": "Dostlar hədiyyələri rezerv edə bilər (sahibi kimin rezerv etdiyini görməz).",
+      "benefit": "Artıq eyni hədiyyələr və ya pozulmuş sürprizlər yoxdur!"
+    },
+    "wishlistSharing": {
+      "title": "Arzu Siyahısı Paylaşımı",
+      "description": "Unikal link vasitəsilə dostlarınızla arzu siyahınızı paylaşın.",
+      "benefit": "Başqalarına həqiqətən nə istədiyinizi asanlıqla bildirin."
+    },
+    "cloudImages": {
+      "title": "Bulud Şəkil Yükləmələri",
+      "description": "Cloudinary istifadə edərək hədiyyə şəkillərini yükləyin və göstərin.",
+      "benefit": "Gözəl şəkillərlə arzularınızı nümayiş etdirin."
+    },
+    "glassmorphismUI": {
+      "title": "Glassmorphism UI",
+      "description": "Hamar şəffaflıq effektləri ilə heyrətamiz, müasir gradient əsaslı dizayn.",
+      "benefit": "Vizual olaraq sürükləyici və zərif təcrübədən həzz alın."
+    }
+  },
+  "testimonials": {
+    "emily": "Wishlist App dostlarım və ailəm üçün hədiyyə verməyi çox asanlaşdırdı. Necə sadə və əyləncəli olduğunu sevirəm!",
+    "james": "Artıq eyni hədiyyələr almıram. Rezervasiya funksiyası dahiyanədir!",
+    "sophia": "Dizayn gözəldir və arzu siyahımı paylaşmaq çox asandır.",
+    "michael": "Bulud şəkil yükləmələri arzu siyahımı heyrətamiz edir. Çox tövsiyə edirəm!"
+  },
+  "mockup": {
+    "alexWishlist": "Aleksin Arzu Siyahısı",
+    "nikeAirMax": "Nike Air Max 270",
+    "appleWatch": "Apple Watch SE",
+    "cloudPillow": "Bulud Yastığı"
+  },
+  "footer": {
+    "allRightsReserved": "Bütün hüquqlar qorunur.",
+    "privacyPolicy": "Məxfilik Siyasəti",
+    "termsOfService": "İstifadə Şərtləri"
+  },
+  "about": {
+    "title": "Wishlist App Haqqında",
+    "subtitle": "Hədiyyə verməyi hər kəs üçün daha asan, mənalı və xoş edir.",
+    "ourMission": "Bizim Missiyamız",
+    "missionText1": "Biz inanırıq ki, hədiyyə vermək sevinc dolu və stress-siz təcrübə olmalıdır. Bizim missiyamız insanların arzularını paylaşmasını asanlaşdıran və yaxınlarının həqiqətən əhəmiyyətli olan mənalı hədiyyələr verməsini təmin edən platforma yaratmaqdır.",
+    "missionText2": "Müasir texnologiyaları düşünülmüş dizaynla birləşdirərək, hədiyyə vermə aktının daha şəxsi, mənalı və bütün iştirakçılar üçün xoş olduğu icma qururuq.",
+    "joinCommunity": "İcmamıza Qoşul",
+    "ourValues": "Bizim Dəyərlərimiz",
+    "valuesSubtitle": "Bu əsas prinsiplər etdiyimiz hər şeyi və verdiyimiz hər qərarı istiqamətləndirir.",
+    "faqTitle": "Tez-tez Verilən Suallar",
+    "faqSubtitle": "Hədiyyə verməni asanlaşdırmaq və yaxşılaşdırmaq üçün Wishlist App istifadəsi haqqında bilməli olduğunuz hər şey.",
+    "values": {
+      "userCentric": {
+        "title": "İstifadəçi Mərkəzli Dizayn",
+        "description": "Hər xüsusiyyət istifadəçini nəzərə alaraq dizayn edilib, intuitiv və xoş təcrübə təmin edir."
+      },
+      "privacyFirst": {
+        "title": "Məxfilik Birinci",
+        "description": "Məlumatlarınız sənaye standartı təhlükəsizlik tədbirləri və məxfilik nəzarəti ilə qorunur."
+      },
+      "innovation": {
+        "title": "İnnovasiya",
+        "description": "Ən müasir xüsusiyyətlər və təcrübələr təqdim etmək üçün daim yeni texnologiyaları araşdırırıq."
+      },
+      "community": {
+        "title": "İcma",
+        "description": "Hədiyyə verməyin sevinci vasitəsilə insanları bir araya gətirən platforma qururuq."
+      }
+    },
+    "stats": {
+      "happyUsers": "Məmnun İstifadəçi",
+      "wishlistsCreated": "Yaradılmış Arzu Siyahısı",
+      "giftsReserved": "Rezerv Edilmiş Hədiyyə",
+      "uptime": "İş Vaxtı"
+    },
+    "faqs": {
+      "q1": {
+        "question": "Hədiyyə rezervasiya sistemi necə işləyir?",
+        "answer": "Kimsə arzu siyahınıza baxdıqda, kimin rezerv etdiyini görmədən hədiyyəni rezerv edə bilər. Bu, sürprizi saxlayaraq təkrarlanan hədiyyələrin qarşısını alır. Siz yalnız əşyanın rezerv edildiyini görəcəksiniz, kimin etdiyini yox."
+      },
+      "q2": {
+        "question": "Arzu siyahım şəxsidir?",
+        "answer": "Arzu siyahınızın məxfiliyinə tam nəzarətiniz var. Onu paylaşılan keçidlə ictimai, yalnız dəvət edilmiş dostlar üçün şəxsi və ya tamamilə yalnız sizin gözləriniz üçün şəxsi edə bilərsiniz. Məxfilik parametrləriniz istənilən vaxt dəyişdirilə bilər."
+      },
+      "q3": {
+        "question": "Arzu siyahısı elementlərinə şəkil əlavə edə bilərəmmi?",
+        "answer": "Bəli! Cloudinary inteqrasiyamızdan istifadə edərək hər arzu siyahısı elementi üçün şəkillər yükləyə bilərsiniz. Bu, başqalarının tam olaraq nə istədiyinizi görməsinə kömək edir və arzu siyahınızı vizual olaraq daha cəlbedici edir."
+      },
+      "q4": {
+        "question": "Arzu siyahımı dostlarımla necə paylaşım?",
+        "answer": "Unikal keçid yaratmaq üçün arzu siyahınızdakı 'Paylaş' düyməsini basın. Sonra bu keçidi e-poçt, mesaj və ya sosial media vasitəsilə dostlar və ailə ilə göndərə bilərsiniz. Onlar hesab yaratmağa ehtiyac olmadan arzu siyahınıza baxa bilərlər."
+      },
+      "q5": {
+        "question": "Kimsə hədiyyəni rezerv etdikdə nə olur?",
+        "answer": "Kimsə hədiyyəni rezerv etdikdə, o, arzu siyahınızda 'Rezerv edilib' kimi işarələnir. Bu, başqalarının eyni əşyanı almasının qarşısını alır. Onu rezerv edən şəxs öz hesabında rezerv etdiyi əşyaları görə bilər, lakin siz kimin nəyi rezerv etdiyini bilməyəcəksiniz."
+      },
+      "q6": {
+        "question": "Arzu siyahımdakı elementləri redaktə edə və ya silə bilərəmmi?",
+        "answer": "Mütləq! İstənilən vaxt arzu siyahınızdakı istənilən elementi redaktə edə bilərsiniz. Adı, təsviri, qiyməti, şəkli dəyişə və ya elementləri tamamilə silə bilərsiniz. Dəyişikliklər arzu siyahınıza baxan hər kəs üçün dərhal əks olunur."
+      },
+      "q7": {
+        "question": "Əlavə edə biləcəyim elementlərin sayında məhdudiyyət varmı?",
+        "answer": "Hazırda arzu siyahınıza əlavə edə biləcəyiniz elementlərin sayında məhdudiyyət yoxdur. Kiçik hədiyyələrdən böyük alışlara qədər istədiyiniz qədər element əlavə edin."
+      },
+      "q8": {
+        "question": "Hesabım və məlumatlarım nə qədər təhlükəsizdir?",
+        "answer": "Biz təhlükəsizliyi ciddi qəbul edirik. Bütün məlumatlar şifrələnir, parollar təhlükəsiz şəkildə hash edilir və sənaye standartı təhlükəsizlik tədbirlərindən istifadə edirik. Razılığınız olmadan şəxsi məlumatlarınızı heç vaxt üçüncü tərəflərlə paylaşmırıq."
+      }
+    }
+  },
+  "contact": {
+    "title": "Bizimlə Əlaqə",
+    "subtitle": "Sizdən eşitmək istərdik. Komandamızla əlaqə saxlayın.",
+    "getInTouch": "Əlaqə saxlayın",
+    "getInTouchDescription": "Sualınız var və ya köməyə ehtiyacınız var? Sizdən eşitmək istərdik. Bizə mesaj göndərin və mümkün qədər tez cavab verəcəyik.",
+    "sendMessage": "Bizə mesaj göndərin",
+    "form": {
+      "name": "Ad",
+      "namePlaceholder": "Adınız",
+      "email": "Email",
+      "emailPlaceholder": "sizin@email.com",
+      "subject": "Mövzu",
+      "subjectPlaceholder": "Mövzu seçin",
+      "message": "Mesaj",
+      "messagePlaceholder": "Sizə necə kömək edə biləcəyimizi bizə deyin...",
+      "sendButton": "Mesaj Göndər",
+      "sending": "Email açılır...",
+      "successMessage": "✓ Email müştərisi açıldı! Mesajınızı tamamlamaq üçün emaili göndərin.",
+      "errorMessage": "✗ Xəta baş verdi. Yenidən cəhd edin və ya birbaşa hello@wishlistapp.com ünvanına yazın",
+      "subjects": {
+        "general": "Ümumi Sorğu",
+        "support": "Texniki Dəstək",
+        "feature": "Xüsusiyyət Sorğusu",
+        "bug": "Xəta Hesabatı",
+        "partnership": "Tərəfdaşlıq"
+      }
+    },
+    "methods": {
+      "email": {
+        "title": "Email",
+        "value": "hello@wishlistapp.com",
+        "description": "24 saat ərzində cavab verəcəyik"
+      },
+      "chat": {
+        "title": "Canlı Söhbət",
+        "value": "9:00-18:00 EST mövcuddur",
+        "description": "Komandamızdan dərhal kömək alın"
+      },
+      "office": {
+        "title": "Ofis",
+        "value": "San Fransisko, Kaliforniya",
+        "description": "İstənilən vaxt bizə gəlin"
+      }
+    },
+    "needHelp": {
+      "title": "Dərhal köməyə ehtiyacınız var?",
+      "description": "Tez-tez verilən suallar bölməsinə baxın və suallarınıza tez cavab tapın.",
+      "viewFaq": "FAQ-ya bax"
+    }
+  },
+  "forgotPassword": {
+    "title": "Şifrəni unutmusunuz?",
+    "subtitle": "Email ünvanınızı daxil edin və sizə şifrə sıfırlama keçidi göndərəcəyik.",
+    "emailPlaceholder": "Email ünvanınızı daxil edin",
+    "sendButton": "Sıfırlama Keçidi Göndər",
+    "sending": "Göndərilir...",
+    "successMessage": "Şifrə sıfırlama keçidi emailinizə göndərildi! Gələn qutuya (və spam qovluğuna) baxın.",
+    "errorMessage": "Sıfırlama emaili göndərilmədi. Email ünvanınızı yoxlayın və yenidən cəhd edin.",
+    "rememberPassword": "Şifrənizi xatırladınız?",
+    "backToLogin": "Girişə qayıt"
+  },
+  "resetPassword": {
+    "invalidLinkTitle": "Sıfırlama Keçidi Etibarsızdır",
+    "invalidLinkDescription": "Şifrə sıfırlama keçidi etibarsızdır və ya vaxtı bitib.",
+    "requestNewLink": "Yeni sıfırlama keçidi istə",
+    "title": "Şifrənizi Sıfırlayın",
+    "subtitle": "Aşağıya yeni şifrənizi daxil edin.",
+    "newPasswordPlaceholder": "Yeni şifrə",
+    "confirmNewPasswordPlaceholder": "Yeni şifrəni təsdiq edin",
+    "resetButton": "Şifrəni Sıfırla",
+    "resetting": "Sıfırlanır...",
+    "rememberPassword": "Şifrənizi xatırladınız?",
+    "backToLogin": "Girişə qayıt",
+    "errorMessage": "Şifrəni sıfırlamaq mümkün olmadı"
+  }
+}

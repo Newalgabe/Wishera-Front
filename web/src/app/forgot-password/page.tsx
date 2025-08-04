@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useCallback } from "react";
 import { forgotPassword } from "../api";
 import Notification from "../../components/Notification";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 function AnimatedBlobs() {
   return (
@@ -30,6 +31,8 @@ export default function ForgotPasswordPage() {
     isVisible: false
   });
 
+  const { t } = useLanguage();
+
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -39,14 +42,14 @@ export default function ForgotPasswordPage() {
         await forgotPassword(email);
         setNotification({
           type: 'success',
-          message: 'Password reset link sent to your email! Check your inbox (and spam folder).',
+          message: t('forgotPassword.successMessage'),
           isVisible: true
         });
         setEmail("");
       } catch (err: any) {
         setNotification({
           type: 'error',
-          message: err.response?.data?.message || "Failed to send reset email. Please check your email address and try again.",
+          message: err.response?.data?.message || t('forgotPassword.errorMessage'),
           isVisible: true
         });
       } finally {
@@ -59,22 +62,22 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-white relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-gray-800 relative overflow-hidden transition-colors duration-300">
       <AnimatedBlobs />
       <motion.div
-        className="relative z-10 bg-white/80 shadow-xl rounded-2xl p-8 w-full max-w-md border border-gray-100 backdrop-blur-lg"
+        className="relative z-10 bg-white/80 dark:bg-gray-800/80 shadow-xl rounded-2xl p-8 w-full max-w-md border border-gray-100 dark:border-gray-700 backdrop-blur-lg transition-colors duration-300"
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7 }}
       >
-        <h1 className="text-2xl font-bold text-gray-800 mb-2 text-center">Forgot Password?</h1>
-        <p className="text-gray-600 text-center mb-6">Enter your email address and we'll send you a link to reset your password.</p>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2 text-center transition-colors duration-300">{t('forgotPassword.title')}</h1>
+        <p className="text-gray-600 dark:text-gray-300 text-center mb-6 transition-colors duration-300">{t('forgotPassword.subtitle')}</p>
         
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <input 
             type="email" 
-            placeholder="Enter your email" 
-            className="px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white/90 text-gray-700" 
+            placeholder={t('forgotPassword.emailPlaceholder')} 
+            className="px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-purple-400 bg-white/90 dark:bg-gray-700/90 text-gray-700 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300" 
             autoComplete="email" 
             required 
             value={email} 
@@ -82,16 +85,16 @@ export default function ForgotPasswordPage() {
           />
           <button 
             type="submit" 
-            className="mt-2 py-3 rounded-lg bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-semibold text-lg shadow-md hover:scale-105 transition-transform" 
+            className="mt-2 py-3 rounded-lg bg-gradient-to-r from-indigo-500 to-blue-500 dark:from-purple-500 dark:to-indigo-500 text-white font-semibold text-lg shadow-md hover:scale-105 transition-transform" 
             disabled={loading}
           >
-            {loading ? "Sending..." : "Send Reset Link"}
+            {loading ? t('forgotPassword.sending') : t('forgotPassword.sendButton')}
           </button>
         </form>
         
-        <div className="mt-6 text-center text-gray-500 text-sm">
-          Remember your password?{' '}
-          <Link href="/login" className="text-indigo-500 hover:underline font-medium">Back to Login</Link>
+        <div className="mt-6 text-center text-gray-500 dark:text-gray-400 text-sm transition-colors duration-300">
+          {t('forgotPassword.rememberPassword')}{' '}
+          <Link href="/login" className="text-indigo-500 dark:text-purple-400 hover:underline font-medium transition-colors duration-300">{t('forgotPassword.backToLogin')}</Link>
         </div>
       </motion.div>
       

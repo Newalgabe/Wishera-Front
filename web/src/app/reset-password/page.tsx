@@ -5,6 +5,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { resetPassword } from "../api";
 import Notification from "../../components/Notification";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 function AnimatedBlobs() {
   return (
@@ -26,6 +27,7 @@ export default function ResetPasswordPage() {
   const [isValidToken, setIsValidToken] = useState(true);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useLanguage();
 
   const [notification, setNotification] = useState<{
     type: 'success' | 'error';
@@ -43,13 +45,13 @@ export default function ResetPasswordPage() {
       setIsValidToken(false);
       setNotification({
         type: 'error',
-        message: 'Invalid or missing reset token',
+        message: t('resetPassword.invalidTokenMessage'),
         isVisible: true
       });
     } else {
       setToken(tokenParam);
     }
-  }, [searchParams]);
+  }, [searchParams, t]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +59,7 @@ export default function ResetPasswordPage() {
     if (newPassword !== confirmPassword) {
       setNotification({
         type: 'error',
-        message: 'Passwords do not match',
+        message: t('resetPassword.passwordMismatchMessage'),
         isVisible: true
       });
       return;
@@ -66,7 +68,7 @@ export default function ResetPasswordPage() {
     if (newPassword.length < 6) {
       setNotification({
         type: 'error',
-        message: 'Password must be at least 6 characters long',
+        message: t('resetPassword.passwordLengthMessage'),
         isVisible: true
       });
       return;
@@ -79,7 +81,7 @@ export default function ResetPasswordPage() {
       await resetPassword(token, newPassword);
       setNotification({
         type: 'success',
-        message: 'Password reset successfully! Redirecting to login...',
+        message: t('resetPassword.passwordResetSuccessMessage'),
         isVisible: true
       });
       
@@ -90,13 +92,13 @@ export default function ResetPasswordPage() {
     } catch (err: any) {
       setNotification({
         type: 'error',
-        message: err.response?.data?.message || "Failed to reset password",
+        message: err.response?.data?.message || t('resetPassword.errorMessage'),
         isVisible: true
       });
     } finally {
       setLoading(false);
     }
-  }, [token, newPassword, confirmPassword, router]);
+  }, [token, newPassword, confirmPassword, router, t]);
 
   const closeNotification = () => {
     setNotification(prev => ({ ...prev, isVisible: false }));
@@ -104,19 +106,19 @@ export default function ResetPasswordPage() {
 
   if (!isValidToken) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-white relative overflow-hidden">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-white dark:from-gray-900 dark:to-gray-800 relative overflow-hidden transition-colors duration-300">
         <AnimatedBlobs />
         <motion.div
-          className="relative z-10 bg-white/80 shadow-xl rounded-2xl p-8 w-full max-w-md border border-gray-100 backdrop-blur-lg"
+          className="relative z-10 bg-white/80 dark:bg-gray-800/80 shadow-xl rounded-2xl p-8 w-full max-w-md border border-gray-100 dark:border-gray-700 backdrop-blur-lg transition-colors duration-300"
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
         >
-          <h1 className="text-2xl font-bold text-gray-800 mb-2 text-center">Invalid Reset Link</h1>
-          <p className="text-gray-600 text-center mb-6">The password reset link is invalid or has expired.</p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2 text-center transition-colors duration-300">{t('resetPassword.invalidLinkTitle')}</h1>
+          <p className="text-gray-600 dark:text-gray-300 text-center mb-6 transition-colors duration-300">{t('resetPassword.invalidLinkDescription')}</p>
           <div className="text-center">
-            <Link href="/forgot-password" className="text-indigo-500 hover:underline font-medium">
-              Request a new reset link
+            <Link href="/forgot-password" className="text-indigo-500 dark:text-purple-400 hover:underline font-medium transition-colors duration-300">
+              {t('resetPassword.requestNewLink')}
             </Link>
           </div>
         </motion.div>
@@ -131,22 +133,22 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white dark:from-gray-900 dark:to-gray-800 relative overflow-hidden transition-colors duration-300">
       <AnimatedBlobs />
       <motion.div
-        className="relative z-10 bg-white/80 shadow-xl rounded-2xl p-8 w-full max-w-md border border-gray-100 backdrop-blur-lg"
+        className="relative z-10 bg-white/80 dark:bg-gray-800/80 shadow-xl rounded-2xl p-8 w-full max-w-md border border-gray-100 dark:border-gray-700 backdrop-blur-lg transition-colors duration-300"
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7 }}
       >
-        <h1 className="text-2xl font-bold text-gray-800 mb-2 text-center">Reset Your Password</h1>
-        <p className="text-gray-600 text-center mb-6">Enter your new password below.</p>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2 text-center transition-colors duration-300">{t('resetPassword.title')}</h1>
+        <p className="text-gray-600 dark:text-gray-300 text-center mb-6 transition-colors duration-300">{t('resetPassword.subtitle')}</p>
         
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <input 
             type="password" 
-            placeholder="New password" 
-            className="px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-400 bg-white/90 text-gray-700" 
+            placeholder={t('resetPassword.newPasswordPlaceholder')}
+            className="px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-400 dark:focus:ring-emerald-400 bg-white/90 dark:bg-gray-700/90 text-gray-700 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300" 
             autoComplete="new-password" 
             required 
             value={newPassword} 
@@ -154,8 +156,8 @@ export default function ResetPasswordPage() {
           />
           <input 
             type="password" 
-            placeholder="Confirm new password" 
-            className="px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-400 bg-white/90 text-gray-700" 
+            placeholder={t('resetPassword.confirmNewPasswordPlaceholder')}
+            className="px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-400 dark:focus:ring-emerald-400 bg-white/90 dark:bg-gray-700/90 text-gray-700 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300" 
             autoComplete="new-password" 
             required 
             value={confirmPassword} 
@@ -163,16 +165,16 @@ export default function ResetPasswordPage() {
           />
           <button 
             type="submit" 
-            className="mt-2 py-3 rounded-lg bg-gradient-to-r from-green-500 to-blue-500 text-white font-semibold text-lg shadow-md hover:scale-105 transition-transform" 
+            className="mt-2 py-3 rounded-lg bg-gradient-to-r from-green-500 to-blue-500 dark:from-emerald-500 dark:to-green-500 text-white font-semibold text-lg shadow-md hover:scale-105 transition-transform" 
             disabled={loading}
           >
-            {loading ? "Resetting..." : "Reset Password"}
+            {loading ? t('resetPassword.resetting') : t('resetPassword.resetButton')}
           </button>
         </form>
         
-        <div className="mt-6 text-center text-gray-500 text-sm">
-          Remember your password?{' '}
-          <Link href="/login" className="text-green-500 hover:underline font-medium">Back to Login</Link>
+        <div className="mt-6 text-center text-gray-500 dark:text-gray-400 text-sm transition-colors duration-300">
+          {t('resetPassword.rememberPassword')}{' '}
+          <Link href="/login" className="text-green-500 dark:text-emerald-400 hover:underline font-medium transition-colors duration-300">{t('resetPassword.backToLogin')}</Link>
         </div>
       </motion.div>
       

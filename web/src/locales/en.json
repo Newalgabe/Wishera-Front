@@ -1,0 +1,254 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "share": "Share",
+    "reserve": "Reserve",
+    "available": "Available",
+    "reserved": "Reserved",
+    "public": "Public",
+    "private": "Private",
+    "scroll": "Scroll"
+  },
+  "navigation": {
+    "home": "Home",
+    "about": "About",
+    "contact": "Contact",
+    "features": "Features",
+    "login": "Login",
+    "signup": "Sign Up",
+    "logout": "Logout",
+    "wishlistApp": "Wishlist App"
+  },
+  "auth": {
+    "loginTitle": "Login to Wishlist",
+    "registerTitle": "Create Your Account",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot your password?",
+    "dontHaveAccount": "Don't have an account?",
+    "alreadyHaveAccount": "Already have an account?",
+    "loggingIn": "Logging in...",
+    "signingUp": "Signing up...",
+    "loginSuccess": "Login successful! Redirecting...",
+    "loginFailed": "Login failed",
+    "registerSuccess": "Registration successful! Redirecting...",
+    "registerFailed": "Registration failed",
+    "resetPassword": "Reset Password",
+    "forgotPasswordTitle": "Forgot Password",
+    "resetPasswordTitle": "Reset Password",
+    "sendResetLink": "Send Reset Link",
+    "newPassword": "New Password",
+    "resetPasswordSuccess": "Password reset successful!"
+  },
+  "home": {
+    "heroTitle": "Your Ultimate Wishlist Experience",
+    "heroSubtitle": "Create, share, and manage your wishlists with friends and family. Never get duplicate gifts again!",
+    "getStarted": "Get Started",
+    "learnMore": "Learn More",
+    "trustedBy": "Trusted by",
+    "featuresTitle": "Everything You Need",
+    "featuresSubtitle": "Powerful features to make gift-giving effortless and fun"
+  },
+  "features": {
+    "userAuth": {
+      "title": "User Authentication",
+      "description": "Register, login, and manage your wishlist securely.",
+      "benefit": "Your data is always protected and private."
+    },
+    "wishlistManagement": {
+      "title": "Wishlist Management",
+      "description": "Add, edit, and delete gifts from your wishlist.",
+      "benefit": "Keep your wishes organized and up to date."
+    },
+    "giftReservations": {
+      "title": "Gift Reservations",
+      "description": "Friends can reserve gifts (without the owner seeing who reserved them).",
+      "benefit": "No more duplicate gifts or spoiled surprises!"
+    },
+    "wishlistSharing": {
+      "title": "Wishlist Sharing",
+      "description": "Share your wishlist with friends via a unique link.",
+      "benefit": "Easily let others know what you really want."
+    },
+    "cloudImages": {
+      "title": "Cloud Image Uploads",
+      "description": "Upload and display gift images using Cloudinary.",
+      "benefit": "Show off your wishes with beautiful images."
+    },
+    "glassmorphismUI": {
+      "title": "Glassmorphism UI",
+      "description": "A stunning, modern gradient-based design with smooth transparency effects.",
+      "benefit": "Enjoy a visually immersive and elegant experience."
+    }
+  },
+  "testimonials": {
+    "emily": "Wishlist App made gift-giving so much easier for my friends and family. I love how simple and fun it is!",
+    "james": "I never get duplicate gifts anymore. The reservation feature is genius!",
+    "sophia": "The design is beautiful and sharing my wishlist is a breeze.",
+    "michael": "Cloud image uploads make my wishlist look amazing. Highly recommend!"
+  },
+  "mockup": {
+    "alexWishlist": "Alex's Wishlist",
+    "nikeAirMax": "Nike Air Max 270",
+    "appleWatch": "Apple Watch SE",
+    "cloudPillow": "Cloud Pillow"
+  },
+  "footer": {
+    "allRightsReserved": "All rights reserved.",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service"
+  },
+  "about": {
+    "title": "About Wishlist App",
+    "subtitle": "Making gift-giving easier, more meaningful, and more enjoyable for everyone.",
+    "ourMission": "Our Mission",
+    "missionText1": "We believe that gift-giving should be a joyful, stress-free experience. Our mission is to create a platform that makes it easy for people to share their wishes and for loved ones to give meaningful gifts that truly matter.",
+    "missionText2": "By combining modern technology with thoughtful design, we're building a community where the act of giving becomes more personal, more meaningful, and more enjoyable for everyone involved.",
+    "joinCommunity": "Join Our Community",
+    "ourValues": "Our Values",
+    "valuesSubtitle": "These core principles guide everything we do and every decision we make.",
+    "faqTitle": "Frequently Asked Questions",
+    "faqSubtitle": "Everything you need to know about using Wishlist App to make gift-giving easier and more enjoyable.",
+    "values": {
+      "userCentric": {
+        "title": "User-Centric Design",
+        "description": "Every feature is designed with the user in mind, ensuring an intuitive and enjoyable experience."
+      },
+      "privacyFirst": {
+        "title": "Privacy First",
+        "description": "Your data is protected with industry-standard security measures and privacy controls."
+      },
+      "innovation": {
+        "title": "Innovation",
+        "description": "Constantly exploring new technologies to deliver cutting-edge features and experiences."
+      },
+      "community": {
+        "title": "Community",
+        "description": "Building a platform that brings people together through the joy of gift-giving."
+      }
+    },
+    "stats": {
+      "happyUsers": "Happy Users",
+      "wishlistsCreated": "Wishlists Created",
+      "giftsReserved": "Gifts Reserved",
+      "uptime": "Uptime"
+    },
+    "faqs": {
+      "q1": {
+        "question": "How does the gift reservation system work?",
+        "answer": "When someone views your wishlist, they can reserve a gift without you seeing who reserved it. This prevents duplicate gifts while keeping the surprise intact. You'll only see that an item has been reserved, not who reserved it."
+      },
+      "q2": {
+        "question": "Is my wishlist private?",
+        "answer": "You have full control over your wishlist privacy. You can make it public with a shareable link, private for invited friends only, or completely private for your eyes only. Your privacy settings can be changed at any time."
+      },
+      "q3": {
+        "question": "Can I add images to my wishlist items?",
+        "answer": "Yes! You can upload images for each wishlist item using our Cloudinary integration. This helps others see exactly what you want and makes your wishlist more visually appealing."
+      },
+      "q4": {
+        "question": "How do I share my wishlist with friends?",
+        "answer": "Simply click the 'Share' button on your wishlist to generate a unique link. You can then send this link to friends and family via email, text, or social media. They can view your wishlist without needing to create an account."
+      },
+      "q5": {
+        "question": "What happens when someone reserves a gift?",
+        "answer": "When someone reserves a gift, it's marked as 'Reserved' on your wishlist. This prevents others from buying the same item. The person who reserved it can see their reserved items in their account, but you won't know who reserved what."
+      },
+      "q6": {
+        "question": "Can I edit or remove items from my wishlist?",
+        "answer": "Absolutely! You can edit any item on your wishlist at any time. You can change the name, description, price, image, or remove items completely. Changes are reflected immediately for anyone viewing your wishlist."
+      },
+      "q7": {
+        "question": "Is there a limit to how many items I can add?",
+        "answer": "Currently, there's no limit to the number of items you can add to your wishlist. Add as many items as you'd like, from small stocking stuffers to big-ticket items."
+      },
+      "q8": {
+        "question": "How secure is my account and data?",
+        "answer": "We take security seriously. All data is encrypted, passwords are securely hashed, and we use industry-standard security measures. We never share your personal information with third parties without your consent."
+      }
+    }
+  },
+  "contact": {
+    "title": "Contact Us",
+    "subtitle": "We'd love to hear from you. Get in touch with our team.",
+    "getInTouch": "Get in touch",
+    "getInTouchDescription": "Have a question or need help? We'd love to hear from you. Send us a message and we'll respond as soon as possible.",
+    "sendMessage": "Send us a message",
+    "form": {
+      "name": "Name",
+      "namePlaceholder": "Your name",
+      "email": "Email",
+      "emailPlaceholder": "your@email.com",
+      "subject": "Subject",
+      "subjectPlaceholder": "Select a subject",
+      "message": "Message",
+      "messagePlaceholder": "Tell us how we can help you...",
+      "sendButton": "Send Message",
+      "sending": "Opening Email...",
+      "successMessage": "✓ Email client opened! Please send the email to complete your message.",
+      "errorMessage": "✗ There was an error. Please try again or email us directly at hello@wishlistapp.com",
+      "subjects": {
+        "general": "General Inquiry",
+        "support": "Technical Support",
+        "feature": "Feature Request",
+        "bug": "Bug Report",
+        "partnership": "Partnership"
+      }
+    },
+    "methods": {
+      "email": {
+        "title": "Email",
+        "value": "hello@wishlistapp.com",
+        "description": "We'll respond within 24 hours"
+      },
+      "chat": {
+        "title": "Live Chat",
+        "value": "Available 9AM-6PM EST",
+        "description": "Get instant help from our team"
+      },
+      "office": {
+        "title": "Office",
+        "value": "San Francisco, CA",
+        "description": "Come visit us anytime"
+      }
+    },
+    "needHelp": {
+      "title": "Need immediate help?",
+      "description": "Check out our FAQ section for quick answers to common questions.",
+      "viewFaq": "View FAQ"
+    }
+  },
+  "forgotPassword": {
+    "title": "Forgot Password?",
+    "subtitle": "Enter your email address and we'll send you a link to reset your password.",
+    "emailPlaceholder": "Enter your email",
+    "sendButton": "Send Reset Link",
+    "sending": "Sending...",
+    "successMessage": "Password reset link sent to your email! Check your inbox (and spam folder).",
+    "errorMessage": "Failed to send reset email. Please check your email address and try again.",
+    "rememberPassword": "Remember your password?",
+    "backToLogin": "Back to Login"
+  },
+  "resetPassword": {
+    "invalidLinkTitle": "Invalid Reset Link",
+    "invalidLinkDescription": "The password reset link is invalid or has expired.",
+    "requestNewLink": "Request a new reset link",
+    "title": "Reset Your Password",
+    "subtitle": "Enter your new password below.",
+    "newPasswordPlaceholder": "New password",
+    "confirmNewPasswordPlaceholder": "Confirm new password",
+    "resetButton": "Reset Password",
+    "resetting": "Resetting...",
+    "rememberPassword": "Remember your password?",
+    "backToLogin": "Back to Login",
+    "errorMessage": "Failed to reset password"
+  }
+}
