@@ -354,7 +354,10 @@ export default function Dashboard() {
               <button className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
                 <BellIcon className="h-6 w-6" />
               </button>
-              <button className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+              <button
+                onClick={() => router.push('/chat')}
+                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+              >
                 <ChatBubbleLeftRightIcon className="h-6 w-6" />
               </button>
               <div className="w-8 h-8 rounded-full bg-indigo-600 dark:bg-purple-500 flex items-center justify-center">

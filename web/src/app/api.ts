@@ -1,6 +1,7 @@
 import axios, { type AxiosRequestConfig } from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5155/api';
+const CHAT_API_URL = process.env.NEXT_PUBLIC_CHAT_API_URL || 'http://localhost:5000/api';
 
 // Auth endpoints (no auth header required)
 export async function login(email: string, password: string) {
@@ -309,5 +310,36 @@ export async function getReservedGifts(): Promise<GiftDTO[]> {
 
 export async function getSharedWishlistGifts(userId: string): Promise<GiftDTO[]> {
   const response = await axios.get(`${API_URL}/Gift/shared/${userId}`, authConfig());
+  return response.data;
+}
+
+// Chat API (Chat microservice)
+export async function createChatToken(userId: string, expiresInMinutes?: number): Promise<{ token: string }> {
+  const response = await axios.post(`${CHAT_API_URL}/chat/token`, { userId, expiresInMinutes });
+  return response.data;
+}
+
+export interface CreateOrJoinChannelDTO {
+  channelType: string;
+  channelId: string;
+  createdByUserId: string;
+  memberIds: string[];
+  customData?: Record<string, any>;
+}
+
+export async function createOrJoinChatChannel(payload: CreateOrJoinChannelDTO): Promise<void> {
+  await axios.post(`${CHAT_API_URL}/chat/channel`, payload, authConfig());
+}
+
+export interface SendChatMessageDTO {
+  channelType: string;
+  channelId: string;
+  senderUserId: string;
+  text: string;
+  customData?: Record<string, any>;
+}
+
+export async function sendChatMessage(payload: SendChatMessageDTO): Promise<{ messageId: string }> {
+  const response = await axios.post(`${CHAT_API_URL}/chat/message`, payload, authConfig());
   return response.data;
 }
