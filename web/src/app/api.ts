@@ -3,6 +3,31 @@ import axios, { type AxiosRequestConfig } from 'axios';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5155/api';
 const CHAT_API_URL = process.env.NEXT_PUBLIC_CHAT_API_URL || 'http://localhost:5000/api';
 
+// Static categories for consistency across the application
+export const WISHLIST_CATEGORIES = [
+  'Electronics',
+  'Books',
+  'Clothing',
+  'Home & Garden',
+  'Sports & Outdoors',
+  'Beauty & Personal Care',
+  'Toys & Games',
+  'Food & Beverages',
+  'Health & Wellness',
+  'Automotive',
+  'Travel',
+  'Music',
+  'Movies & TV',
+  'Art & Crafts',
+  'Jewelry & Accessories',
+  'Pet Supplies',
+  'Office & School',
+  'Baby & Kids',
+  'Other'
+] as const;
+
+export type WishlistCategory = typeof WISHLIST_CATEGORIES[number];
+
 // Auth endpoints (no auth header required)
 export async function login(email: string, password: string) {
   const response = await axios.post(`${API_URL}/Auth/login`, { email, password });
@@ -39,8 +64,11 @@ function authConfig(): AxiosRequestConfig {
   if (typeof window === 'undefined') return {} as AxiosRequestConfig;
   const token = localStorage.getItem('token');
   return token
-    ? { headers: { Authorization: `Bearer ${token}` } }
-    : {};
+    ? { 
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000 // 10 second timeout
+      }
+    : { timeout: 10000 };
 }
 
 // DTOs
@@ -65,6 +93,7 @@ export interface WishlistItemDTO {
   category?: string | null;
   price?: number | null;
   url?: string | null;
+  giftId?: string | null;
 }
 
 export interface WishlistResponseDTO {
@@ -92,9 +121,22 @@ export interface CreateWishlistDTO {
   allowedViewerIds?: string[];
 }
 
+export interface UpdateWishlistDTO {
+  title?: string;
+  description?: string | null;
+  category?: string | null;
+  isPublic?: boolean;
+  allowedViewerIds?: string[];
+}
+
 // Authorized API calls for dashboard
 export async function getFeed(page = 1, pageSize = 20): Promise<WishlistFeedDTO[]> {
   const response = await axios.get(`${API_URL}/Wishlists/feed?page=${page}&pageSize=${pageSize}`, authConfig());
+  return response.data;
+}
+
+export async function getCategories(): Promise<string[]> {
+  const response = await axios.get(`${API_URL}/Wishlists/categories`, authConfig());
   return response.data;
 }
 
@@ -118,6 +160,21 @@ export async function createWishlist(payload: CreateWishlistDTO): Promise<Wishli
   return response.data;
 }
 
+export async function updateWishlist(id: string, payload: {
+  title?: string;
+  description?: string | null;
+  category?: string | null;
+  isPublic?: boolean;
+  allowedViewerIds?: string[];
+}): Promise<WishlistResponseDTO> {
+  const response = await axios.put(`${API_URL}/Wishlists/${id}`, payload, authConfig());
+  return response.data;
+}
+
+export async function deleteWishlist(id: string): Promise<void> {
+  await axios.delete(`${API_URL}/Wishlists/${id}`, authConfig());
+}
+
 // Users API
 export interface UserProfileDTO {
   id: string;
@@ -138,21 +195,6 @@ export interface UserSearchDTO {
   id: string;
   username: string;
   avatarUrl?: string | null;
-  isFollowing: boolean;
-}
-
-export interface UserProfileDTO {
-  id: string;
-  username: string;
-  email: string;
-  bio?: string | null;
-  interests: string[];
-  avatarUrl?: string | null;
-  createdAt: string;
-  followingCount: number;
-  followersCount: number;
-  wishlistCount: number;
-  isPrivate: boolean;
   isFollowing: boolean;
 }
 
@@ -237,12 +279,16 @@ export async function createGift(params: {
   name: string;
   price: number;
   category: string;
+  wishlistId?: string;
   imageFile?: File | null;
 }): Promise<{ id: string; message: string }> {
   const form = new FormData();
   form.append('name', params.name);
   form.append('price', String(params.price));
   form.append('category', params.category);
+  if (params.wishlistId) {
+    form.append('wishlistId', params.wishlistId);
+  }
   if (params.imageFile) {
     form.append('imageFile', params.imageFile);
   }
@@ -310,6 +356,16 @@ export async function getReservedGifts(): Promise<GiftDTO[]> {
 
 export async function getSharedWishlistGifts(userId: string): Promise<GiftDTO[]> {
   const response = await axios.get(`${API_URL}/Gift/shared/${userId}`, authConfig());
+  return response.data;
+}
+
+export async function addGiftToWishlist(giftId: string, wishlistId: string): Promise<{ message: string }> {
+  const response = await axios.post(`${API_URL}/Gift/${giftId}/assign-to-wishlist`, { wishlistId }, authConfig());
+  return response.data;
+}
+
+export async function removeGiftFromWishlist(giftId: string): Promise<{ message: string }> {
+  const response = await axios.post(`${API_URL}/Gift/${giftId}/remove-from-wishlist`, null, authConfig());
   return response.data;
 }
 

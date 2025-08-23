@@ -35,7 +35,10 @@ import {
   getUserWishlists,
   getWishlistDetails,
   createWishlist,
+  updateWishlist,
+  deleteWishlist,
   type CreateWishlistDTO,
+  WISHLIST_CATEGORIES,
     // Gifts
     createGift,
     getMyGifts,
@@ -53,6 +56,8 @@ type UIWishlist = {
   user: { id: string; name: string; avatar: string; username: string };
   title: string;
   description?: string | null;
+  category?: string | null;
+  isPublic?: boolean;
   gifts: { id: string; name: string; price?: number | null; image?: string | null }[];
   likes: number;
   isLiked: boolean;
@@ -90,6 +95,47 @@ export default function Dashboard() {
   const [createForm, setCreateForm] = useState({ title: "", description: "", category: "", isPublic: true, allowedViewerIds: "" });
   const [createError, setCreateError] = useState<string | null>(null);
 
+  // Wishlist management state
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [editingWishlist, setEditingWishlist] = useState<UIWishlist | null>(null);
+  const [deletingWishlist, setDeletingWishlist] = useState<UIWishlist | null>(null);
+  const [isEditWishlistOpen, setIsEditWishlistOpen] = useState(false);
+  const [isDeleteWishlistOpen, setIsDeleteWishlistOpen] = useState(false);
+  const [editWishlistForm, setEditWishlistForm] = useState({
+    title: '',
+    description: '',
+    category: '',
+    isPublic: true
+  });
+  const [editWishlistError, setEditWishlistError] = useState<string | null>(null);
+  const [editWishlistLoading, setEditWishlistLoading] = useState(false);
+  const [deleteWishlistLoading, setDeleteWishlistLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Get current user ID
+  const currentUserId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
+
+  // Debug logging for user ID
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.log('Current user ID from localStorage:', currentUserId);
+      console.log('All localStorage keys:', Object.keys(localStorage));
+      console.log('Token exists:', !!localStorage.getItem('token'));
+    }
+  }, [currentUserId]);
+
+  // Helper function to check if user owns a wishlist
+  const isWishlistOwner = (wishlist: UIWishlist) => {
+    const isOwner = currentUserId && wishlist.user.id === currentUserId;
+    console.log('Ownership check:', {
+      currentUserId,
+      wishlistUserId: wishlist.user.id,
+      wishlistTitle: wishlist.title,
+      isOwner
+    });
+    return isOwner;
+  };
+
   // Profile editing state
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [editProfileForm, setEditProfileForm] = useState({
@@ -101,6 +147,7 @@ export default function Dashboard() {
   const [editProfileError, setEditProfileError] = useState<string | null>(null);
   const [editProfileLoading, setEditProfileLoading] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [interestInput, setInterestInput] = useState("");
 
   // Gifts tab state
   const [gifts, setGifts] = useState<GiftDTO[]>([]);
@@ -142,10 +189,12 @@ export default function Dashboard() {
             id: w.userId,
             name: w.username,
             avatar: w.avatarUrl || "https://api.dicebear.com/7.x/initials/svg?seed=" + encodeURIComponent(w.username),
-            username: "@" + w.username
+            username: formatUsername(w.username)
           },
           title: w.title,
           description: w.description,
+          category: w.category,
+          isPublic: w.isPublic,
           gifts: [],
           likes: w.likeCount,
           isLiked: w.isLiked,
@@ -154,7 +203,6 @@ export default function Dashboard() {
         }));
         setWishlists(mapped);
         // Suggested users: default to following list instead of empty search
-        const currentUserId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
         if (currentUserId) {
           try {
             const users = await getFollowing(currentUserId, 1, 5);
@@ -251,9 +299,11 @@ export default function Dashboard() {
         ]);
         const mappedMy: UIWishlist[] = myWishlists.map(w => ({
           id: w.id,
-          user: { id: w.userId, name: userProfile.username, avatar: w.avatarUrl || "", username: "@" + userProfile.username },
+          user: { id: w.userId, name: userProfile.username, avatar: w.avatarUrl || "", username: formatUsername(userProfile.username) },
           title: w.title,
           description: w.description,
+          category: w.category,
+          isPublic: w.isPublic,
           gifts: [],
           likes: w.likeCount,
           isLiked: w.isLiked,
@@ -278,6 +328,20 @@ export default function Dashboard() {
     loadProfile();
   }, [activeTab]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (activeDropdown && !(event.target as Element).closest('.dropdown-container')) {
+        setActiveDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [activeDropdown]);
+
   const handleLike = async (wishlistId: string) => {
     setWishlists(prev => prev.map(w => w.id === wishlistId ? { ...w, isLiked: !w.isLiked, likes: w.isLiked ? w.likes - 1 : w.likes + 1 } : w));
     try {
@@ -300,6 +364,220 @@ export default function Dashboard() {
         ? { ...wishlist, isBookmarked: !wishlist.isBookmarked }
         : wishlist
     ));
+  };
+
+  const handleEditWishlist = async () => {
+    if (!editingWishlist) return;
+    
+    // Check authentication
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) {
+      setEditWishlistError('You must be logged in to edit wishlists');
+      return;
+    }
+    
+    // Double-check ownership
+    if (!isWishlistOwner(editingWishlist)) {
+      setEditWishlistError('You do not have permission to edit this wishlist');
+      return;
+    }
+    
+    // Check if wishlist still exists
+    const wishlistExists = wishlists.some(w => w.id === editingWishlist.id);
+    if (!wishlistExists) {
+      setEditWishlistError('Wishlist no longer exists');
+      return;
+    }
+    
+    // Validate form
+    if (!editWishlistForm.title.trim()) {
+      setEditWishlistError('Title is required');
+      return;
+    }
+    
+    setEditWishlistLoading(true);
+    setEditWishlistError(null);
+    
+    try {
+      console.log('Sending update request with data:', {
+        title: editWishlistForm.title,
+        description: editWishlistForm.description || null,
+        category: editWishlistForm.category || null,
+        isPublic: editWishlistForm.isPublic
+      });
+      
+      await updateWishlist(editingWishlist.id, {
+        title: editWishlistForm.title,
+        description: editWishlistForm.description || null,
+        category: editWishlistForm.category || null,
+        isPublic: editWishlistForm.isPublic
+      });
+      
+      console.log('Update request successful, refreshing wishlists...');
+      
+      // Refresh wishlists data
+      try {
+        const refreshedWishlists = await getFeed(1, 20);
+        console.log('Refreshed wishlists data:', refreshedWishlists);
+        const mapped: UIWishlist[] = refreshedWishlists.map(w => ({
+          id: w.id,
+          user: { id: w.userId, name: w.username, avatar: w.avatarUrl || "", username: formatUsername(w.username) },
+          title: w.title,
+          description: w.description,
+          category: w.category,
+          isPublic: w.isPublic,
+          gifts: [],
+          likes: w.likeCount,
+          isLiked: w.isLiked,
+          isBookmarked: false,
+          createdAt: new Date(w.createdAt).toLocaleString()
+        }));
+        console.log('Mapped wishlists:', mapped);
+        setWishlists(mapped);
+      } catch (error) {
+        console.error('Failed to refresh wishlists:', error);
+      }
+      
+      setIsEditWishlistOpen(false);
+      setEditingWishlist(null);
+      setEditWishlistForm({ title: '', description: '', category: '', isPublic: true });
+      setSuccessMessage('Wishlist updated successfully!');
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (error: any) {
+      console.error('Edit wishlist error:', error);
+      
+      // Handle different types of errors
+      if (error.response) {
+        if (error.response.status === 403) {
+          setEditWishlistError('You do not have permission to edit this wishlist');
+        } else if (error.response.status === 404) {
+          setEditWishlistError('Wishlist not found');
+        } else if (error.response.status === 500) {
+          setEditWishlistError('Server error occurred. Please try again later.');
+        } else {
+          setEditWishlistError(error.response.data?.message || 'Failed to update wishlist');
+        }
+      } else if (error.request) {
+        setEditWishlistError('Network error. Please check your connection and try again.');
+      } else {
+        setEditWishlistError(error.message || 'Failed to update wishlist');
+      }
+    } finally {
+      setEditWishlistLoading(false);
+    }
+  };
+
+  const handleDeleteWishlist = async () => {
+    if (!deletingWishlist) return;
+    
+    // Check authentication
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) {
+      setSuccessMessage('You must be logged in to delete wishlists');
+      setTimeout(() => setSuccessMessage(null), 5000);
+      return;
+    }
+    
+    // Double-check ownership
+    if (!isWishlistOwner(deletingWishlist)) {
+      setSuccessMessage('You do not have permission to delete this wishlist');
+      setTimeout(() => setSuccessMessage(null), 5000);
+      return;
+    }
+    
+    // Check if wishlist still exists
+    const wishlistExists = wishlists.some(w => w.id === deletingWishlist.id);
+    if (!wishlistExists) {
+      setSuccessMessage('Wishlist no longer exists');
+      setTimeout(() => setSuccessMessage(null), 5000);
+      return;
+    }
+    
+
+    
+    setDeleteWishlistLoading(true);
+    
+    try {
+      await deleteWishlist(deletingWishlist.id);
+      
+      // Refresh wishlists data
+      try {
+        const refreshedWishlists = await getFeed(1, 20);
+        const mapped: UIWishlist[] = refreshedWishlists.map(w => ({
+          id: w.id,
+          user: { id: w.userId, name: w.username, avatar: w.avatarUrl || "", username: formatUsername(w.username) },
+          title: w.title,
+          description: w.description,
+          category: w.category,
+          isPublic: w.isPublic,
+          gifts: [],
+          likes: w.likeCount,
+          isLiked: w.isLiked,
+          isBookmarked: false,
+          createdAt: new Date(w.createdAt).toLocaleString()
+        }));
+        setWishlists(mapped);
+      } catch (error) {
+        console.error('Failed to refresh wishlists:', error);
+      }
+      
+      setIsDeleteWishlistOpen(false);
+      setDeletingWishlist(null);
+      setSuccessMessage('Wishlist deleted successfully!');
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (error: any) {
+      console.error('Delete wishlist error:', error);
+      
+      // Handle different types of errors
+      if (error.response) {
+        if (error.response.status === 403) {
+          setSuccessMessage('You do not have permission to delete this wishlist');
+        } else if (error.response.status === 404) {
+          setSuccessMessage('Wishlist not found');
+        } else if (error.response.status === 500) {
+          setSuccessMessage('Server error occurred. Please try again later.');
+        } else {
+          setSuccessMessage(error.response.data?.message || 'Failed to delete wishlist');
+        }
+      } else if (error.request) {
+        setSuccessMessage('Network error. Please check your connection and try again.');
+      } else {
+        setSuccessMessage(error.message || 'Failed to delete wishlist');
+      }
+      
+      // Clear error message after 5 seconds
+      setTimeout(() => setSuccessMessage(null), 5000);
+    } finally {
+      setDeleteWishlistLoading(false);
+    }
+  };
+
+  // Function to get translated categories
+  const getTranslatedCategories = () => {
+    return WISHLIST_CATEGORIES.map(category => {
+      const categoryKey = category.toLowerCase().replace(/[^a-z]/g, '');
+      return {
+        value: category,
+        label: t(`dashboard.categories.${categoryKey}`) || category
+      };
+    });
+  };
+
+  // Function to get translated category label
+  const getTranslatedCategoryLabel = (category: string | null | undefined) => {
+    if (!category) return '';
+    const categoryKey = category.toLowerCase().replace(/[^a-z]/g, '');
+    return t(`dashboard.categories.${categoryKey}`) || category;
+  };
+
+  // Function to properly format username with @ symbol
+  const formatUsername = (username: string) => {
+    // Remove any existing @ symbols and add one
+    return '@' + username.replace(/^@+/, '');
   };
 
   return (
@@ -329,7 +607,6 @@ export default function Dashboard() {
                         const users = await searchUsers(q, 1, 5);
                         setSuggestedUsers(users);
                       } else {
-                        const currentUserId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
                         if (currentUserId) {
                           const users = await getFollowing(currentUserId, 1, 5);
                           setSuggestedUsers(users);
@@ -367,6 +644,15 @@ export default function Dashboard() {
           </div>
         </div>
       </nav>
+
+      {/* Global Success Message */}
+      {successMessage && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-40">
+          <div className="bg-green-100 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 px-4 py-3 rounded-lg shadow-lg">
+            {successMessage}
+          </div>
+        </div>
+      )}
 
       <div className="flex pt-16">
         {/* Left Sidebar */}
@@ -443,11 +729,15 @@ export default function Dashboard() {
                 <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
-                        {profile.username?.[0]?.toUpperCase() || 'U'}
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-lg border-2 border-gray-200 dark:border-gray-700">
+                        <img
+                          src={profile.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(profile.username)}`}
+                          alt={profile.username}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                       <div>
-                        <div className="text-xl font-bold text-gray-900 dark:text-white">@{profile.username}</div>
+                        <div className="text-xl font-bold text-gray-900 dark:text-white">{formatUsername(profile.username)}</div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
                           {profile.followers.length} {t('dashboard.followers')} • {profile.following.length} {t('dashboard.following')}
                         </div>
@@ -468,6 +758,22 @@ export default function Dashboard() {
                       {t('dashboard.editProfile')}
                     </button>
                   </div>
+                  {(profile.bio || (profile.interests && profile.interests.length > 0)) && (
+                    <div className="mt-2 mb-6 space-y-2">
+                      {profile.bio && (
+                        <p className="text-gray-700 dark:text-gray-300">{profile.bio}</p>
+                      )}
+                      {profile.interests && profile.interests.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {profile.interests.map((it, idx) => (
+                            <span key={idx} className="px-2 py-1 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
+                              {it}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
                       <div className="flex items-center gap-2 mb-4">
@@ -501,7 +807,7 @@ export default function Dashboard() {
                           <div key={u.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
                             <div className="flex items-center gap-3">
                               <img src={u.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(u.username)}`} alt={u.username} className="w-10 h-10 rounded-full border-2 border-gray-200 dark:border-gray-600" />
-                              <span className="text-sm font-medium text-gray-900 dark:text-white">@{u.username}</span>
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">{formatUsername(u.username)}</span>
                             </div>
                             <button
                               onClick={async () => {
@@ -550,13 +856,114 @@ export default function Dashboard() {
                             {wishlist.user.name}
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
-                            @{wishlist.user.username} • {wishlist.createdAt}
+                            {wishlist.user.username} • {wishlist.createdAt}
                           </div>
                         </div>
                       </div>
-                      <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200">
-                        <EllipsisHorizontalIcon className="h-5 w-5" />
-                      </button>
+                      <div className="relative dropdown-container">
+                        <button 
+                          onClick={() => setActiveDropdown(wishlist.id === activeDropdown ? null : wishlist.id)}
+                          className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                        >
+                          <EllipsisHorizontalIcon className="h-5 w-5" />
+                        </button>
+                        
+                        {/* Dropdown Menu */}
+                        {activeDropdown === wishlist.id && (
+                          <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                            <div className="py-2">
+                              {/* View Details */}
+                              <button
+                                onClick={() => {
+                                  setActiveDropdown(null);
+                                  // Navigate to wishlist details page
+                                  router.push(`/wishlist/${wishlist.id}`);
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <EyeIcon className="h-4 w-4" />
+                                  {t('dashboard.viewDetails')}
+                                </div>
+                              </button>
+                              
+                              {/* Share */}
+                              <button
+                                onClick={async () => {
+                                  setActiveDropdown(null);
+                                  try {
+                                    const shareUrl = `${window.location.origin}/wishlist/${wishlist.id}`;
+                                    await navigator.clipboard.writeText(shareUrl);
+                                    setSuccessMessage(t('dashboard.wishlistShared'));
+                                    setTimeout(() => setSuccessMessage(null), 3000);
+                                  } catch (error) {
+                                    console.error('Failed to copy to clipboard:', error);
+                                    // Fallback for older browsers
+                                    const textArea = document.createElement('textarea');
+                                    textArea.value = `${window.location.origin}/wishlist/${wishlist.id}`;
+                                    document.body.appendChild(textArea);
+                                    textArea.select();
+                                    document.execCommand('copy');
+                                    document.body.removeChild(textArea);
+                                    setSuccessMessage(t('dashboard.wishlistShared'));
+                                    setTimeout(() => setSuccessMessage(null), 3000);
+                                  }
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <ShareIcon className="h-4 w-4" />
+                                  {t('dashboard.share')}
+                                </div>
+                              </button>
+                              
+                              {/* Edit - Only show for user's own wishlists */}
+                              {isWishlistOwner(wishlist) && (
+                                <button
+                                  onClick={() => {
+                                    setActiveDropdown(null);
+                                    setEditingWishlist(wishlist);
+                                    setEditWishlistForm({
+                                      title: wishlist.title,
+                                      description: wishlist.description || '',
+                                      category: wishlist.category || '',
+                                      isPublic: wishlist.isPublic ?? true
+                                    });
+                                    setIsEditWishlistOpen(true);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors duration-200"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                    {t('dashboard.edit')}
+                                  </div>
+                                </button>
+                              )}
+                              
+                              {/* Delete - Only show for user's own wishlists */}
+                              {isWishlistOwner(wishlist) && (
+                                <button
+                                  onClick={() => {
+                                    setActiveDropdown(null);
+                                    setDeletingWishlist(wishlist);
+                                    setIsDeleteWishlistOpen(true);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    {t('dashboard.delete')}
+                                  </div>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -568,9 +975,16 @@ export default function Dashboard() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                         </svg>
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                        {wishlist.title}
-                      </h3>
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                          {wishlist.title}
+                        </h3>
+                        {wishlist.category && (
+                          <span className="inline-block px-2 py-1 text-xs font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded-full mt-1">
+                            {getTranslatedCategoryLabel(wishlist.category)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <p className="text-gray-600 dark:text-gray-300 mb-6 text-lg leading-relaxed">
                       {wishlist.description}
@@ -683,13 +1097,18 @@ export default function Dashboard() {
                           onChange={(e)=> setGiftForm({ ...giftForm, price: e.target.value })}
                           className="px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-w-0 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                         />
-                        <input
-                          type="text"
-                          placeholder={t('dashboard.category')}
+                        <select
                           value={giftForm.category}
-                          onChange={(e)=> setGiftForm({ ...giftForm, category: e.target.value })}
-                          className="px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-w-0 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
-                        />
+                          onChange={(e) => setGiftForm({ ...giftForm, category: e.target.value })}
+                          className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
+                        >
+                          <option value="">{t('dashboard.selectCategory')}</option>
+                          {getTranslatedCategories().map((category) => (
+                            <option key={category.value} value={category.value}>
+                              {category.label}
+                            </option>
+                          ))}
+                        </select>
                         <div className="relative">
                           <input
                             type="file"
@@ -711,6 +1130,12 @@ export default function Dashboard() {
                             try {
                               const priceNumber = Number(giftForm.price);
                               if (!giftForm.name.trim() || Number.isNaN(priceNumber)) return;
+                              console.log('Creating gift with data:', {
+                                name: giftForm.name.trim(),
+                                price: priceNumber,
+                                category: giftForm.category.trim() || 'General',
+                                hasImage: !!giftForm.imageFile
+                              });
                               await createGift({
                                 name: giftForm.name.trim(),
                                 price: priceNumber,
@@ -720,7 +1145,14 @@ export default function Dashboard() {
                               setGiftForm({ name: '', price: '', category: '', imageFile: null });
                               const refreshed = await getMyGifts({ category: giftCategoryFilter || undefined, sortBy: giftSortBy || undefined });
                               setGifts(refreshed);
-                            } catch {}
+                              console.log('Gift created successfully');
+                            } catch (error: unknown) {
+                              console.error('Failed to create gift:', error);
+                              const errorMessage = error && typeof error === 'object' && 'response' in error 
+                                ? (error.response as { data?: { message?: string } })?.data?.message 
+                                : 'Failed to create gift';
+                              setError(errorMessage || 'Failed to create gift');
+                            }
                           }}
                           className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold hover:from-indigo-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
                         >{t('common.add')}</button>
@@ -737,13 +1169,18 @@ export default function Dashboard() {
                         <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t('dashboard.filtersSorting')}</h3>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <input
-                          type="text"
-                          placeholder={t('dashboard.filterByCategory')}
+                        <select
                           value={giftCategoryFilter}
-                          onChange={(e)=> setGiftCategoryFilter(e.target.value)}
+                          onChange={(e) => setGiftCategoryFilter(e.target.value)}
                           className="px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-w-0 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
-                        />
+                        >
+                          <option value="">{t('dashboard.filterByCategory')}</option>
+                          {getTranslatedCategories().map((category) => (
+                            <option key={category.value} value={category.value}>
+                              {category.label}
+                            </option>
+                          ))}
+                        </select>
                         <select
                           value={giftSortBy}
                           onChange={(e)=> setGiftSortBy(e.target.value as "price-asc" | "price-desc" | "name-asc" | "name-desc" | "")}
@@ -856,7 +1293,7 @@ export default function Dashboard() {
                               </div>
                               <div className="flex items-center gap-2 mb-3">
                                 <span className="text-xs px-3 py-1 rounded-full bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 text-indigo-800 dark:text-indigo-200 font-medium">
-                                  {g.category || 'General'}
+                                  {getTranslatedCategoryLabel(g.category) || 'General'}
                                 </span>
                                 {g.reservedByUsername && (
                                   <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
@@ -946,7 +1383,7 @@ export default function Dashboard() {
                         <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-600"></div>
                       </div>
                       <div>
-                        <div className="font-semibold text-gray-900 dark:text-white">@{user.username}</div>
+                        <div className="font-semibold text-gray-900 dark:text-white">{formatUsername(user.username)}</div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">3 mutual friends</div>
                       </div>
                     </div>
@@ -1013,22 +1450,27 @@ export default function Dashboard() {
                   type="text"
                   value={createForm.title}
                   onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
-                  placeholder="Title"
+                  placeholder={t('dashboard.title')}
                   className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
                 <textarea
                   value={createForm.description}
                   onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
-                  placeholder="Description"
+                  placeholder={t('dashboard.description')}
                   className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
-                <input
-                  type="text"
+                <select
                   value={createForm.category}
                   onChange={(e) => setCreateForm({ ...createForm, category: e.target.value })}
-                  placeholder="Category (optional)"
                   className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
+                >
+                  <option value="">{t('dashboard.selectCategory')}</option>
+                  {getTranslatedCategories().map((category) => (
+                    <option key={category.value} value={category.value}>
+                      {category.label}
+                    </option>
+                  ))}
+                </select>
                 {!createForm.isPublic && (
                   <input
                     type="text"
@@ -1044,7 +1486,7 @@ export default function Dashboard() {
                     checked={createForm.isPublic}
                     onChange={(e) => setCreateForm({ ...createForm, isPublic: e.target.checked })}
                   />
-                  {createForm.isPublic ? 'Public' : 'Private'}
+                  {createForm.isPublic ? t('dashboard.public') : t('dashboard.private')}
                 </label>
               </div>
               <div className="mt-5 flex justify-end gap-2">
@@ -1068,9 +1510,11 @@ export default function Dashboard() {
                       // Prepend to feed for instant feedback (dedupe by id)
                       setWishlists(prev => dedupeById([{
                         id: created.id,
-                        user: { id: created.userId, name: created.username, avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(created.username)}`, username: '@' + created.username },
+                        user: { id: created.userId, name: created.username, avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(created.username)}`, username: formatUsername(created.username) },
                         title: created.title,
                         description: created.description,
+                        category: created.category,
+                        isPublic: created.isPublic,
                         gifts: [],
                         likes: created.likeCount,
                         isLiked: created.isLiked,
@@ -1166,16 +1610,62 @@ export default function Dashboard() {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     {t('dashboard.interests')}
                   </label>
-                  <input
-                    type="text"
-                    value={editProfileForm.interests.join(', ')}
-                    onChange={(e) => setEditProfileForm({ 
-                      ...editProfileForm, 
-                      interests: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
-                    })}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
-                    placeholder={t('dashboard.interestsPlaceholder')}
-                  />
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {editProfileForm.interests.map((it, idx) => (
+                      <span key={idx} className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 text-xs">
+                        {it}
+                        <button
+                          type="button"
+                          onClick={() => setEditProfileForm({
+                            ...editProfileForm,
+                            interests: editProfileForm.interests.filter((_, i) => i !== idx)
+                          })}
+                          className="ml-1 text-gray-500 hover:text-red-600"
+                          aria-label="Remove interest"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={interestInput}
+                      onChange={(e) => setInterestInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ',') {
+                          e.preventDefault();
+                          const next = interestInput.trim();
+                          if (next) {
+                            setEditProfileForm({
+                              ...editProfileForm,
+                              interests: Array.from(new Set([...editProfileForm.interests, next]))
+                            });
+                            setInterestInput("");
+                          }
+                        }
+                      }}
+                      className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                      placeholder={t('dashboard.interestsPlaceholder') || 'Type an interest and press Enter'}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = interestInput.trim();
+                        if (next) {
+                          setEditProfileForm({
+                            ...editProfileForm,
+                            interests: Array.from(new Set([...editProfileForm.interests, next]))
+                          });
+                          setInterestInput("");
+                        }
+                      }}
+                      className="px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 transition-all duration-200"
+                    >
+                      {t('common.add') || 'Add'}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Privacy Setting */}
@@ -1253,6 +1743,183 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Edit Wishlist Modal */}
+      {isEditWishlistOpen && editingWishlist && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={() => {
+            setIsEditWishlistOpen(false);
+            setEditWishlistError(null);
+            setEditingWishlist(null);
+            setEditWishlistForm({ title: '', description: '', category: '', isPublic: true });
+          }}
+        >
+          <div 
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                {t('dashboard.editWishlist') || 'Edit Wishlist'}
+              </h3>
+              
+              {editWishlistError && (
+                <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg text-sm">
+                  {editWishlistError}
+                </div>
+              )}
+
+              {successMessage && (
+                <div className="mb-4 p-3 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg text-sm">
+                  {successMessage}
+                </div>
+              )}
+
+              <div className="space-y-4">
+                {/* Title */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {t('dashboard.title') || 'Title'}
+                  </label>
+                  <input
+                    type="text"
+                    value={editWishlistForm.title}
+                    onChange={(e) => setEditWishlistForm({ ...editWishlistForm, title: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                    placeholder={t('dashboard.title') || 'Title'}
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {t('dashboard.description') || 'Description'}
+                  </label>
+                  <textarea
+                    value={editWishlistForm.description}
+                    onChange={(e) => setEditWishlistForm({ ...editWishlistForm, description: e.target.value })}
+                    rows={3}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                    placeholder={t('dashboard.description') || 'Description'}
+                  />
+                </div>
+
+                {/* Category */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {t('dashboard.category') || 'Category'}
+                  </label>
+                  <select
+                    value={editWishlistForm.category}
+                    onChange={(e) => setEditWishlistForm({ ...editWishlistForm, category: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                  >
+                    <option value="">{t('dashboard.selectCategory')}</option>
+                    {getTranslatedCategories().map((category) => (
+                      <option key={category.value} value={category.value}>
+                        {category.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Privacy Setting */}
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="isPublic"
+                    checked={editWishlistForm.isPublic}
+                    onChange={(e) => setEditWishlistForm({ ...editWishlistForm, isPublic: e.target.checked })}
+                    className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                  />
+                  <label htmlFor="isPublic" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {t('dashboard.publicWishlist') || 'Public Wishlist'}
+                  </label>
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3">
+                <button 
+                  onClick={() => {
+                    setIsEditWishlistOpen(false);
+                    setEditWishlistError(null);
+                    setEditingWishlist(null);
+                    setEditWishlistForm({ title: '', description: '', category: '', isPublic: true });
+                  }} 
+                  className="px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 font-medium"
+                >
+                  {t('common.cancel') || 'Cancel'}
+                </button>
+                <button
+                  onClick={handleEditWishlist}
+                  disabled={editWishlistLoading}
+                  className="px-6 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {editWishlistLoading && (
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  )}
+                  {editWishlistLoading ? (t('common.saving') || 'Saving') : (t('common.save') || 'Save')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Wishlist Confirmation Modal */}
+      {isDeleteWishlistOpen && deletingWishlist && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={() => {
+            setIsDeleteWishlistOpen(false);
+            setDeletingWishlist(null);
+          }}
+        >
+          <div 
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                {t('dashboard.deleteWishlist') || 'Delete Wishlist'}
+              </h3>
+              
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
+                {t('dashboard.deleteWishlistConfirm') || 'Are you sure you want to delete'} <strong>"{deletingWishlist.title}"</strong>? {t('dashboard.deleteWishlistWarning') || 'This action cannot be undone.'}
+              </p>
+
+              <div className="flex justify-end gap-3">
+                <button 
+                  onClick={() => {
+                    setIsDeleteWishlistOpen(false);
+                    setDeletingWishlist(null);
+                  }} 
+                  className="px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 font-medium"
+                >
+                  {t('common.cancel') || 'Cancel'}
+                </button>
+                <button
+                  onClick={handleDeleteWishlist}
+                  disabled={deleteWishlistLoading}
+                  className="px-6 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {deleteWishlistLoading && (
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  )}
+                  {deleteWishlistLoading ? (t('common.deleting') || 'Deleting') : (t('common.delete') || 'Delete')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
