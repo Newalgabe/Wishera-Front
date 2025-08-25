@@ -13,7 +13,8 @@ import {
   BookmarkIcon,
   EllipsisHorizontalIcon,
   ShareIcon,
-  EyeIcon
+  EyeIcon,
+  ArrowRightOnRectangleIcon
 } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartIconSolid } from "@heroicons/react/24/solid";
 import { useLanguage } from "../../contexts/LanguageContext";
@@ -134,6 +135,17 @@ export default function Dashboard() {
       isOwner
     });
     return isOwner;
+  };
+
+  // Logout function
+  const handleLogout = () => {
+    // Clear all auth data from localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('username');
+    
+    // Redirect to login page
+    router.push('/login');
   };
 
   // Profile editing state
@@ -637,6 +649,13 @@ export default function Dashboard() {
               >
                 <ChatBubbleLeftRightIcon className="h-6 w-6" />
               </button>
+              <button
+                onClick={handleLogout}
+                className="p-2 text-gray-600 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                title="Logout"
+              >
+                <ArrowRightOnRectangleIcon className="h-6 w-6" />
+              </button>
               <div className="w-8 h-8 rounded-full bg-indigo-600 dark:bg-purple-500 flex items-center justify-center">
                 <UserIcon className="h-5 w-5 text-white" />
               </div>
@@ -805,9 +824,12 @@ export default function Dashboard() {
                       <div className="space-y-3">
                         {profile.following.map(u => (
                           <div key={u.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
-                            <div className="flex items-center gap-3">
+                            <div 
+                              className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={() => router.push(`/user/${u.id}`)}
+                            >
                               <img src={u.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(u.username)}`} alt={u.username} className="w-10 h-10 rounded-full border-2 border-gray-200 dark:border-gray-600" />
-                              <span className="text-sm font-medium text-gray-900 dark:text-white">{formatUsername(u.username)}</span>
+                              <span className="text-sm font-medium text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{formatUsername(u.username)}</span>
                             </div>
                             <button
                               onClick={async () => {
@@ -843,7 +865,10 @@ export default function Dashboard() {
                   <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
-                        <div className="relative">
+                        <div 
+                          className="relative cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => router.push(`/user/${wishlist.user.id}`)}
+                        >
                           <img
                             src={wishlist.user.avatar}
                             alt={wishlist.user.name}
@@ -851,8 +876,11 @@ export default function Dashboard() {
                           />
                           <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-600"></div>
                         </div>
-                        <div>
-                          <div className="font-bold text-gray-900 dark:text-white text-lg">
+                        <div 
+                          className="cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => router.push(`/user/${wishlist.user.id}`)}
+                        >
+                          <div className="font-bold text-gray-900 dark:text-white text-lg hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                             {wishlist.user.name}
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -1373,7 +1401,10 @@ export default function Dashboard() {
               <div className="space-y-4">
                 {suggestedUsers.map((user) => (
                   <div key={user.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
-                    <div className="flex items-center space-x-3">
+                    <div 
+                      className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => router.push(`/user/${user.id}`)}
+                    >
                       <div className="relative">
                         <img
                           src={user.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.username)}`}
@@ -1383,7 +1414,7 @@ export default function Dashboard() {
                         <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-600"></div>
                       </div>
                       <div>
-                        <div className="font-semibold text-gray-900 dark:text-white">{formatUsername(user.username)}</div>
+                        <div className="font-semibold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{formatUsername(user.username)}</div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">3 mutual friends</div>
                       </div>
                     </div>

@@ -355,5 +355,19 @@
       "babykids": "Baby & Kids",
       "other": "Other"
     }
+  },
+  "userProfile": {
+    "loading": "Loading profile...",
+    "userNotFound": "User not found",
+    "goBack": "Go Back",
+    "wishlists": "Wishlists",
+    "noWishlists": "No wishlists yet",
+    "noFollowers": "No followers yet",
+    "notFollowingAnyone": "Not following anyone yet",
+    "profileLinkCopied": "Profile link copied to clipboard",
+    "followedSuccessfully": "Followed successfully",
+    "unfollowedSuccessfully": "Unfollowed successfully",
+    "failedToFollow": "Failed to follow/unfollow user",
+    "failedToCopyLink": "Failed to copy link"
   }
 }

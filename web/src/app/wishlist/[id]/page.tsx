@@ -482,14 +482,19 @@ export default function WishlistDetailsPage() {
               className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6"
             >
               <div className="text-center">
-                <img
-                  src={wishlist.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(wishlist.username)}`}
-                  alt={wishlist.username}
-                  className="w-20 h-20 rounded-full border-4 border-gray-200 dark:border-gray-600 mx-auto mb-4 object-cover"
-                />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                  {wishlist.username}
-                </h3>
+                <div 
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => router.push(`/user/${wishlist.userId}`)}
+                >
+                  <img
+                    src={wishlist.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(wishlist.username)}`}
+                    alt={wishlist.username}
+                    className="w-20 h-20 rounded-full border-4 border-gray-200 dark:border-gray-600 mx-auto mb-4 object-cover"
+                  />
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                    {wishlist.username}
+                  </h3>
+                </div>
                 {currentUserId !== wishlist.userId && (
                   <button
                     onClick={handleFollow}

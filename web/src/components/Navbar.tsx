@@ -1,12 +1,35 @@
 "use client";
 import Link from "next/link";
-import { HomeIcon } from "@heroicons/react/24/outline";
+import { useRouter } from "next/navigation";
+import { HomeIcon, ArrowRightOnRectangleIcon } from "@heroicons/react/24/outline";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
 import { useLanguage } from "../contexts/LanguageContext";
+import { useEffect, useState } from "react";
 
 export default function Navbar() {
   const { t } = useLanguage();
+  const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // Check if user is logged in by looking for token in localStorage
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    setIsLoggedIn(!!token);
+  }, []);
+
+  const handleLogout = () => {
+    // Clear all auth data from localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('username');
+    
+    // Update state
+    setIsLoggedIn(false);
+    
+    // Redirect to login page
+    router.push('/login');
+  };
 
   return (
     <nav className="w-full sticky top-0 z-30 bg-gradient-to-br from-white/70 to-indigo-100/60 dark:from-gray-900/70 dark:to-gray-800/60 backdrop-blur-md border-b border-indigo-100/40 dark:border-gray-700/40 shadow-sm transition-colors duration-300">
@@ -25,8 +48,23 @@ export default function Navbar() {
         <div className="flex gap-2 items-center">
           <LanguageSelector />
           <ThemeToggle />
-          <Link href="/login" className="px-4 py-2 rounded-full bg-gradient-to-r from-indigo-500 to-blue-500 dark:from-purple-500 dark:to-indigo-500 text-white font-semibold text-sm shadow hover:scale-105 transition-transform">{t('navigation.login')}</Link>
-          <Link href="/register" className="px-4 py-2 rounded-full bg-gradient-to-r from-yellow-400 to-orange-400 dark:from-orange-500 dark:to-red-500 text-white font-semibold text-sm shadow hover:scale-105 transition-transform">{t('navigation.signup')}</Link>
+          {isLoggedIn ? (
+            <>
+              <Link href="/dashboard" className="px-4 py-2 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 dark:from-emerald-500 dark:to-green-500 text-white font-semibold text-sm shadow hover:scale-105 transition-transform">Dashboard</Link>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 rounded-full bg-gradient-to-r from-red-500 to-pink-500 dark:from-pink-500 dark:to-red-500 text-white font-semibold text-sm shadow hover:scale-105 transition-transform flex items-center gap-1"
+              >
+                <ArrowRightOnRectangleIcon className="w-4 h-4" />
+                {t('navigation.logout')}
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="px-4 py-2 rounded-full bg-gradient-to-r from-indigo-500 to-blue-500 dark:from-purple-500 dark:to-indigo-500 text-white font-semibold text-sm shadow hover:scale-105 transition-transform">{t('navigation.login')}</Link>
+              <Link href="/register" className="px-4 py-2 rounded-full bg-gradient-to-r from-yellow-400 to-orange-400 dark:from-orange-500 dark:to-red-500 text-white font-semibold text-sm shadow hover:scale-105 transition-transform">{t('navigation.signup')}</Link>
+            </>
+          )}
         </div>
       </div>
     </nav>

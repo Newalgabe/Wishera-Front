@@ -344,5 +344,19 @@
       "babykids": "Дети и младенцы",
       "other": "Другое"
     }
+  },
+  "userProfile": {
+    "loading": "Загрузка профиля...",
+    "userNotFound": "Пользователь не найден",
+    "goBack": "Назад",
+    "wishlists": "Списки желаний",
+    "noWishlists": "Списков желаний пока нет",
+    "noFollowers": "Подписчиков пока нет",
+    "notFollowingAnyone": "Пока ни на кого не подписан",
+    "profileLinkCopied": "Ссылка на профиль скопирована",
+    "followedSuccessfully": "Успешно подписались",
+    "unfollowedSuccessfully": "Успешно отписались",
+    "failedToFollow": "Не удалось подписаться/отписаться",
+    "failedToCopyLink": "Не удалось скопировать ссылку"
   }
 }

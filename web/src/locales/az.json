@@ -344,5 +344,19 @@
       "babykids": "Uşaq və körpə",
       "other": "Digər"
     }
+  },
+  "userProfile": {
+    "loading": "Profil yüklənir...",
+    "userNotFound": "İstifadəçi tapılmadı",
+    "goBack": "Geri qayıt",
+    "wishlists": "Arzu siyahıları",
+    "noWishlists": "Hələ arzu siyahısı yoxdur",
+    "noFollowers": "Hələ izləyici yoxdur",
+    "notFollowingAnyone": "Hələ heç kəsi izləmir",
+    "profileLinkCopied": "Profil linki kopyalandı",
+    "followedSuccessfully": "Uğurla izləməyə başladınız",
+    "unfollowedSuccessfully": "Uğurla izləməyi dayandırdınız",
+    "failedToFollow": "İzləməyə/izləməyi dayandırmağa mümkün olmadı",
+    "failedToCopyLink": "Linki kopyalamaq mümkün olmadı"
   }
 }
