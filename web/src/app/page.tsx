@@ -1,7 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { UserIcon, GiftIcon, LockClosedIcon, ShareIcon, CloudIcon, SparklesIcon, ChevronLeftIcon, ChevronRightIcon, HomeIcon, InformationCircleIcon, ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
+import { UserIcon, GiftIcon, LockClosedIcon, ShareIcon, CloudIcon, SparklesIcon, ChevronLeftIcon, ChevronRightIcon, HomeIcon, InformationCircleIcon, ChatBubbleLeftRightIcon, StarIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -11,22 +11,26 @@ const testimonials = [
   {
     avatar: "https://randomuser.me/api/portraits/women/65.jpg",
     name: "Emily R.",
-    key: "emily"
+    key: "emily",
+    rating: 5
   },
   {
     avatar: "https://randomuser.me/api/portraits/men/32.jpg",
     name: "James P.",
-    key: "james"
+    key: "james",
+    rating: 5
   },
   {
     avatar: "https://randomuser.me/api/portraits/women/44.jpg",
     name: "Sophia L.",
-    key: "sophia"
+    key: "sophia",
+    rating: 5
   },
   {
     avatar: "https://randomuser.me/api/portraits/men/65.jpg",
     name: "Michael T.",
-    key: "michael"
+    key: "michael",
+    rating: 5
   },
 ];
 
@@ -34,38 +38,59 @@ function AnimatedBlobs() {
   return (
     <>
       <motion.div
-        className="absolute -top-24 -left-24 w-96 h-96 bg-blue-400 opacity-30 rounded-full blur-3xl z-0"
-        animate={{ y: [0, 30, 0], x: [0, 20, 0] }}
-        transition={{ duration: 10, repeat: Infinity, repeatType: "mirror" }}
+        className="absolute -top-24 -left-24 w-96 h-96 bg-gradient-to-br from-blue-400 to-indigo-500 opacity-20 rounded-full blur-3xl z-0"
+        animate={{ 
+          y: [0, 30, 0], 
+          x: [0, 20, 0],
+          scale: [1, 1.1, 1]
+        }}
+        transition={{ duration: 15, repeat: Infinity, repeatType: "mirror" }}
       />
       <motion.div
-        className="absolute top-40 -right-32 w-80 h-80 bg-pink-400 opacity-20 rounded-full blur-3xl z-0"
-        animate={{ y: [0, -20, 0], x: [0, -30, 0] }}
+        className="absolute top-40 -right-32 w-80 h-80 bg-gradient-to-br from-pink-400 to-rose-500 opacity-15 rounded-full blur-3xl z-0"
+        animate={{ 
+          y: [0, -20, 0], 
+          x: [0, -30, 0],
+          scale: [1, 0.9, 1]
+        }}
+        transition={{ duration: 18, repeat: Infinity, repeatType: "mirror" }}
+      />
+      <motion.div
+        className="absolute bottom-0 left-1/2 w-72 h-72 bg-gradient-to-br from-purple-400 to-indigo-500 opacity-15 rounded-full blur-3xl z-0"
+        animate={{ 
+          y: [0, 20, 0], 
+          x: [0, 10, 0],
+          scale: [1, 1.2, 1]
+        }}
+        transition={{ duration: 20, repeat: Infinity, repeatType: "mirror" }}
+      />
+      <motion.div
+        className="absolute top-10 left-1/3 w-40 h-40 bg-gradient-to-br from-yellow-300 to-orange-400 opacity-20 rounded-full blur-2xl z-0"
+        animate={{ 
+          scale: [1, 1.1, 1],
+          rotate: [0, 180, 360]
+        }}
         transition={{ duration: 12, repeat: Infinity, repeatType: "mirror" }}
       />
       <motion.div
-        className="absolute bottom-0 left-1/2 w-72 h-72 bg-purple-400 opacity-20 rounded-full blur-3xl z-0"
-        animate={{ y: [0, 20, 0], x: [0, 10, 0] }}
+        className="absolute bottom-10 right-1/4 w-32 h-32 bg-gradient-to-br from-green-300 to-emerald-400 opacity-20 rounded-full blur-2xl z-0"
+        animate={{ 
+          scale: [1, 0.95, 1],
+          rotate: [0, -180, -360]
+        }}
         transition={{ duration: 14, repeat: Infinity, repeatType: "mirror" }}
       />
-      {/* New blobs */}
-      <motion.div
-        className="absolute top-10 left-1/3 w-40 h-40 bg-yellow-300 opacity-20 rounded-full blur-2xl z-0"
-        animate={{ scale: [1, 1.1, 1] }}
-        transition={{ duration: 8, repeat: Infinity, repeatType: "mirror" }}
-      />
-      <motion.div
-        className="absolute bottom-10 right-1/4 w-32 h-32 bg-green-300 opacity-20 rounded-full blur-2xl z-0"
-        animate={{ scale: [1, 0.95, 1] }}
-        transition={{ duration: 9, repeat: Infinity, repeatType: "mirror" }}
-      />
-      {/* Dotted pattern */}
+      {/* Enhanced dotted pattern */}
       <div className="absolute top-0 right-0 w-32 h-32 z-0 opacity-10 pointer-events-none select-none">
         <svg width="100%" height="100%" viewBox="0 0 100 100" fill="none">
           <defs>
             <pattern id="dots" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
-              <circle cx="1.5" cy="1.5" r="1.5" fill="#6366f1" />
+              <circle cx="1.5" cy="1.5" r="1.5" fill="url(#gradient)" />
             </pattern>
+            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#6366f1" />
+              <stop offset="100%" stopColor="#8b5cf6" />
+            </linearGradient>
           </defs>
           <rect width="100" height="100" fill="url(#dots)" />
         </svg>
@@ -96,9 +121,10 @@ function TrustedBy() {
         {avatars.map((src, idx) => (
           <motion.div
             key={src}
-            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white dark:border-gray-600 shadow-md overflow-hidden flex items-center justify-center bg-gray-100 dark:bg-gray-700 transition-colors duration-300"
-            whileHover={{ scale: 1.1 }}
+            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white dark:border-gray-600 shadow-lg overflow-hidden flex items-center justify-center bg-gray-100 dark:bg-gray-700 transition-colors duration-300"
+            whileHover={{ scale: 1.1, rotate: 5 }}
             transition={{ type: "spring", stiffness: 300 }}
+            style={{ zIndex: avatars.length - idx }}
           >
             <img src={src} alt={`User ${idx + 1}`} className="w-full h-full object-cover" />
           </motion.div>
@@ -117,17 +143,28 @@ function TestimonialCarousel() {
   }, [index]);
   const prev = () => setIndex((i) => (i - 1 + testimonials.length) % testimonials.length);
   const next = () => setIndex((i) => (i + 1) % testimonials.length);
+  
   return (
-    <div className="relative flex flex-col items-center bg-white/80 dark:bg-gray-800/80 rounded-2xl shadow-lg px-6 py-6 mt-8 mb-2 max-w-xs mx-auto border border-gray-100 dark:border-gray-700 backdrop-blur-sm min-h-[220px] transition-colors duration-300">
+    <div className="relative flex flex-col items-center glass-card rounded-3xl shadow-2xl px-6 py-8 mt-8 mb-2 max-w-sm mx-auto min-h-[280px] transition-all duration-300 hover:shadow-3xl">
       <div className="absolute left-2 top-1/2 -translate-y-1/2 z-10">
-        <button onClick={prev} className="p-1 rounded-full bg-white/70 dark:bg-gray-700/70 hover:bg-indigo-100 dark:hover:bg-gray-600 transition-colors duration-200">
+        <motion.button 
+          onClick={prev} 
+          className="p-2 rounded-full bg-white/80 dark:bg-gray-700/80 hover:bg-indigo-100 dark:hover:bg-gray-600 transition-colors duration-200 shadow-lg"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+        >
           <ChevronLeftIcon className="w-5 h-5 text-indigo-400 dark:text-purple-400" />
-        </button>
+        </motion.button>
       </div>
       <div className="absolute right-2 top-1/2 -translate-y-1/2 z-10">
-        <button onClick={next} className="p-1 rounded-full bg-white/70 dark:bg-gray-700/70 hover:bg-indigo-100 dark:hover:bg-gray-600 transition-colors duration-200">
+        <motion.button 
+          onClick={next} 
+          className="p-2 rounded-full bg-white/80 dark:bg-gray-700/80 hover:bg-indigo-100 dark:hover:bg-gray-600 transition-colors duration-200 shadow-lg"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+        >
           <ChevronRightIcon className="w-5 h-5 text-indigo-400 dark:text-purple-400" />
-        </button>
+        </motion.button>
       </div>
       <motion.div
         key={index}
@@ -137,22 +174,41 @@ function TestimonialCarousel() {
         transition={{ duration: 0.5 }}
         className="flex flex-col items-center w-full"
       >
-        <img
-          src={testimonials[index].avatar}
-          alt={testimonials[index].name}
-          className="w-14 h-14 rounded-full mb-3 shadow-md object-cover"
-        />
-        <blockquote className="italic text-gray-700 dark:text-gray-300 text-center mb-2 text-base sm:text-lg transition-colors duration-300">
-          “{t(`testimonials.${testimonials[index].key}`)}”
+        <motion.div
+          className="relative mb-4"
+          whileHover={{ scale: 1.05 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <img
+            src={testimonials[index].avatar}
+            alt={testimonials[index].name}
+            className="w-16 h-16 rounded-full shadow-lg object-cover border-4 border-white dark:border-gray-600"
+          />
+          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full flex items-center justify-center">
+            <StarIcon className="w-3 h-3 text-white" />
+          </div>
+        </motion.div>
+        <blockquote className="italic text-gray-700 dark:text-gray-300 text-center mb-3 text-base sm:text-lg transition-colors duration-300 leading-relaxed">
+          "{t(`testimonials.${testimonials[index].key}`)}"
         </blockquote>
+        <div className="flex items-center gap-2 mb-2">
+          {[...Array(testimonials[index].rating)].map((_, i) => (
+            <StarIcon key={i} className="w-4 h-4 text-yellow-400 fill-current" />
+          ))}
+        </div>
         <div className="text-sm text-gray-500 dark:text-gray-400 font-semibold transition-colors duration-300">{testimonials[index].name}</div>
       </motion.div>
-      <div className="flex gap-1 mt-3 justify-center">
+      <div className="flex gap-2 mt-4 justify-center">
         {testimonials.map((_, i) => (
-          <button
+          <motion.button
             key={i}
             onClick={() => setIndex(i)}
-            className={`inline-block w-2 h-2 rounded-full focus:outline-none transition-colors duration-200 ${i === index ? "bg-indigo-400 dark:bg-purple-400" : "bg-gray-300 dark:bg-gray-600"}`}
+            className={`inline-block w-2 h-2 rounded-full focus:outline-none transition-all duration-200 ${
+              i === index 
+                ? "bg-gradient-to-r from-indigo-400 to-purple-400 scale-125" 
+                : "bg-gray-300 dark:bg-gray-600"
+            }`}
+            whileHover={{ scale: 1.2 }}
             aria-label={`Go to testimonial ${i + 1}`}
           />
         ))}
@@ -170,10 +226,28 @@ function ScrollIndicator() {
       animate={{ opacity: 1, y: [10, 0, 10] }}
       transition={{ duration: 2, repeat: Infinity, repeatType: "loop" }}
     >
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="animate-bounce dark:stroke-purple-400">
+      <motion.svg 
+        width="28" 
+        height="28" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="url(#scrollGradient)" 
+        strokeWidth="2.5" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+        className="animate-bounce"
+      >
+        <defs>
+          <linearGradient id="scrollGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#6366f1" />
+            <stop offset="100%" stopColor="#8b5cf6" />
+          </linearGradient>
+        </defs>
         <polyline points="6 9 12 15 18 9" />
-      </svg>
-      <span className="text-xs text-indigo-400 dark:text-purple-400 mt-1 transition-colors duration-300">{t('common.scroll')}</span>
+      </motion.svg>
+      <span className="text-xs bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent mt-1 font-medium">
+        {t('common.scroll')}
+      </span>
     </motion.div>
   );
 }
@@ -182,48 +256,97 @@ function AppMockup() {
   const { t } = useLanguage();
   return (
     <motion.div
-      className="relative z-10 bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700 w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg p-4 sm:p-6 flex flex-col gap-4 transition-all duration-300 hover:-translate-y-2 hover:shadow-3xl"
+      className="relative z-10 glass-card rounded-3xl shadow-2xl border border-gray-100/50 dark:border-gray-700/50 w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg p-4 sm:p-6 flex flex-col gap-4 transition-all duration-300 hover:-translate-y-2 hover:shadow-3xl"
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 1, delay: 0.5 }}
-      whileHover={{ scale: 1.04 }}
+      whileHover={{ scale: 1.02 }}
     >
-      <div className="flex items-center gap-2 mb-2">
-        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 dark:from-purple-400 dark:to-indigo-500 flex items-center justify-center text-white font-bold text-base sm:text-lg">A</div>
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg sm:text-xl shadow-lg">
+          A
+        </div>
         <div>
-          <div className="font-semibold text-gray-800 dark:text-gray-100 text-sm sm:text-base transition-colors duration-300">{t('mockup.alexWishlist')}</div>
-          <div className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-300">{t('common.public')}</div>
+          <div className="font-semibold text-gray-800 dark:text-gray-100 text-sm sm:text-base transition-colors duration-300">
+            {t('mockup.alexWishlist')}
+          </div>
+          <div className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-300 flex items-center gap-1">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            {t('common.public')}
+          </div>
         </div>
       </div>
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-3 p-2 rounded-xl bg-gray-50 dark:bg-gray-700 transition-colors duration-300">
-          <GiftIcon className="w-5 h-5 sm:w-6 sm:h-6 text-pink-400" />
+      <div className="flex flex-col gap-3">
+        <motion.div 
+          className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 transition-colors duration-300 border border-gray-200/50 dark:border-gray-600/50"
+          whileHover={{ scale: 1.02, x: 5 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center">
+            <GiftIcon className="w-4 h-4 text-white" />
+          </div>
           <div className="flex-1">
-            <div className="font-medium text-gray-700 dark:text-gray-200 text-sm sm:text-base transition-colors duration-300">{t('mockup.nikeAirMax')}</div>
+            <div className="font-medium text-gray-700 dark:text-gray-200 text-sm sm:text-base transition-colors duration-300">
+              {t('mockup.nikeAirMax')}
+            </div>
             <div className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-300">$150</div>
           </div>
-          <span className="text-xs text-green-500 font-semibold">{t('common.available')}</span>
-        </div>
-        <div className="flex items-center gap-3 p-2 rounded-xl bg-gray-50 dark:bg-gray-700 transition-colors duration-300">
-          <GiftIcon className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400" />
+          <span className="text-xs text-green-500 font-semibold bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full">
+            {t('common.available')}
+          </span>
+        </motion.div>
+        <motion.div 
+          className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 transition-colors duration-300 border border-gray-200/50 dark:border-gray-600/50"
+          whileHover={{ scale: 1.02, x: 5 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
+            <GiftIcon className="w-4 h-4 text-white" />
+          </div>
           <div className="flex-1">
-            <div className="font-medium text-gray-700 dark:text-gray-200 text-sm sm:text-base transition-colors duration-300">{t('mockup.appleWatch')}</div>
+            <div className="font-medium text-gray-700 dark:text-gray-200 text-sm sm:text-base transition-colors duration-300">
+              {t('mockup.appleWatch')}
+            </div>
             <div className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-300">$249</div>
           </div>
-          <span className="text-xs text-gray-400 dark:text-gray-500 font-semibold transition-colors duration-300">{t('common.reserved')}</span>
-        </div>
-        <div className="flex items-center gap-3 p-2 rounded-xl bg-gray-50 dark:bg-gray-700 transition-colors duration-300">
-          <GiftIcon className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400" />
+          <span className="text-xs text-gray-400 dark:text-gray-500 font-semibold bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full transition-colors duration-300">
+            {t('common.reserved')}
+          </span>
+        </motion.div>
+        <motion.div 
+          className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 transition-colors duration-300 border border-gray-200/50 dark:border-gray-600/50"
+          whileHover={{ scale: 1.02, x: 5 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center">
+            <GiftIcon className="w-4 h-4 text-white" />
+          </div>
           <div className="flex-1">
-            <div className="font-medium text-gray-700 dark:text-gray-200 text-sm sm:text-base transition-colors duration-300">{t('mockup.cloudPillow')}</div>
+            <div className="font-medium text-gray-700 dark:text-gray-200 text-sm sm:text-base transition-colors duration-300">
+              {t('mockup.cloudPillow')}
+            </div>
             <div className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-300">$39</div>
           </div>
-          <span className="text-xs text-green-500 font-semibold">{t('common.available')}</span>
-        </div>
+          <span className="text-xs text-green-500 font-semibold bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full">
+            {t('common.available')}
+          </span>
+        </motion.div>
       </div>
-      <div className="mt-4 flex gap-2">
-        <button className="flex-1 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-blue-500 dark:from-purple-500 dark:to-indigo-500 text-white font-semibold shadow text-sm sm:text-base">{t('common.share')}</button>
-        <button className="flex-1 py-2 rounded-xl bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-200 font-semibold shadow text-sm sm:text-base transition-colors duration-300">{t('common.reserve')}</button>
+      <div className="mt-4 flex gap-3">
+        <motion.button 
+          className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 text-white font-semibold shadow-lg text-sm sm:text-base transition-all duration-300 hover:shadow-xl"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          {t('common.share')}
+        </motion.button>
+        <motion.button 
+          className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-600 dark:to-gray-700 text-gray-600 dark:text-gray-200 font-semibold shadow-lg text-sm sm:text-base transition-all duration-300 hover:shadow-xl"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          {t('common.reserve')}
+        </motion.button>
       </div>
     </motion.div>
   );
@@ -233,10 +356,24 @@ function FeaturesBackground() {
   return (
     <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none select-none">
       <svg width="100%" height="100%" viewBox="0 0 1200 200" fill="none" className="hidden md:block">
-        <path d="M100 100 Q 300 0 500 100 T 900 100 T 1100 100" stroke="#c7d2fe" strokeWidth="3" fill="none" opacity="0.25" />
+        <defs>
+          <linearGradient id="curveGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#c7d2fe" stopOpacity="0.3" />
+            <stop offset="50%" stopColor="#a5b4fc" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#818cf8" stopOpacity="0.3" />
+          </linearGradient>
+        </defs>
+        <path d="M100 100 Q 300 0 500 100 T 900 100 T 1100 100" stroke="url(#curveGradient)" strokeWidth="3" fill="none" />
       </svg>
       <svg width="100%" height="100%" viewBox="0 0 400 200" fill="none" className="block md:hidden">
-        <path d="M20 100 Q 100 20 200 100 T 380 100" stroke="#c7d2fe" strokeWidth="2" fill="none" opacity="0.18" />
+        <defs>
+          <linearGradient id="curveGradientMobile" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#c7d2fe" stopOpacity="0.25" />
+            <stop offset="50%" stopColor="#a5b4fc" stopOpacity="0.15" />
+            <stop offset="100%" stopColor="#818cf8" stopOpacity="0.25" />
+          </linearGradient>
+        </defs>
+        <path d="M20 100 Q 100 20 200 100 T 380 100" stroke="url(#curveGradientMobile)" strokeWidth="2" fill="none" />
       </svg>
     </div>
   );
@@ -251,78 +388,86 @@ export default function Home() {
       descriptionKey: "features.userAuth.description",
       benefitKey: "features.userAuth.benefit",
       icon: UserIcon,
-      color: "bg-gradient-to-br from-blue-500 to-indigo-600",
+      color: "bg-gradient-to-br from-blue-500 via-indigo-600 to-blue-700",
+      gradient: "from-blue-500 to-indigo-600"
     },
     {
       titleKey: "features.wishlistManagement.title",
       descriptionKey: "features.wishlistManagement.description",
       benefitKey: "features.wishlistManagement.benefit",
       icon: GiftIcon,
-      color: "bg-gradient-to-br from-pink-500 to-rose-500",
+      color: "bg-gradient-to-br from-pink-500 via-rose-500 to-pink-600",
+      gradient: "from-pink-500 to-rose-500"
     },
     {
       titleKey: "features.giftReservations.title",
       descriptionKey: "features.giftReservations.description",
       benefitKey: "features.giftReservations.benefit",
       icon: LockClosedIcon,
-      color: "bg-gradient-to-br from-green-400 to-emerald-600",
+      color: "bg-gradient-to-br from-green-400 via-emerald-500 to-green-600",
+      gradient: "from-green-400 to-emerald-600"
     },
     {
       titleKey: "features.wishlistSharing.title",
       descriptionKey: "features.wishlistSharing.description",
       benefitKey: "features.wishlistSharing.benefit",
       icon: ShareIcon,
-      color: "bg-gradient-to-br from-yellow-400 to-orange-500",
+      color: "bg-gradient-to-br from-yellow-400 via-orange-500 to-yellow-600",
+      gradient: "from-yellow-400 to-orange-500"
     },
     {
       titleKey: "features.cloudImages.title",
       descriptionKey: "features.cloudImages.description",
       benefitKey: "features.cloudImages.benefit",
       icon: CloudIcon,
-      color: "bg-gradient-to-br from-purple-500 to-fuchsia-600",
+      color: "bg-gradient-to-br from-purple-500 via-fuchsia-600 to-purple-700",
+      gradient: "from-purple-500 to-fuchsia-600"
     },
     {
       titleKey: "features.glassmorphismUI.title",
       descriptionKey: "features.glassmorphismUI.description",
       benefitKey: "features.glassmorphismUI.benefit",
       icon: SparklesIcon,
-      color: "bg-gradient-to-br from-cyan-400 to-blue-300",
+      color: "bg-gradient-to-br from-cyan-400 via-blue-500 to-cyan-600",
+      gradient: "from-cyan-400 to-blue-500"
     },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 dark:from-gray-900 dark:to-gray-800 flex flex-col transition-colors duration-300">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col transition-colors duration-300">
       <Navbar />
       {/* Hero Section */}
-      <section className="relative flex flex-col-reverse md:flex-row items-center justify-center py-16 sm:py-24 px-2 sm:px-8 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-gray-800 overflow-hidden w-full transition-colors duration-300">
+      <section className="relative flex flex-col-reverse md:flex-row items-center justify-center py-16 sm:py-24 px-4 sm:px-8 bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-hidden w-full transition-colors duration-300">
         <AnimatedBlobs />
         <div className="relative z-10 flex-1 flex flex-col items-center md:items-start text-center md:text-left w-full max-w-xl">
           <motion.h1
             initial={{ opacity: 0, y: -40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
-            className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 dark:text-gray-100 mb-6 tracking-tight drop-shadow-lg w-full transition-colors duration-300"
+            className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 dark:text-gray-100 mb-6 tracking-tight drop-shadow-lg w-full transition-colors duration-300"
           >
-            {t('home.heroTitle')}
+            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 dark:from-purple-400 dark:via-indigo-400 dark:to-purple-500 bg-clip-text text-transparent">
+              {t('home.heroTitle')}
+            </span>
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-lg sm:text-2xl text-gray-600 dark:text-gray-300 max-w-2xl mb-8 w-full transition-colors duration-300"
+            className="text-lg sm:text-2xl text-gray-600 dark:text-gray-300 max-w-2xl mb-8 w-full transition-colors duration-300 leading-relaxed"
           >
             {t('home.heroSubtitle')}
           </motion.p>
-          {/* Removed login/sign up buttons from hero section, now in Navbar */}
           <TrustedBy />
           <TestimonialCarousel />
           <motion.div
             whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
             className="inline-block mt-6"
           >
             <Link
               href="/about"
-              className="inline-block px-6 py-3 rounded-full bg-gradient-to-r from-yellow-400 to-orange-400 dark:from-orange-500 dark:to-red-500 text-white font-semibold text-base shadow-md transition-transform"
+              className="inline-block px-8 py-4 rounded-2xl bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-600 dark:from-orange-500 dark:via-yellow-500 dark:to-orange-600 text-white font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:from-yellow-500 hover:via-orange-600 hover:to-yellow-700 dark:hover:from-orange-600 dark:hover:via-yellow-600 dark:hover:to-orange-700"
             >
               {t('home.learnMore')}
             </Link>
@@ -334,32 +479,55 @@ export default function Home() {
         <ScrollIndicator />
       </section>
       {/* Features Section */}
-      <section id="features" className="relative flex flex-col gap-16 sm:gap-20 py-12 sm:py-24 px-2 sm:px-8 max-w-5xl mx-auto w-full">
+      <section id="features" className="relative flex flex-col gap-16 sm:gap-20 py-12 sm:py-24 px-4 sm:px-8 max-w-7xl mx-auto w-full">
         <FeaturesBackground />
+        <motion.div 
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+        >
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 dark:from-purple-400 dark:via-indigo-400 dark:to-purple-500 bg-clip-text text-transparent">
+              {t('home.featuresTitle')}
+            </span>
+          </h2>
+          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            {t('home.featuresSubtitle')}
+          </p>
+        </motion.div>
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, idx) => {
             const Icon = feature.icon;
             return (
               <motion.div
                 key={feature.titleKey}
-                className="backdrop-blur-lg bg-white/60 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700 rounded-3xl shadow-xl flex flex-col items-center text-center p-8 min-h-[320px] w-full max-w-md mx-auto relative overflow-hidden transition-colors duration-300"
+                className="glass-card rounded-3xl shadow-xl flex flex-col items-center text-center p-8 min-h-[360px] w-full max-w-md mx-auto relative overflow-hidden transition-all duration-300 hover:shadow-2xl group"
                 initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.5 }}
                 transition={{ duration: 0.7, delay: idx * 0.15 }}
+                whileHover={{ y: -8 }}
               >
                 <motion.div
-                  className={`w-20 h-20 mb-6 rounded-full ${feature.color} flex items-center justify-center shadow-lg border-4 border-white/40 dark:border-gray-600/40`}
+                  className={`w-20 h-20 mb-6 rounded-2xl ${feature.color} flex items-center justify-center shadow-xl border-4 border-white/40 dark:border-gray-600/40 group-hover:shadow-2xl`}
                   whileHover={{ scale: 1.1, rotate: 6 }}
                   transition={{ type: "spring", stiffness: 300 }}
                 >
                   <Icon className="w-10 h-10 text-white drop-shadow-lg" />
                 </motion.div>
-                <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2 transition-colors duration-300">{t(feature.titleKey)}</h2>
-                <p className="text-gray-500 dark:text-gray-400 text-base mb-2 transition-colors duration-300">{t(feature.descriptionKey)}</p>
-                <div className="text-indigo-500 dark:text-purple-400 font-medium text-sm italic mb-2 transition-colors duration-300">{t(feature.benefitKey)}</div>
-                {/* Subtle divider */}
-                <div className="w-12 h-1 rounded-full bg-gradient-to-r from-indigo-200 to-indigo-400 opacity-30 mx-auto mt-2" />
+                <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-3 transition-colors duration-300">
+                  {t(feature.titleKey)}
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 text-base mb-4 transition-colors duration-300 leading-relaxed">
+                  {t(feature.descriptionKey)}
+                </p>
+                <div className={`text-transparent bg-clip-text bg-gradient-to-r ${feature.gradient} font-semibold text-sm italic mb-3 transition-colors duration-300`}>
+                  {t(feature.benefitKey)}
+                </div>
+                {/* Enhanced divider */}
+                <div className={`w-16 h-1 rounded-full bg-gradient-to-r ${feature.gradient} opacity-40 mx-auto mt-2 group-hover:opacity-60 transition-opacity duration-300`} />
               </motion.div>
             );
           })}
