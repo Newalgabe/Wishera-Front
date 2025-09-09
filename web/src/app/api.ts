@@ -1,6 +1,8 @@
 import axios, { type AxiosRequestConfig } from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5155/api';
+const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:5219/api';
+const GIFT_API_URL = process.env.NEXT_PUBLIC_GIFT_API_URL || 'http://localhost:5221/api';
 const CHAT_API_URL = process.env.NEXT_PUBLIC_CHAT_API_URL || 'http://localhost:5000/api';
 
 // Static categories for consistency across the application
@@ -30,32 +32,35 @@ export type WishlistCategory = typeof WISHLIST_CATEGORIES[number];
 
 // Auth endpoints (no auth header required)
 export async function login(email: string, password: string) {
-  const response = await axios.post(`${API_URL}/Auth/login`, { email, password });
+  const response = await axios.post(`${AUTH_API_URL}/Auth/login`, {
+    username: email,
+    password
+  });
   return response.data;
 }
 
 export async function register(username: string, email: string, password: string) {
-  const response = await axios.post(`${API_URL}/Auth/register`, { username, email, password });
+  const response = await axios.post(`${AUTH_API_URL}/Auth/register`, { username, email, password });
   return response.data;
 }
 
 export async function forgotPassword(email: string) {
-  const response = await axios.post(`${API_URL}/Auth/forgot-password`, { email });
+  const response = await axios.post(`${AUTH_API_URL}/Auth/forgot-password`, { email });
   return response.data;
 }
 
 export async function resetPassword(token: string, newPassword: string) {
-  const response = await axios.post(`${API_URL}/Auth/reset-password`, { token, newPassword });
+  const response = await axios.post(`${AUTH_API_URL}/Auth/reset-password`, { token, newPassword });
   return response.data;
 }
 
 export async function checkEmailAvailability(email: string) {
-  const response = await axios.get(`${API_URL}/Auth/check-email?email=${encodeURIComponent(email)}`);
+  const response = await axios.get(`${AUTH_API_URL}/Auth/check-email?email=${encodeURIComponent(email)}`);
   return response.data;
 }
 
 export async function checkUsernameAvailability(username: string) {
-  const response = await axios.get(`${API_URL}/Auth/check-username?username=${encodeURIComponent(username)}`);
+  const response = await axios.get(`${AUTH_API_URL}/Auth/check-username?username=${encodeURIComponent(username)}`);
   return response.data;
 }
 
@@ -131,32 +136,32 @@ export interface UpdateWishlistDTO {
 
 // Authorized API calls for dashboard
 export async function getFeed(page = 1, pageSize = 20): Promise<WishlistFeedDTO[]> {
-  const response = await axios.get(`${API_URL}/Wishlists/feed?page=${page}&pageSize=${pageSize}`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/Wishlists/feed?page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
 export async function getCategories(): Promise<string[]> {
-  const response = await axios.get(`${API_URL}/Wishlists/categories`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/Wishlists/categories`, authConfig());
   return response.data;
 }
 
 export async function getWishlistDetails(id: string): Promise<WishlistResponseDTO> {
-  const response = await axios.get(`${API_URL}/Wishlists/${id}`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/Wishlists/${id}`, authConfig());
   return response.data;
 }
 
 export async function likeWishlist(id: string): Promise<boolean> {
-  const response = await axios.post(`${API_URL}/Wishlists/${id}/like`, null, authConfig());
+  const response = await axios.post(`${GIFT_API_URL}/Wishlists/${id}/like`, null, authConfig());
   return response.data;
 }
 
 export async function unlikeWishlist(id: string): Promise<boolean> {
-  const response = await axios.delete(`${API_URL}/Wishlists/${id}/unlike`, authConfig());
+  const response = await axios.delete(`${GIFT_API_URL}/Wishlists/${id}/unlike`, authConfig());
   return response.data;
 }
 
 export async function createWishlist(payload: CreateWishlistDTO): Promise<WishlistResponseDTO> {
-  const response = await axios.post(`${API_URL}/Wishlists`, payload, authConfig());
+  const response = await axios.post(`${GIFT_API_URL}/Wishlists`, payload, authConfig());
   return response.data;
 }
 
@@ -167,12 +172,12 @@ export async function updateWishlist(id: string, payload: {
   isPublic?: boolean;
   allowedViewerIds?: string[];
 }): Promise<WishlistResponseDTO> {
-  const response = await axios.put(`${API_URL}/Wishlists/${id}`, payload, authConfig());
+  const response = await axios.put(`${GIFT_API_URL}/Wishlists/${id}`, payload, authConfig());
   return response.data;
 }
 
 export async function deleteWishlist(id: string): Promise<void> {
-  await axios.delete(`${API_URL}/Wishlists/${id}`, authConfig());
+  await axios.delete(`${GIFT_API_URL}/Wishlists/${id}`, authConfig());
 }
 
 // Users API
@@ -253,7 +258,7 @@ export async function updateUserAvatar(file: File): Promise<{ avatarUrl: string 
 
 // User wishlists
 export async function getUserWishlists(userId: string, page = 1, pageSize = 20): Promise<WishlistFeedDTO[]> {
-  const response = await axios.get(`${API_URL}/Wishlists/user/${userId}?page=${page}&pageSize=${pageSize}`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/Wishlists/user/${userId}?page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
@@ -293,7 +298,7 @@ export async function createGift(params: {
     form.append('imageFile', params.imageFile);
   }
   const config = authConfig();
-  const response = await axios.post(`${API_URL}/Gift`, form, {
+  const response = await axios.post(`${GIFT_API_URL}/Gift`, form, {
     ...config,
     headers: {
       ...(config.headers || {}),
@@ -308,28 +313,28 @@ export async function getMyGifts(options?: { category?: string; sortBy?: 'price-
   if (options?.category) query.push(`category=${encodeURIComponent(options.category)}`);
   if (options?.sortBy) query.push(`sortBy=${encodeURIComponent(options.sortBy)}`);
   const qs = query.length ? `?${query.join('&')}` : '';
-  const response = await axios.get(`${API_URL}/Gift/wishlist${qs}`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/Gift/wishlist${qs}`, authConfig());
   return response.data;
 }
 
 export async function getGiftById(id: string): Promise<GiftDTO> {
-  const response = await axios.get(`${API_URL}/Gift/${id}`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/Gift/${id}`, authConfig());
   return response.data;
 }
 
 export async function updateGift(id: string, payload: GiftUpdateDTO): Promise<void> {
-  await axios.put(`${API_URL}/Gift/${id}`, payload, authConfig());
+  await axios.put(`${GIFT_API_URL}/Gift/${id}`, payload, authConfig());
 }
 
 export async function deleteGift(id: string): Promise<void> {
-  await axios.delete(`${API_URL}/Gift/${id}`, authConfig());
+  await axios.delete(`${GIFT_API_URL}/Gift/${id}`, authConfig());
 }
 
 export async function uploadGiftImage(id: string, file: File): Promise<{ ImageUrl: string }> {
   const form = new FormData();
   form.append('imageFile', file);
   const config = authConfig();
-  const response = await axios.post(`${API_URL}/Gift/${id}/upload-image`, form, {
+  const response = await axios.post(`${GIFT_API_URL}/Gift/${id}/upload-image`, form, {
     ...config,
     headers: {
       ...(config.headers || {}),
@@ -340,32 +345,32 @@ export async function uploadGiftImage(id: string, file: File): Promise<{ ImageUr
 }
 
 export async function reserveGift(id: string): Promise<{ message: string; reservedBy: string }>{
-  const response = await axios.post(`${API_URL}/Gift/${id}/reserve`, null, authConfig());
+  const response = await axios.post(`${GIFT_API_URL}/Gift/${id}/reserve`, null, authConfig());
   return response.data;
 }
 
 export async function cancelGiftReservation(id: string): Promise<{ message: string }>{
-  const response = await axios.post(`${API_URL}/Gift/${id}/cancel-reserve`, null, authConfig());
+  const response = await axios.post(`${GIFT_API_URL}/Gift/${id}/cancel-reserve`, null, authConfig());
   return response.data;
 }
 
 export async function getReservedGifts(): Promise<GiftDTO[]> {
-  const response = await axios.get(`${API_URL}/Gift/reserved`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/Gift/reserved`, authConfig());
   return response.data;
 }
 
 export async function getSharedWishlistGifts(userId: string): Promise<GiftDTO[]> {
-  const response = await axios.get(`${API_URL}/Gift/shared/${userId}`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/Gift/shared/${userId}`, authConfig());
   return response.data;
 }
 
 export async function addGiftToWishlist(giftId: string, wishlistId: string): Promise<{ message: string }> {
-  const response = await axios.post(`${API_URL}/Gift/${giftId}/assign-to-wishlist`, { wishlistId }, authConfig());
+  const response = await axios.post(`${GIFT_API_URL}/Gift/${giftId}/assign-to-wishlist`, { wishlistId }, authConfig());
   return response.data;
 }
 
 export async function removeGiftFromWishlist(giftId: string): Promise<{ message: string }> {
-  const response = await axios.post(`${API_URL}/Gift/${giftId}/remove-from-wishlist`, null, authConfig());
+  const response = await axios.post(`${GIFT_API_URL}/Gift/${giftId}/remove-from-wishlist`, null, authConfig());
   return response.data;
 }
 
