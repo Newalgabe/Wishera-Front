@@ -6,14 +6,16 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   async rewrites() {
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5155/api";
+    const chatBase = process.env.NEXT_PUBLIC_CHAT_API_URL || "http://localhost:5000/api";
     return [
       {
         source: "/api/:path*",
-        destination: "http://localhost:5155/api/:path*",
+        destination: `${apiBase}/:path*`,
       },
       {
         source: "/chat-api/:path*",
-        destination: "http://localhost:5000/api/:path*",
+        destination: `${chatBase}/:path*`,
       },
     ];
   },

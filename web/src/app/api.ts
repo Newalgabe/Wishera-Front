@@ -1,9 +1,40 @@
 import axios, { type AxiosRequestConfig } from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5155/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? '/api' : 'http://localhost:5155/api');
 const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:5219/api';
-const GIFT_API_URL = process.env.NEXT_PUBLIC_GIFT_API_URL || 'http://localhost:5221/api';
 const CHAT_API_URL = process.env.NEXT_PUBLIC_CHAT_API_URL || 'http://localhost:5000/api';
+const GIFT_API_URL = process.env.NEXT_PUBLIC_GIFT_API_URL || 'http://localhost:5221/api';
+const USER_API_URL = process.env.NEXT_PUBLIC_USER_API_URL || 'http://localhost:5220/api';
+
+// Ensure Authorization header is attached to all requests when token exists
+axios.defaults.timeout = 10000;
+axios.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('token');
+    // Do not attach Authorization for public auth endpoints
+    const url = String(config.url || '').toLowerCase();
+    const isAuthPublic = url.includes('/auth/login')
+      || url.includes('/auth/register')
+      || url.includes('/auth/forgot-password')
+      || url.includes('/auth/reset-password')
+      || url.includes('/auth/check-email')
+      || url.includes('/auth/check-username');
+
+    if (token && !isAuthPublic) {
+      // Support both AxiosHeaders instance and plain object headers
+      const headers: any = config.headers;
+      if (headers && typeof headers.set === 'function') {
+        headers.set('Authorization', `Bearer ${token}`);
+      } else {
+        config.headers = {
+          ...(config.headers || {} as any),
+          Authorization: `Bearer ${token}`,
+        } as any;
+      }
+    }
+  }
+  return config;
+});
 
 // Static categories for consistency across the application
 export const WISHLIST_CATEGORIES = [
@@ -32,35 +63,32 @@ export type WishlistCategory = typeof WISHLIST_CATEGORIES[number];
 
 // Auth endpoints (no auth header required)
 export async function login(email: string, password: string) {
-  const response = await axios.post(`${AUTH_API_URL}/Auth/login`, {
-    username: email,
-    password
-  });
+  const response = await axios.post(`${AUTH_API_URL}/auth/login`, { email, password });
   return response.data;
 }
 
 export async function register(username: string, email: string, password: string) {
-  const response = await axios.post(`${AUTH_API_URL}/Auth/register`, { username, email, password });
+  const response = await axios.post(`${AUTH_API_URL}/auth/register`, { username, email, password });
   return response.data;
 }
 
 export async function forgotPassword(email: string) {
-  const response = await axios.post(`${AUTH_API_URL}/Auth/forgot-password`, { email });
+  const response = await axios.post(`${AUTH_API_URL}/auth/forgot-password`, { email });
   return response.data;
 }
 
 export async function resetPassword(token: string, newPassword: string) {
-  const response = await axios.post(`${AUTH_API_URL}/Auth/reset-password`, { token, newPassword });
+  const response = await axios.post(`${AUTH_API_URL}/auth/reset-password`, { token, newPassword });
   return response.data;
 }
 
 export async function checkEmailAvailability(email: string) {
-  const response = await axios.get(`${AUTH_API_URL}/Auth/check-email?email=${encodeURIComponent(email)}`);
+  const response = await axios.get(`${AUTH_API_URL}/auth/check-email?email=${encodeURIComponent(email)}`);
   return response.data;
 }
 
 export async function checkUsernameAvailability(username: string) {
-  const response = await axios.get(`${AUTH_API_URL}/Auth/check-username?username=${encodeURIComponent(username)}`);
+  const response = await axios.get(`${AUTH_API_URL}/auth/check-username?username=${encodeURIComponent(username)}`);
   return response.data;
 }
 
@@ -136,32 +164,32 @@ export interface UpdateWishlistDTO {
 
 // Authorized API calls for dashboard
 export async function getFeed(page = 1, pageSize = 20): Promise<WishlistFeedDTO[]> {
-  const response = await axios.get(`${GIFT_API_URL}/Wishlists/feed?page=${page}&pageSize=${pageSize}`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/wishlists/feed?page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
 export async function getCategories(): Promise<string[]> {
-  const response = await axios.get(`${GIFT_API_URL}/Wishlists/categories`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/wishlists/categories`, authConfig());
   return response.data;
 }
 
 export async function getWishlistDetails(id: string): Promise<WishlistResponseDTO> {
-  const response = await axios.get(`${GIFT_API_URL}/Wishlists/${id}`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/wishlists/${id}`, authConfig());
   return response.data;
 }
 
 export async function likeWishlist(id: string): Promise<boolean> {
-  const response = await axios.post(`${GIFT_API_URL}/Wishlists/${id}/like`, null, authConfig());
+  const response = await axios.post(`${GIFT_API_URL}/wishlists/${id}/like`, null, authConfig());
   return response.data;
 }
 
 export async function unlikeWishlist(id: string): Promise<boolean> {
-  const response = await axios.delete(`${GIFT_API_URL}/Wishlists/${id}/unlike`, authConfig());
+  const response = await axios.delete(`${GIFT_API_URL}/wishlists/${id}/unlike`, authConfig());
   return response.data;
 }
 
 export async function createWishlist(payload: CreateWishlistDTO): Promise<WishlistResponseDTO> {
-  const response = await axios.post(`${GIFT_API_URL}/Wishlists`, payload, authConfig());
+  const response = await axios.post(`${GIFT_API_URL}/wishlists`, payload, authConfig());
   return response.data;
 }
 
@@ -172,12 +200,12 @@ export async function updateWishlist(id: string, payload: {
   isPublic?: boolean;
   allowedViewerIds?: string[];
 }): Promise<WishlistResponseDTO> {
-  const response = await axios.put(`${GIFT_API_URL}/Wishlists/${id}`, payload, authConfig());
+  const response = await axios.put(`${GIFT_API_URL}/wishlists/${id}`, payload, authConfig());
   return response.data;
 }
 
 export async function deleteWishlist(id: string): Promise<void> {
-  await axios.delete(`${GIFT_API_URL}/Wishlists/${id}`, authConfig());
+  await axios.delete(`${GIFT_API_URL}/wishlists/${id}`, authConfig());
 }
 
 // Users API
@@ -204,32 +232,32 @@ export interface UserSearchDTO {
 }
 
 export async function getUserProfile(id: string): Promise<UserProfileDTO> {
-  const response = await axios.get(`${API_URL}/Users/${id}`, authConfig());
+  const response = await axios.get(`${USER_API_URL}/users/${id}`, authConfig());
   return response.data;
 }
 
 export async function searchUsers(query: string, page = 1, pageSize = 10): Promise<UserSearchDTO[]> {
-  const response = await axios.get(`${API_URL}/Users/search?query=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`, authConfig());
+  const response = await axios.get(`${USER_API_URL}/users/search?query=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
 export async function getFollowers(id: string, page = 1, pageSize = 10): Promise<UserSearchDTO[]> {
-  const response = await axios.get(`${API_URL}/Users/${id}/followers?page=${page}&pageSize=${pageSize}`, authConfig());
+  const response = await axios.get(`${USER_API_URL}/users/${id}/followers?page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
 export async function getFollowing(id: string, page = 1, pageSize = 10): Promise<UserSearchDTO[]> {
-  const response = await axios.get(`${API_URL}/Users/${id}/following?page=${page}&pageSize=${pageSize}`, authConfig());
+  const response = await axios.get(`${USER_API_URL}/users/${id}/following?page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
 export async function followUser(id: string): Promise<boolean> {
-  const response = await axios.post(`${API_URL}/Users/follow/${id}`, null, authConfig());
+  const response = await axios.post(`${USER_API_URL}/users/follow/${id}`, null, authConfig());
   return response.data;
 }
 
 export async function unfollowUser(id: string): Promise<boolean> {
-  const response = await axios.delete(`${API_URL}/Users/unfollow/${id}`, authConfig());
+  const response = await axios.delete(`${USER_API_URL}/users/unfollow/${id}`, authConfig());
   return response.data;
 }
 
@@ -239,14 +267,14 @@ export async function updateUserProfile(updateData: {
   interests?: string[];
   isPrivate?: boolean;
 }): Promise<UserProfileDTO> {
-  const response = await axios.put(`${API_URL}/Users/profile`, updateData, authConfig());
+  const response = await axios.put(`${USER_API_URL}/users/profile`, updateData, authConfig());
   return response.data;
 }
 
 export async function updateUserAvatar(file: File): Promise<{ avatarUrl: string }> {
   const formData = new FormData();
   formData.append('file', file);
-  const response = await axios.post(`${API_URL}/Users/avatar`, formData, {
+  const response = await axios.post(`${USER_API_URL}/users/avatar`, formData, {
     ...authConfig(),
     headers: {
       ...authConfig().headers,
@@ -258,7 +286,7 @@ export async function updateUserAvatar(file: File): Promise<{ avatarUrl: string 
 
 // User wishlists
 export async function getUserWishlists(userId: string, page = 1, pageSize = 20): Promise<WishlistFeedDTO[]> {
-  const response = await axios.get(`${GIFT_API_URL}/Wishlists/user/${userId}?page=${page}&pageSize=${pageSize}`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/wishlists/user/${userId}?page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
@@ -298,7 +326,7 @@ export async function createGift(params: {
     form.append('imageFile', params.imageFile);
   }
   const config = authConfig();
-  const response = await axios.post(`${GIFT_API_URL}/Gift`, form, {
+  const response = await axios.post(`${GIFT_API_URL}/gift`, form, {
     ...config,
     headers: {
       ...(config.headers || {}),
@@ -313,28 +341,28 @@ export async function getMyGifts(options?: { category?: string; sortBy?: 'price-
   if (options?.category) query.push(`category=${encodeURIComponent(options.category)}`);
   if (options?.sortBy) query.push(`sortBy=${encodeURIComponent(options.sortBy)}`);
   const qs = query.length ? `?${query.join('&')}` : '';
-  const response = await axios.get(`${GIFT_API_URL}/Gift/wishlist${qs}`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/gift/wishlist${qs}`, authConfig());
   return response.data;
 }
 
 export async function getGiftById(id: string): Promise<GiftDTO> {
-  const response = await axios.get(`${GIFT_API_URL}/Gift/${id}`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/gift/${id}`, authConfig());
   return response.data;
 }
 
 export async function updateGift(id: string, payload: GiftUpdateDTO): Promise<void> {
-  await axios.put(`${GIFT_API_URL}/Gift/${id}`, payload, authConfig());
+  await axios.put(`${GIFT_API_URL}/gift/${id}`, payload, authConfig());
 }
 
 export async function deleteGift(id: string): Promise<void> {
-  await axios.delete(`${GIFT_API_URL}/Gift/${id}`, authConfig());
+  await axios.delete(`${GIFT_API_URL}/gift/${id}`, authConfig());
 }
 
 export async function uploadGiftImage(id: string, file: File): Promise<{ ImageUrl: string }> {
   const form = new FormData();
   form.append('imageFile', file);
   const config = authConfig();
-  const response = await axios.post(`${GIFT_API_URL}/Gift/${id}/upload-image`, form, {
+  const response = await axios.post(`${GIFT_API_URL}/gift/${id}/upload-image`, form, {
     ...config,
     headers: {
       ...(config.headers || {}),
@@ -345,32 +373,32 @@ export async function uploadGiftImage(id: string, file: File): Promise<{ ImageUr
 }
 
 export async function reserveGift(id: string): Promise<{ message: string; reservedBy: string }>{
-  const response = await axios.post(`${GIFT_API_URL}/Gift/${id}/reserve`, null, authConfig());
+  const response = await axios.post(`${GIFT_API_URL}/gift/${id}/reserve`, null, authConfig());
   return response.data;
 }
 
 export async function cancelGiftReservation(id: string): Promise<{ message: string }>{
-  const response = await axios.post(`${GIFT_API_URL}/Gift/${id}/cancel-reserve`, null, authConfig());
+  const response = await axios.post(`${GIFT_API_URL}/gift/${id}/cancel-reserve`, null, authConfig());
   return response.data;
 }
 
 export async function getReservedGifts(): Promise<GiftDTO[]> {
-  const response = await axios.get(`${GIFT_API_URL}/Gift/reserved`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/gift/reserved`, authConfig());
   return response.data;
 }
 
 export async function getSharedWishlistGifts(userId: string): Promise<GiftDTO[]> {
-  const response = await axios.get(`${GIFT_API_URL}/Gift/shared/${userId}`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/gift/shared/${userId}`, authConfig());
   return response.data;
 }
 
 export async function addGiftToWishlist(giftId: string, wishlistId: string): Promise<{ message: string }> {
-  const response = await axios.post(`${GIFT_API_URL}/Gift/${giftId}/assign-to-wishlist`, { wishlistId }, authConfig());
+  const response = await axios.post(`${GIFT_API_URL}/gift/${giftId}/assign-to-wishlist`, { wishlistId }, authConfig());
   return response.data;
 }
 
 export async function removeGiftFromWishlist(giftId: string): Promise<{ message: string }> {
-  const response = await axios.post(`${GIFT_API_URL}/Gift/${giftId}/remove-from-wishlist`, null, authConfig());
+  const response = await axios.post(`${GIFT_API_URL}/gift/${giftId}/remove-from-wishlist`, null, authConfig());
   return response.data;
 }
 

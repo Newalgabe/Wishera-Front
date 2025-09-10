@@ -45,8 +45,10 @@ export default function RegisterPage() {
     try {
       const data = await register(username, email, password);
       localStorage.setItem("token", data.token);
-      if (data.userId) localStorage.setItem("userId", data.userId);
-      if (data.username) localStorage.setItem("username", data.username);
+      const uid = (data.userId || data.UserId) as string | undefined;
+      const uname = (data.username || data.Username) as string | undefined;
+      if (uid) localStorage.setItem("userId", uid);
+      if (uname) localStorage.setItem("username", uname);
       setNotification({
         type: 'success',
         message: t('auth.registerSuccess'),

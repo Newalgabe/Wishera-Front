@@ -113,8 +113,37 @@ export default function Dashboard() {
   const [deleteWishlistLoading, setDeleteWishlistLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Get current user ID
-  const currentUserId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
+  // Get current user ID (kept in state so it updates if we derive it from JWT)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Derive userId/username from JWT if missing in localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const storedUserId = localStorage.getItem('userId');
+      const storedUsername = localStorage.getItem('username');
+      const token = localStorage.getItem('token');
+      if (storedUserId) {
+        setCurrentUserId(storedUserId);
+        return;
+      }
+      if (token && !storedUserId) {
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const payloadJson = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+          const nameId = payloadJson['nameid'] || payloadJson['sub'] || payloadJson['NameIdentifier'];
+          const uname = payloadJson['unique_name'] || payloadJson['name'] || payloadJson['Username'];
+          if (nameId && typeof nameId === 'string') {
+            localStorage.setItem('userId', nameId);
+            setCurrentUserId(nameId);
+          }
+          if (!storedUsername && uname && typeof uname === 'string') {
+            localStorage.setItem('username', uname);
+          }
+        }
+      }
+    } catch {}
+  }, []);
 
   // Debug logging for user ID
   useEffect(() => {
@@ -193,7 +222,18 @@ export default function Dashboard() {
           router.push('/login');
           return;
         }
-        const data = await getFeed(1, 20);
+        let data: WishlistFeedDTO[] = [];
+        // Prefer showing current user's own wishlists on home if we know their id
+        if (currentUserId) {
+          try {
+            data = await getUserWishlists(currentUserId, 1, 20);
+          } catch {
+            // fallback to global feed
+            data = await getFeed(1, 20);
+          }
+        } else {
+          data = await getFeed(1, 20);
+        }
         if (!isMounted) return;
         const mapped: UIWishlist[] = data.map((w: WishlistFeedDTO) => ({
           id: w.id,
@@ -234,7 +274,7 @@ export default function Dashboard() {
     }
     load();
     return () => { isMounted = false; };
-  }, []);
+  }, [currentUserId]);
 
   // After feed loads, fetch wishlist item details lazily for each card
   useEffect(() => {

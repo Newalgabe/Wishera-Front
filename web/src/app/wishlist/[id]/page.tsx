@@ -43,6 +43,9 @@ export default function WishlistDetailsPage() {
   const [myGifts, setMyGifts] = useState<GiftDTO[]>([]);
   const [showGiftSelector, setShowGiftSelector] = useState(false);
   const [loadingGifts, setLoadingGifts] = useState(false);
+  const [createGiftForm, setCreateGiftForm] = useState<{ name: string; price: string; category: string; imageFile: File | null }>({ name: "", price: "", category: "", imageFile: null });
+  const [createGiftLoading, setCreateGiftLoading] = useState(false);
+  const [createGiftError, setCreateGiftError] = useState<string | null>(null);
 
   const currentUserId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
 
@@ -111,6 +114,45 @@ export default function WishlistDetailsPage() {
         ? (error.response as { data?: { message?: string } })?.data?.message 
         : 'Failed to add gift to wishlist';
       setError(errorMessage || 'Failed to add gift to wishlist');
+    }
+  };
+
+  const handleCreateGiftAndAdd = async () => {
+    if (!wishlist) return;
+    const name = createGiftForm.name.trim();
+    const priceNum = Number(createGiftForm.price);
+    if (!name) {
+      setCreateGiftError('Name is required');
+      return;
+    }
+    if (Number.isNaN(priceNum) || priceNum < 0) {
+      setCreateGiftError('Price must be a valid non-negative number');
+      return;
+    }
+    try {
+      setCreateGiftLoading(true);
+      setCreateGiftError(null);
+      await createGift({
+        name,
+        price: priceNum,
+        category: createGiftForm.category.trim() || 'Other',
+        wishlistId: wishlist.id,
+        imageFile: createGiftForm.imageFile
+      });
+      setSuccessMessage('Gift created and added to wishlist!');
+      setTimeout(() => setSuccessMessage(null), 3000);
+      const details = await getWishlistDetails(wishlistId);
+      setWishlist(details);
+      // reset form
+      setCreateGiftForm({ name: "", price: "", category: "", imageFile: null });
+      setShowGiftSelector(false);
+    } catch (error: unknown) {
+      const errorMessage = error && typeof error === 'object' && 'response' in error 
+        ? (error.response as { data?: { message?: string } })?.data?.message 
+        : 'Failed to create gift';
+      setCreateGiftError(errorMessage || 'Failed to create gift');
+    } finally {
+      setCreateGiftLoading(false);
     }
   };
 
@@ -416,7 +458,53 @@ export default function WishlistDetailsPage() {
                       ✕
                     </button>
                   </div>
-                  
+                  {/* Create new gift */}
+                  <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                    <h5 className="font-medium text-gray-900 dark:text-white mb-3">Create New Gift</h5>
+                    {createGiftError && (
+                      <div className="mb-3 text-sm text-red-500">{createGiftError}</div>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <input
+                        type="text"
+                        placeholder="Name"
+                        value={createGiftForm.name}
+                        onChange={(e) => setCreateGiftForm(f => ({ ...f, name: e.target.value }))}
+                        className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Price"
+                        value={createGiftForm.price}
+                        onChange={(e) => setCreateGiftForm(f => ({ ...f, price: e.target.value }))}
+                        className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Category"
+                        value={createGiftForm.category}
+                        onChange={(e) => setCreateGiftForm(f => ({ ...f, category: e.target.value }))}
+                        className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200"
+                      />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setCreateGiftForm(f => ({ ...f, imageFile: e.target.files?.[0] || null }))}
+                        className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200"
+                      />
+                    </div>
+                    <div className="mt-3 flex justify-end">
+                      <button
+                        onClick={handleCreateGiftAndAdd}
+                        disabled={createGiftLoading}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                      >
+                        {createGiftLoading ? 'Creating...' : 'Create and Add to Wishlist'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Existing gifts list */}
                   {loadingGifts ? (
                     <div className="text-center py-8">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
