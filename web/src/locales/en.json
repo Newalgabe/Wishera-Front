@@ -37,10 +37,10 @@
     "login": "Login",
     "signup": "Sign Up",
     "logout": "Logout",
-    "wishlistApp": "Wishlist App"
+    "wishlistApp": "Wishera"
   },
   "auth": {
-    "loginTitle": "Login to Wishlist",
+    "loginTitle": "Login to Wishera",
     "registerTitle": "Create Your Account",
     "email": "Email",
     "password": "Password",
@@ -103,7 +103,7 @@
     }
   },
   "testimonials": {
-    "emily": "Wishlist App made gift-giving so much easier for my friends and family. I love how simple and fun it is!",
+    "emily": "Wishera made gift-giving so much easier for my friends and family. I love how simple and fun it is!",
     "james": "I never get duplicate gifts anymore. The reservation feature is genius!",
     "sophia": "The design is beautiful and sharing my wishlist is a breeze.",
     "michael": "Cloud image uploads make my wishlist look amazing. Highly recommend!"
@@ -120,7 +120,7 @@
     "termsOfService": "Terms of Service"
   },
   "about": {
-    "title": "About Wishlist App",
+    "title": "About Wishera",
     "subtitle": "Making gift-giving easier, more meaningful, and more enjoyable for everyone.",
     "ourMission": "Our Mission",
     "missionText1": "We believe that gift-giving should be a joyful, stress-free experience. Our mission is to create a platform that makes it easy for people to share their wishes and for loved ones to give meaningful gifts that truly matter.",
@@ -129,7 +129,7 @@
     "ourValues": "Our Values",
     "valuesSubtitle": "These core principles guide everything we do and every decision we make.",
     "faqTitle": "Frequently Asked Questions",
-    "faqSubtitle": "Everything you need to know about using Wishlist App to make gift-giving easier and more enjoyable.",
+    "faqSubtitle": "Everything you need to know about using Wishera to make gift-giving easier and more enjoyable.",
     "values": {
       "userCentric": {
         "title": "User-Centric Design",

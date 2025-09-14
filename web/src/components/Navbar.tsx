@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { HomeIcon, ArrowRightOnRectangleIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
+import WisheraLogo from "./WisheraLogo";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
@@ -54,21 +55,7 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex items-center justify-between w-full">
         {/* Logo and name */}
-        <motion.div 
-          className="flex items-center gap-3"
-          whileHover={{ scale: 1.05 }}
-          transition={{ type: "spring", stiffness: 300 }}
-        >
-          <div className="relative">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-indigo-600 dark:from-purple-500 dark:via-indigo-500 dark:to-purple-600 flex items-center justify-center text-white font-extrabold text-lg sm:text-xl shadow-lg">
-              <SparklesIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-pink-400 to-rose-400 rounded-full animate-pulse"></div>
-          </div>
-          <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent tracking-tight">
-            {t('navigation.wishlistApp')}
-          </span>
-        </motion.div>
+        <WisheraLogo size="md" />
 
         {/* Navigation */}
         <div className="hidden md:flex gap-6 lg:gap-8 text-gray-600 dark:text-gray-300 font-medium text-sm sm:text-base items-center">

@@ -26,10 +26,10 @@
     "login": "Daxil ol",
     "signup": "Qeydiyyat",
     "logout": "Çıxış",
-    "wishlistApp": "Arzu Siyahısı Tətbiqi"
+    "wishlistApp": "Wishera"
   },
   "auth": {
-    "loginTitle": "Wishlist-ə daxil ol",
+    "loginTitle": "Wishera-ya daxil ol",
     "registerTitle": "Hesab yarat",
     "email": "E-poçt",
     "password": "Şifrə",
@@ -92,7 +92,7 @@
     }
   },
   "testimonials": {
-    "emily": "Wishlist App dostlarım və ailəm üçün hədiyyə verməyi çox asanlaşdırdı. Necə sadə və əyləncəli olduğunu sevirəm!",
+    "emily": "Wishera dostlarım və ailəm üçün hədiyyə verməyi çox asanlaşdırdı. Necə sadə və əyləncəli olduğunu sevirəm!",
     "james": "Artıq eyni hədiyyələr almıram. Rezervasiya funksiyası dahiyanədir!",
     "sophia": "Dizayn gözəldir və arzu siyahımı paylaşmaq çox asandır.",
     "michael": "Bulud şəkil yükləmələri arzu siyahımı heyrətamiz edir. Çox tövsiyə edirəm!"
@@ -109,7 +109,7 @@
     "termsOfService": "İstifadə Şərtləri"
   },
   "about": {
-    "title": "Wishlist App Haqqında",
+    "title": "Wishera Haqqında",
     "subtitle": "Hədiyyə verməyi hər kəs üçün daha asan, mənalı və xoş edir.",
     "ourMission": "Bizim Missiyamız",
     "missionText1": "Biz inanırıq ki, hədiyyə vermək sevinc dolu və stress-siz təcrübə olmalıdır. Bizim missiyamız insanların arzularını paylaşmasını asanlaşdıran və yaxınlarının həqiqətən əhəmiyyətli olan mənalı hədiyyələr verməsini təmin edən platforma yaratmaqdır.",
@@ -118,7 +118,7 @@
     "ourValues": "Bizim Dəyərlərimiz",
     "valuesSubtitle": "Bu əsas prinsiplər etdiyimiz hər şeyi və verdiyimiz hər qərarı istiqamətləndirir.",
     "faqTitle": "Tez-tez Verilən Suallar",
-    "faqSubtitle": "Hədiyyə verməni asanlaşdırmaq və yaxşılaşdırmaq üçün Wishlist App istifadəsi haqqında bilməli olduğunuz hər şey.",
+    "faqSubtitle": "Hədiyyə verməni asanlaşdırmaq və yaxşılaşdırmaq üçün Wishera istifadəsi haqqında bilməli olduğunuz hər şey.",
     "values": {
       "userCentric": {
         "title": "İstifadəçi Mərkəzli Dizayn",

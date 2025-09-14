@@ -1,5 +1,5 @@
 {
-  "name": "web",
+  "name": "wishera-web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -18,7 +18,7 @@
     "axios": "^1.10.0",
     "framer-motion": "^12.23.6",
     "jwt-decode": "^4.0.0",
-    "next": "15.4.2",
+    "next": "^15.5.3",
     "qrcode": "^1.5.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",

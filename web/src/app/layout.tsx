@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Wishlist App",
+  title: "Wishera",
   description: "The Ultimate Gift Wishlist Manager",
 };
 

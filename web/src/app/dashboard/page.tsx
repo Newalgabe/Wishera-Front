@@ -18,6 +18,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartIconSolid } from "@heroicons/react/24/solid";
 import { useLanguage } from "../../contexts/LanguageContext";
+import WisheraLogo from "../../components/WisheraLogo";
 import {
   getFeed,
   likeWishlist,
@@ -47,10 +48,12 @@ import {
     reserveGift,
     cancelGiftReservation,
     type GiftDTO,
+    getSuggestedUsers,
 } from "../api";
 import { useRouter } from "next/navigation";
 import ThemeToggle from "../../components/ThemeToggle";
 import LanguageSelector from "../../components/LanguageSelector";
+import UserSearchAutocomplete from "../../components/UserSearchAutocomplete";
 
 type UIWishlist = {
   id: string;
@@ -66,11 +69,6 @@ type UIWishlist = {
   createdAt: string;
 };
 
-const suggestedUsers = [
-  { id: 4, name: "Alex Rivera", avatar: "https://randomuser.me/api/portraits/men/4.jpg", username: "@alexrivera", mutualFriends: 3 },
-  { id: 5, name: "Lisa Wang", avatar: "https://randomuser.me/api/portraits/women/5.jpg", username: "@lisawang", mutualFriends: 5 },
-  { id: 6, name: "David Kim", avatar: "https://randomuser.me/api/portraits/men/6.jpg", username: "@davidkim", mutualFriends: 2 }
-];
 
 export default function Dashboard() {
   const { t } = useLanguage();
@@ -81,6 +79,7 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [suggestedUsers, setSuggestedUsers] = useState<UserSearchDTO[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [profile, setProfile] = useState<null | {
     id: string;
     username: string;
@@ -93,7 +92,7 @@ export default function Dashboard() {
     myWishlists: UIWishlist[];
   }>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [createForm, setCreateForm] = useState({ title: "", description: "", category: "", isPublic: true, allowedViewerIds: "" });
+  const [createForm, setCreateForm] = useState({ title: "", description: "", category: "", isPublic: true, allowedViewerIds: [] as string[] });
   const [createError, setCreateError] = useState<string | null>(null);
 
   // Wishlist management state
@@ -106,7 +105,8 @@ export default function Dashboard() {
     title: '',
     description: '',
     category: '',
-    isPublic: true
+    isPublic: true,
+    allowedViewerIds: [] as string[]
   });
   const [editWishlistError, setEditWishlistError] = useState<string | null>(null);
   const [editWishlistLoading, setEditWishlistLoading] = useState(false);
@@ -223,17 +223,8 @@ export default function Dashboard() {
           return;
         }
         let data: WishlistFeedDTO[] = [];
-        // Prefer showing current user's own wishlists on home if we know their id
-        if (currentUserId) {
-          try {
-            data = await getUserWishlists(currentUserId, 1, 20);
-          } catch {
-            // fallback to global feed
-            data = await getFeed(1, 20);
-          }
-        } else {
-          data = await getFeed(1, 20);
-        }
+        // Show global feed (all users' wishlists) on home page
+        data = await getFeed(1, 20);
         if (!isMounted) return;
         const mapped: UIWishlist[] = data.map((w: WishlistFeedDTO) => ({
           id: w.id,
@@ -254,12 +245,14 @@ export default function Dashboard() {
           createdAt: new Date(w.createdAt).toLocaleString()
         }));
         setWishlists(mapped);
-        // Suggested users: default to following list instead of empty search
+        // Load suggested users
         if (currentUserId) {
           try {
-            const users = await getFollowing(currentUserId, 1, 5);
+            const users = await getSuggestedUsers(currentUserId, 1, 5);
             setSuggestedUsers(users);
-          } catch {}
+          } catch (error) {
+            console.error('Failed to load suggested users:', error);
+          }
         }
         setError(null);
       } catch (e: any) {
@@ -383,8 +376,12 @@ export default function Dashboard() {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (activeDropdown && !(event.target as Element).closest('.dropdown-container')) {
+      const target = event.target as Element;
+      if (activeDropdown && !target.closest('.dropdown-container')) {
         setActiveDropdown(null);
+      }
+      if (showSearchDropdown && !target.closest('.search-container')) {
+        setShowSearchDropdown(false);
       }
     };
 
@@ -392,7 +389,7 @@ export default function Dashboard() {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [activeDropdown]);
+  }, [activeDropdown, showSearchDropdown]);
 
   const handleLike = async (wishlistId: string) => {
     setWishlists(prev => prev.map(w => w.id === wishlistId ? { ...w, isLiked: !w.isLiked, likes: w.isLiked ? w.likes - 1 : w.likes + 1 } : w));
@@ -455,14 +452,16 @@ export default function Dashboard() {
         title: editWishlistForm.title,
         description: editWishlistForm.description || null,
         category: editWishlistForm.category || null,
-        isPublic: editWishlistForm.isPublic
+        isPublic: editWishlistForm.isPublic,
+        allowedViewerIds: editWishlistForm.isPublic ? [] : editWishlistForm.allowedViewerIds
       });
       
       await updateWishlist(editingWishlist.id, {
         title: editWishlistForm.title,
         description: editWishlistForm.description || null,
         category: editWishlistForm.category || null,
-        isPublic: editWishlistForm.isPublic
+        isPublic: editWishlistForm.isPublic,
+        allowedViewerIds: editWishlistForm.isPublic ? [] : editWishlistForm.allowedViewerIds
       });
       
       console.log('Update request successful, refreshing wishlists...');
@@ -492,7 +491,7 @@ export default function Dashboard() {
       
       setIsEditWishlistOpen(false);
       setEditingWishlist(null);
-      setEditWishlistForm({ title: '', description: '', category: '', isPublic: true });
+      setEditWishlistForm({ title: '', description: '', category: '', isPublic: true, allowedViewerIds: [] });
       setSuccessMessage('Wishlist updated successfully!');
       
       // Clear success message after 3 seconds
@@ -639,14 +638,11 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <div className="flex items-center">
-              <GiftIcon className="h-8 w-8 text-indigo-600 dark:text-purple-400" />
-              <span className="ml-2 text-xl font-bold text-gray-900 dark:text-white">WishlistApp</span>
-            </div>
+            <WisheraLogo size="md" />
 
             {/* Search Bar */}
             <div className="flex-1 max-w-md mx-8">
-              <div className="relative">
+              <div className="relative search-container">
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
@@ -656,9 +652,13 @@ export default function Dashboard() {
                     setSearchQuery(q);
                     try {
                       if (q.trim().length >= 2) {
+                        console.log('Searching for:', q);
                         const users = await searchUsers(q, 1, 5);
+                        console.log('Search results:', users);
                         setSuggestedUsers(users);
+                        setShowSearchDropdown(true);
                       } else {
+                        setShowSearchDropdown(false);
                         if (currentUserId) {
                           const users = await getFollowing(currentUserId, 1, 5);
                           setSuggestedUsers(users);
@@ -666,11 +666,63 @@ export default function Dashboard() {
                           setSuggestedUsers([]);
                         }
                       }
-                    } catch {}
+                    } catch (error) {
+                      console.error('Search error:', error);
+                      setSuggestedUsers([]);
+                      setShowSearchDropdown(false);
+                    }
                   }}
                   placeholder={t('dashboard.searchPlaceholder')}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-purple-500"
                 />
+                
+                {/* Search Results Dropdown */}
+                {showSearchDropdown && searchQuery.trim().length >= 2 && suggestedUsers.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {suggestedUsers.map((user, index) => (
+                      <div
+                        key={user.id}
+                        onClick={() => {
+                          router.push(`/user/${user.id}`);
+                          setSearchQuery("");
+                          setSuggestedUsers([]);
+                          setShowSearchDropdown(false);
+                        }}
+                        className="flex items-center p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-600 last:border-b-0"
+                      >
+                        <img
+                          src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.username)}`}
+                          alt={user.username}
+                          className="w-10 h-10 rounded-full border-2 border-gray-200 dark:border-gray-600"
+                        />
+                        <div className="ml-3 flex-1">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-medium text-gray-900 dark:text-white">
+                              {user.username}
+                            </h3>
+                            {user.isFollowing && (
+                              <span className="text-xs text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/20 px-2 py-1 rounded-full">
+                                Following
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {user.isFollowing ? 'You are following this user' : 'Not following'}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* No Results Message */}
+                {showSearchDropdown && searchQuery.trim().length >= 2 && suggestedUsers.length === 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-3">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm text-center">
+                      No users found for "{searchQuery}"
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -995,7 +1047,8 @@ export default function Dashboard() {
                                       title: wishlist.title,
                                       description: wishlist.description || '',
                                       category: wishlist.category || '',
-                                      isPublic: wishlist.isPublic ?? true
+                                      isPublic: wishlist.isPublic ?? true,
+                                      allowedViewerIds: [] // TODO: Load actual allowed viewer IDs from wishlist data
                                     });
                                     setIsEditWishlistOpen(true);
                                   }}
@@ -1455,7 +1508,9 @@ export default function Dashboard() {
                       </div>
                       <div>
                         <div className="font-semibold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{formatUsername(user.username)}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">3 mutual friends</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          {user.mutualFriendsCount || 0} mutual friends
+                        </div>
                       </div>
                     </div>
                     {user.isFollowing ? (
@@ -1543,12 +1598,11 @@ export default function Dashboard() {
                   ))}
                 </select>
                 {!createForm.isPublic && (
-                  <input
-                    type="text"
+                  <UserSearchAutocomplete
                     value={createForm.allowedViewerIds}
-                    onChange={(e) => setCreateForm({ ...createForm, allowedViewerIds: e.target.value })}
-                    placeholder="Allowed viewer IDs (comma-separated)"
-                    className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
+                    onChange={(userIds) => setCreateForm({ ...createForm, allowedViewerIds: userIds })}
+                    placeholder="Search and add people to share with..."
+                    className="w-full"
                   />
                 )}
                 <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
@@ -1573,9 +1627,7 @@ export default function Dashboard() {
                         isPublic: createForm.isPublic,
                         allowedViewerIds: createForm.isPublic
                           ? []
-                          : (createForm.allowedViewerIds
-                              ? createForm.allowedViewerIds.split(',').map(s => s.trim()).filter(Boolean)
-                              : [])
+                          : createForm.allowedViewerIds
                       };
                       const created = await createWishlist(payload);
                       // Prepend to feed for instant feedback (dedupe by id)
@@ -1593,7 +1645,7 @@ export default function Dashboard() {
                         createdAt: new Date(created.createdAt).toLocaleString()
                       }, ...prev]));
                       setIsCreateOpen(false);
-                      setCreateForm({ title: '', description: '', category: '', isPublic: true, allowedViewerIds: '' });
+                      setCreateForm({ title: '', description: '', category: '', isPublic: true, allowedViewerIds: [] });
                     } catch (e: any) {
                       setCreateError(e?.response?.data?.message || 'Failed to create');
                     }
@@ -1823,7 +1875,7 @@ export default function Dashboard() {
             setIsEditWishlistOpen(false);
             setEditWishlistError(null);
             setEditingWishlist(null);
-            setEditWishlistForm({ title: '', description: '', category: '', isPublic: true });
+            setEditWishlistForm({ title: '', description: '', category: '', isPublic: true, allowedViewerIds: [] });
           }}
         >
           <div 
@@ -1908,6 +1960,21 @@ export default function Dashboard() {
                     {t('dashboard.publicWishlist') || 'Public Wishlist'}
                   </label>
                 </div>
+
+                {/* Allowed Viewers - Only show for private wishlists */}
+                {!editWishlistForm.isPublic && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Share with specific people
+                    </label>
+                    <UserSearchAutocomplete
+                      value={editWishlistForm.allowedViewerIds}
+                      onChange={(userIds) => setEditWishlistForm({ ...editWishlistForm, allowedViewerIds: userIds })}
+                      placeholder="Search and add people to share with..."
+                      className="w-full"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="mt-6 flex justify-end gap-3">
@@ -1916,7 +1983,7 @@ export default function Dashboard() {
                     setIsEditWishlistOpen(false);
                     setEditWishlistError(null);
                     setEditingWishlist(null);
-                    setEditWishlistForm({ title: '', description: '', category: '', isPublic: true });
+                    setEditWishlistForm({ title: '', description: '', category: '', isPublic: true, allowedViewerIds: [] });
                   }} 
                   className="px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 font-medium"
                 >

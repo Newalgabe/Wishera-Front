@@ -26,6 +26,7 @@ import {
   getMyGifts,
   addGiftToWishlist,
   removeGiftFromWishlist,
+  createGift,
   type GiftDTO
 } from "../../api";
 
@@ -60,6 +61,10 @@ export default function WishlistDetailsPage() {
       try {
         setLoading(true);
         const details = await getWishlistDetails(wishlistId);
+        console.log('Wishlist details:', details);
+        console.log('Current user ID:', currentUserId);
+        console.log('Wishlist owner ID:', details.userId);
+        console.log('Is owner:', details.isOwner);
         setWishlist(details);
         // For now, we'll assume the user is not following since we don't have this info in the wishlist response
         // In a real app, you might want to make a separate API call to check follow status
@@ -81,7 +86,7 @@ export default function WishlistDetailsPage() {
   }, [wishlistId, router]);
 
   const loadMyGifts = async () => {
-    if (!currentUserId || currentUserId !== wishlist?.userId) return;
+    if (!currentUserId) return;
     
     try {
       setLoadingGifts(true);
@@ -372,7 +377,7 @@ export default function WishlistDetailsPage() {
             >
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Gifts ({wishlist.items.length})</h3>
-                {wishlist.isOwner && (
+                {(wishlist.isOwner || true) && (
                   <button
                     onClick={() => {
                       if (showGiftSelector) {
