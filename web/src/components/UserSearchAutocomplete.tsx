@@ -26,7 +26,7 @@ export default function UserSearchAutocomplete({
   
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Get selected users for display
   const [selectedUsers, setSelectedUsers] = useState<UserSearchDTO[]>([]);

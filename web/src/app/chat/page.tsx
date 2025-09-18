@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSignalRChat } from "@/hooks/useSignalRChat";
 import { useRouter } from "next/navigation";
 import { createChatToken, createOrJoinChatChannel, sendChatMessage, searchUsers, getFollowing, type UserSearchDTO } from "../api";
 import { 
@@ -51,10 +52,24 @@ export default function ChatPage() {
   const listRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
+  function toNumericId(id: string | null | undefined): number | null {
+    if (!id) return null;
+    const n = Number(id);
+    if (!Number.isNaN(n) && Number.isFinite(n)) return Math.trunc(n);
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      hash = (hash << 5) - hash + id.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash) || 1;
+  }
+
   const currentUserId = useMemo(() => {
     if (typeof window === 'undefined') return "";
     return localStorage.getItem('userId') || "";
   }, []);
+
+  const chat = useSignalRChat(currentUserId);
 
   // Load friends/following users
   useEffect(() => {
@@ -115,6 +130,25 @@ export default function ChatPage() {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
   }, [messages.length]);
 
+  // Subscribe to server pushes
+  useEffect(() => {
+    const offMsg = chat.onReceiveMessage((payload: any, username?: string) => {
+      setMessages(prev => [...prev, {
+        id: crypto.randomUUID(),
+        text: typeof payload === 'string' ? payload : payload?.message ?? '',
+        userId: username || 'other',
+        createdAt: new Date().toISOString()
+      }]);
+    });
+    const offUsers = chat.onReceiveActiveUsers((ids) => {
+      setContacts(prev => prev.map(c => ({ ...c, isOnline: ids.includes(c.id) })));
+    });
+    return () => {
+      offMsg?.();
+      offUsers?.();
+    };
+  }, [chat]);
+
   useEffect(() => {
     if (selectedContact) {
       setShowSidebar(false);
@@ -169,13 +203,14 @@ export default function ChatPage() {
         createdAt: new Date().toISOString(),
         username: "You"
       }]);
-      await sendChatMessage({
-        channelType: channelType || 'messaging',
-        channelId: channelId,
-        senderUserId: currentUserId,
-        text,
-        customData: {}
-      });
+      if (selectedContact) {
+        const targetId = selectedContact.id;
+        if (targetId && typeof targetId === 'string') {
+          await chat.sendToUser(targetId, text);
+        } else {
+          throw new Error('Invalid target user id');
+        }
+      }
     } catch (e: any) {
       setError(e?.response?.data?.message || 'Failed to send message');
     }
@@ -190,6 +225,14 @@ export default function ChatPage() {
     setSelectedContact(contact);
     setShowSearchResults(false);
     setSearchQuery("");
+    // add to active users list
+    (async () => {
+      try {
+        const cid = await chat.getConnectionId();
+        const uid = currentUserId;
+        if (cid && uid) await chat.addUser(uid, cid);
+      } catch {}
+    })();
   };
 
   const handleSearchResultSelect = (user: UserSearchDTO) => {

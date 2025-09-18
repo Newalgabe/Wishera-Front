@@ -113,6 +113,7 @@ export interface WishlistFeedDTO {
   title: string;
   description?: string | null;
   category?: string | null;
+  isPublic?: boolean;
   createdAt: string;
   likeCount: number;
   commentCount: number;
@@ -133,6 +134,7 @@ export interface WishlistResponseDTO {
   id: string;
   userId: string;
   username: string;
+  avatarUrl?: string | null;
   title: string;
   description?: string | null;
   category?: string | null;
