@@ -2,7 +2,7 @@ import axios, { type AxiosRequestConfig } from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? '/api' : 'http://localhost:5155/api');
 const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:5219/api';
-const CHAT_API_URL = process.env.NEXT_PUBLIC_CHAT_API_URL || 'http://localhost:5000/api';
+const CHAT_API_URL = process.env.NEXT_PUBLIC_CHAT_API_URL || 'http://localhost:5162/api';
 const GIFT_API_URL = process.env.NEXT_PUBLIC_GIFT_API_URL || 'http://localhost:5221/api';
 const USER_API_URL = process.env.NEXT_PUBLIC_USER_API_URL || 'http://localhost:5220/api';
 
@@ -456,5 +456,15 @@ export interface ChatHistoryItemDTO {
 
 export async function getChatHistory(userA: string, userB: string, page = 0, pageSize = 50): Promise<ChatHistoryItemDTO[]> {
   const response = await axios.get(`${CHAT_API_URL}/chat/history?userA=${encodeURIComponent(userA)}&userB=${encodeURIComponent(userB)}&page=${page}&pageSize=${pageSize}`, authConfig());
+  return response.data;
+}
+
+export async function editChatMessage(messageId: string, newText: string): Promise<{ updated: boolean }> {
+  const response = await axios.post(`${CHAT_API_URL}/chat/message/edit`, { messageId, newText }, authConfig());
+  return response.data;
+}
+
+export async function deleteChatMessage(messageId: string): Promise<{ deleted: boolean }> {
+  const response = await axios.post(`${CHAT_API_URL}/chat/message/delete`, { messageId }, authConfig());
   return response.data;
 }

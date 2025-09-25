@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSignalRChat } from "@/hooks/useSignalRChat";
 import { useRouter } from "next/navigation";
-import { createChatToken, createOrJoinChatChannel, sendChatMessage, searchUsers, getFollowing, getChatHistory, type UserSearchDTO } from "../api";
+import { createChatToken, createOrJoinChatChannel, sendChatMessage, searchUsers, getFollowing, getChatHistory, editChatMessage, deleteChatMessage, type UserSearchDTO } from "../api";
 import { 
   PaperAirplaneIcon, 
   PlusIcon, 
@@ -20,6 +20,8 @@ type ChatMessage = {
   userId: string; 
   createdAt: string;
   username?: string;
+  replyToMessageId?: string | null;
+  reactions?: Record<string, string[]>;
 };
 
 type ChatContact = {
@@ -71,6 +73,12 @@ export default function ChatPage() {
   }, []);
 
   const chat = useSignalRChat(currentUserId);
+  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
+  const typingTimeoutRef = useRef<any>(null);
+  const [emojiMenuForId, setEmojiMenuForId] = useState<string | null>(null);
+  const REACTIONS = ["👍","❤️","😂","🎉","👏","😮","😢","🔥","✅","❌","👌","😁","🙏","🤔","😎" ,"💖", "🍑", "🍆", "🍒"];
 
   // Load friends/following users
   useEffect(() => {
@@ -162,12 +170,15 @@ export default function ChatPage() {
       const nowIso = new Date().toISOString();
       const text = typeof payload === 'string' ? payload : (payload?.text ?? payload?.message ?? '');
       const sender = typeof payload === 'string' ? (username || 'other') : (payload?.senderId || username || 'other');
+      const id = typeof payload === 'object' && payload?.id ? String(payload.id) : crypto.randomUUID();
+      const replyToMessageId = typeof payload === 'object' && payload?.replyToMessageId ? String(payload.replyToMessageId) : null;
       setMessages(prev => {
         const next = [...prev, {
-        id: crypto.randomUUID(),
+          id,
         text,
         userId: sender,
-        createdAt: nowIso
+          createdAt: nowIso,
+          replyToMessageId
         }];
         // Persist to localStorage per-conversation
         try {
@@ -183,9 +194,34 @@ export default function ChatPage() {
     const offUsers = chat.onReceiveActiveUsers((ids) => {
       setContacts(prev => prev.map(c => ({ ...c, isOnline: ids.includes(c.id) })));
     });
+    const offTyping = chat.onTyping(({ userId, isTyping }) => {
+      if (userId === selectedContact?.id) {
+        setIsTyping(isTyping);
+      }
+    });
+    const offRead = chat.onMessagesRead(({ byUserId, messageIds }) => {
+      // Could update UI to show read ticks per message id (omitted for brevity)
+    });
+    const offReact = chat.onMessageReactionUpdated(({ id, userId, emoji, removed }) => {
+      setMessages(prev => prev.map(m => {
+        if (m.id !== id) return m;
+        const reactions = { ...(m.reactions || {}) };
+        const current = new Set(reactions[emoji] || []);
+        if (removed) {
+          current.delete(userId);
+        } else {
+          current.add(userId);
+        }
+        reactions[emoji] = Array.from(current);
+        return { ...m, reactions };
+      }));
+    });
     return () => {
       offMsg?.();
       offUsers?.();
+      offTyping?.();
+      offRead?.();
+      offReact?.();
     };
   }, [chat]);
 
@@ -233,6 +269,17 @@ export default function ChatPage() {
     try {
       if (!input.trim()) return;
       if (!currentUserId) return;
+      if (editingId) {
+        const newText = input.trim();
+        setInput("");
+        setEditingId(null);
+        // Optimistic update
+        setMessages(prev => prev.map(m => m.id === editingId ? { ...m, text: newText } : m));
+        try {
+          await editChatMessage(editingId, newText);
+        } catch {}
+        return;
+      }
       const id = crypto.randomUUID();
       const text = input.trim();
       setInput("");
@@ -242,7 +289,8 @@ export default function ChatPage() {
           text, 
           userId: currentUserId, 
           createdAt: new Date().toISOString(),
-          username: "You"
+          username: "You",
+          replyToMessageId: replyTo?.id ?? null
         }];
         try {
           const peerId = selectedContact?.id;
@@ -256,13 +304,26 @@ export default function ChatPage() {
       if (selectedContact) {
         const targetId = selectedContact.id;
         if (targetId && typeof targetId === 'string') {
-          await chat.sendToUser(targetId, text);
+          // Prefer meta so replyTo is included server-side
+          await chat.sendToUserWithMeta(targetId, text, replyTo?.id ?? undefined, id);
         } else {
           throw new Error('Invalid target user id');
         }
       }
+      setReplyTo(null);
     } catch (e: any) {
       setError(e?.response?.data?.message || 'Failed to send message');
+    }
+  }
+
+  function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setInput(e.target.value);
+    if (selectedContact?.id) {
+      chat.startTyping(selectedContact.id);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+        if (selectedContact?.id) chat.stopTyping(selectedContact.id);
+      }, 1200);
     }
   }
 
@@ -290,7 +351,9 @@ export default function ChatPage() {
             id: m.id,
             text: m.text,
             userId: m.senderUserId,
-            createdAt: m.sentAt
+            createdAt: m.sentAt,
+            replyToMessageId: (m as any).replyToMessageId ?? null,
+            reactions: (m as any).reactions || {}
           }));
           setMessages(fromServer);
           try {
@@ -305,6 +368,16 @@ export default function ChatPage() {
       }
     })();
   };
+
+  function quotePreview() {
+    if (!replyTo) return null;
+    return (
+      <div className="mb-2 px-3 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl text-xs flex items-center justify-between">
+        <span className="truncate max-w-[80%]">Replying to: {replyTo.text}</span>
+        <button onClick={() => setReplyTo(null)} className="ml-2 text-indigo-600 dark:text-indigo-300">Cancel</button>
+      </div>
+    );
+  }
 
   const handleSearchResultSelect = (user: UserSearchDTO) => {
     const contact: ChatContact = {
@@ -505,6 +578,11 @@ export default function ChatPage() {
                     className={`flex ${message.userId === currentUserId ? 'justify-end' : 'justify-start'}`}
                   >
                     <div className={`max-w-[70%] ${message.userId === currentUserId ? 'order-2' : 'order-1'}`}>
+                      {message.replyToMessageId && (
+                        <div className="mb-1 text-xs text-gray-500 dark:text-gray-400 italic">
+                          Replying to...
+                        </div>
+                      )}
                       {message.userId !== currentUserId && (
                         <div className="flex items-center mb-1">
                           <img
@@ -525,6 +603,17 @@ export default function ChatPage() {
                         }`}
                       >
                         <p>{message.text}</p>
+                        {message.reactions && Object.keys(message.reactions).length > 0 && (
+                          <div className="mt-1 flex gap-2 text-xs">
+                            {Object.entries(message.reactions).map(([emoji, users]) => (
+                              users.length > 0 ? (
+                                <span key={emoji} className={`px-2 py-0.5 rounded-full border ${message.userId === currentUserId ? 'border-indigo-300 text-indigo-100' : 'border-gray-300 text-gray-600 dark:text-gray-300'}`}>
+                                  {emoji} {users.length}
+                                </span>
+                              ) : null
+                            ))}
+                          </div>
+                        )}
                         <p className={`text-xs mt-1 ${
                           message.userId === currentUserId 
                             ? 'text-indigo-200' 
@@ -532,6 +621,46 @@ export default function ChatPage() {
                         }`}>
                           {formatTime(message.createdAt)}
                         </p>
+                        <div className="mt-2 flex items-center gap-2 opacity-70 hover:opacity-100 transition-opacity relative">
+                          {/* Reactions dropdown */}
+                          <button onClick={() => setEmojiMenuForId(emojiMenuForId === message.id ? null : message.id)} className="text-xs cursor-pointer px-2 py-0.5 rounded border border-gray-300 dark:border-gray-600">
+                            😊 React
+                          </button>
+                          {emojiMenuForId === message.id && (
+                            <div className={`absolute z-10 bottom-full mb-2 ${message.userId === currentUserId ? 'right-0' : 'left-0'} bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-2 grid grid-cols-5 gap-1`}
+                              onMouseLeave={() => setEmojiMenuForId(null)}
+                            >
+                              {REACTIONS.map(em => (
+                                <button
+                                  key={em}
+                                  onClick={async () => { try { await chat.reactToMessage(message.id, em); } finally { setEmojiMenuForId(null); } }}
+                                  className="px-2 py-1 text-base hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                                  title={em}
+                                >
+                                  {em}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          <span className="mx-1 text-gray-400">|</span>
+                          <button onClick={() => setReplyTo(message)} className="text-xs text-indigo-600 dark:text-indigo-300">Reply</button>
+                          {message.userId === currentUserId && (
+                            <>
+                              <button onClick={() => { setEditingId(message.id); setInput(message.text); inputRef.current?.focus(); }} className="text-xs text-gray-600 dark:text-gray-300">Edit</button>
+                              <button onClick={async () => {
+                                try {
+                                  await deleteChatMessage(message.id);
+                                  setMessages(prev => prev.filter(m => m.id !== message.id));
+                                  const peerId = selectedContact?.id;
+                                  if (currentUserId && peerId) {
+                                    const cacheKey = `chatHistory:${currentUserId}:${peerId}`;
+                                    localStorage.setItem(cacheKey, JSON.stringify(prev.filter(m => m.id !== message.id)));
+                                  }
+                                } catch {}
+                              }} className="text-xs text-red-600">Delete</button>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -548,6 +677,7 @@ export default function ChatPage() {
                   placeholder="Type a message..."
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
+                  onChange={onInputChange}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
                   className="flex-1 px-4 py-3 rounded-2xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
@@ -559,6 +689,10 @@ export default function ChatPage() {
                   <PaperAirplaneIcon className="w-5 h-5" />
                 </button>
               </div>
+              {isTyping && (
+                <div className="px-4 pt-2 text-xs text-gray-500 dark:text-gray-400">{selectedContact?.name} is typing...</div>
+              )}
+              {quotePreview()}
             </div>
           </>
         ) : (

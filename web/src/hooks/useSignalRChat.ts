@@ -71,6 +71,18 @@ export function useSignalRChat(currentUserId?: string | null, token?: string) {
     return connectionRef.current?.invoke("SendMessageToUser", userId, message);
   }, []);
 
+  const sendToUserWithMeta = useCallback(async (userId: string, message: string, replyToMessageId?: string | null, clientMessageId?: string | null) => {
+    return connectionRef.current?.invoke("SendMessageToUserWithMeta", userId, message, replyToMessageId ?? null, clientMessageId ?? null);
+  }, []);
+
+  const editMessage = useCallback(async (messageId: string, newText: string) => {
+    return connectionRef.current?.invoke<boolean>("EditMessage", messageId, newText);
+  }, []);
+
+  const deleteMessage = useCallback(async (messageId: string) => {
+    return connectionRef.current?.invoke<boolean>("DeleteMessage", messageId);
+  }, []);
+
   const onReceiveMessage = useCallback((handler: (payload: any, username?: string) => void) => {
     connectionRef.current?.on("ReceiveMessage", handler);
     return () => connectionRef.current?.off("ReceiveMessage", handler);
@@ -81,12 +93,58 @@ export function useSignalRChat(currentUserId?: string | null, token?: string) {
     return () => connectionRef.current?.off("ReceiveActiveUsers", handler);
   }, []);
 
+  const onTyping = useCallback((handler: (data: { userId: string; isTyping: boolean }) => void) => {
+    connectionRef.current?.on("Typing", handler as any);
+    return () => connectionRef.current?.off("Typing", handler as any);
+  }, []);
+
+  const onMessageReactionUpdated = useCallback((handler: (data: { id: string; userId: string; emoji: string; removed?: boolean }) => void) => {
+    connectionRef.current?.on("MessageReactionUpdated", handler as any);
+    return () => connectionRef.current?.off("MessageReactionUpdated", handler as any);
+  }, []);
+
+  const onMessagesRead = useCallback((handler: (data: { byUserId: string; messageIds: string[] }) => void) => {
+    connectionRef.current?.on("MessagesRead", handler as any);
+    return () => connectionRef.current?.off("MessagesRead", handler as any);
+  }, []);
+
+  const startTyping = useCallback(async (targetUserId: string) => {
+    return connectionRef.current?.invoke("StartTyping", targetUserId);
+  }, []);
+
+  const stopTyping = useCallback(async (targetUserId: string) => {
+    return connectionRef.current?.invoke("StopTyping", targetUserId);
+  }, []);
+
+  const reactToMessage = useCallback(async (messageId: string, emoji: string) => {
+    return connectionRef.current?.invoke<boolean>("ReactToMessage", messageId, emoji);
+  }, []);
+
+  const unreactToMessage = useCallback(async (messageId: string, emoji: string) => {
+    return connectionRef.current?.invoke<boolean>("UnreactToMessage", messageId, emoji);
+  }, []);
+
+  const markMessagesRead = useCallback(async (peerUserId: string, messageIds: string[]) => {
+    return connectionRef.current?.invoke<number>("MarkMessagesRead", peerUserId, messageIds);
+  }, []);
+
   return {
     connected,
     getConnectionId,
     addUser,
     sendToAll,
     sendToUser,
+    sendToUserWithMeta,
+    editMessage,
+    deleteMessage,
+    onTyping,
+    onMessageReactionUpdated,
+    onMessagesRead,
+    startTyping,
+    stopTyping,
+    reactToMessage,
+    unreactToMessage,
+    markMessagesRead,
     onReceiveMessage,
     onReceiveActiveUsers,
   };
