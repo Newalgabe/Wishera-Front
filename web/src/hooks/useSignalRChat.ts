@@ -7,7 +7,7 @@ export function useSignalRChat(currentUserId?: string | null, token?: string) {
   const connectionRef = useRef<signalR.HubConnection | null>(null);
 
   const hubUrl = useMemo(() => {
-    const base = process.env.NEXT_PUBLIC_CHAT_HUB_URL || "http://localhost:5210/chat";
+    const base = process.env.NEXT_PUBLIC_CHAT_HUB_URL || "http://localhost:5162/chat";
     const uid = currentUserId && currentUserId !== "" ? `userId=${encodeURIComponent(currentUserId)}` : "";
     return uid ? `${base}${base.includes("?") ? "&" : "?"}${uid}` : base;
   }, [currentUserId]);
@@ -17,7 +17,6 @@ export function useSignalRChat(currentUserId?: string | null, token?: string) {
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(hubUrl, {
         accessTokenFactory: () => token || localStorage.getItem("token") || "",
-        withCredentials: true,
         // Let SignalR negotiate the best available transport (WebSockets/ServerSentEvents/LongPolling)
       })
       .withAutomaticReconnect([0, 1000, 2000, 5000])

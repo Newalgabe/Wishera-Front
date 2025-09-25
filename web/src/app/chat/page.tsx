@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSignalRChat } from "@/hooks/useSignalRChat";
 import { useRouter } from "next/navigation";
-import { createChatToken, createOrJoinChatChannel, sendChatMessage, searchUsers, getFollowing, type UserSearchDTO } from "../api";
+import { createChatToken, createOrJoinChatChannel, sendChatMessage, searchUsers, getFollowing, getChatHistory, type UserSearchDTO } from "../api";
 import { 
   PaperAirplaneIcon, 
   PlusIcon, 
@@ -51,6 +51,7 @@ export default function ChatPage() {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const listRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const restoredOnceRef = useRef(false);
 
   function toNumericId(id: string | null | undefined): number | null {
     if (!id) return null;
@@ -95,6 +96,30 @@ export default function ChatPage() {
     loadContacts();
   }, [currentUserId]);
 
+  // Restore last selected conversation and cached messages after contacts load
+  useEffect(() => {
+    if (restoredOnceRef.current) return;
+    if (!currentUserId) return;
+    if (!contacts || contacts.length === 0) return;
+    const savedId = typeof window !== 'undefined' ? localStorage.getItem('chatSelectedContactId') : null;
+    if (savedId) {
+      const found = contacts.find(c => c.id === savedId);
+      if (found) {
+        restoredOnceRef.current = true;
+        // Load cached messages immediately for better UX
+        try {
+          const cacheKey = `chatHistory:${currentUserId}:${savedId}`;
+          const cached = localStorage.getItem(cacheKey);
+          if (cached) {
+            const parsed = JSON.parse(cached) as ChatMessage[];
+            if (Array.isArray(parsed)) setMessages(parsed);
+          }
+        } catch {}
+        handleContactSelect(found);
+      }
+    }
+  }, [contacts, currentUserId]);
+
   // Search users
   useEffect(() => {
     async function searchUsersByName() {
@@ -133,12 +158,27 @@ export default function ChatPage() {
   // Subscribe to server pushes
   useEffect(() => {
     const offMsg = chat.onReceiveMessage((payload: any, username?: string) => {
-      setMessages(prev => [...prev, {
+      // Server sends either: (userId, messageText) or ({ senderId, text }, username)
+      const nowIso = new Date().toISOString();
+      const text = typeof payload === 'string' ? payload : (payload?.text ?? payload?.message ?? '');
+      const sender = typeof payload === 'string' ? (username || 'other') : (payload?.senderId || username || 'other');
+      setMessages(prev => {
+        const next = [...prev, {
         id: crypto.randomUUID(),
-        text: typeof payload === 'string' ? payload : payload?.message ?? '',
-        userId: username || 'other',
-        createdAt: new Date().toISOString()
-      }]);
+        text,
+        userId: sender,
+        createdAt: nowIso
+        }];
+        // Persist to localStorage per-conversation
+        try {
+          const peerId = selectedContact?.id;
+          if (currentUserId && peerId) {
+            const cacheKey = `chatHistory:${currentUserId}:${peerId}`;
+            localStorage.setItem(cacheKey, JSON.stringify(next));
+          }
+        } catch {}
+        return next;
+      });
     });
     const offUsers = chat.onReceiveActiveUsers((ids) => {
       setContacts(prev => prev.map(c => ({ ...c, isOnline: ids.includes(c.id) })));
@@ -196,13 +236,23 @@ export default function ChatPage() {
       const id = crypto.randomUUID();
       const text = input.trim();
       setInput("");
-      setMessages(prev => [...prev, { 
-        id, 
-        text, 
-        userId: currentUserId, 
-        createdAt: new Date().toISOString(),
-        username: "You"
-      }]);
+      setMessages(prev => {
+        const next = [...prev, { 
+          id, 
+          text, 
+          userId: currentUserId, 
+          createdAt: new Date().toISOString(),
+          username: "You"
+        }];
+        try {
+          const peerId = selectedContact?.id;
+          if (currentUserId && peerId) {
+            const cacheKey = `chatHistory:${currentUserId}:${peerId}`;
+            localStorage.setItem(cacheKey, JSON.stringify(next));
+          }
+        } catch {}
+        return next;
+      });
       if (selectedContact) {
         const targetId = selectedContact.id;
         if (targetId && typeof targetId === 'string') {
@@ -225,13 +275,34 @@ export default function ChatPage() {
     setSelectedContact(contact);
     setShowSearchResults(false);
     setSearchQuery("");
-    // add to active users list
+    try { localStorage.setItem('chatSelectedContactId', contact.id); } catch {}
+    // add to active users list and load persisted history
     (async () => {
       try {
         const cid = await chat.getConnectionId();
         const uid = currentUserId;
         if (cid && uid) await chat.addUser(uid, cid);
       } catch {}
+      try {
+        if (currentUserId && contact?.id) {
+          const history = await getChatHistory(currentUserId, contact.id, 0, 50);
+          const fromServer = history.map(m => ({
+            id: m.id,
+            text: m.text,
+            userId: m.senderUserId,
+            createdAt: m.sentAt
+          }));
+          setMessages(fromServer);
+          try {
+            const cacheKey = `chatHistory:${currentUserId}:${contact.id}`;
+            localStorage.setItem(cacheKey, JSON.stringify(fromServer));
+          } catch {}
+        } else {
+          setMessages([]);
+        }
+      } catch (e) {
+        // If history fails, keep current messages array unchanged
+      }
     })();
   };
 

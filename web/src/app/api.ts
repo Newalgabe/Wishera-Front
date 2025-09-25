@@ -440,3 +440,21 @@ export async function sendChatMessage(payload: SendChatMessageDTO): Promise<{ me
   const response = await axios.post(`${CHAT_API_URL}/chat/message`, payload, authConfig());
   return response.data;
 }
+
+// Chat history (persisted in Mongo via chat-service)
+export interface ChatHistoryItemDTO {
+  id: string;
+  conversationId: string;
+  senderUserId: string;
+  recipientUserId: string;
+  text: string;
+  sentAt: string;
+  deliveredAt?: string | null;
+  readAt?: string | null;
+  clientMessageId?: string | null;
+}
+
+export async function getChatHistory(userA: string, userB: string, page = 0, pageSize = 50): Promise<ChatHistoryItemDTO[]> {
+  const response = await axios.get(`${CHAT_API_URL}/chat/history?userA=${encodeURIComponent(userA)}&userB=${encodeURIComponent(userB)}&page=${page}&pageSize=${pageSize}`, authConfig());
+  return response.data;
+}
