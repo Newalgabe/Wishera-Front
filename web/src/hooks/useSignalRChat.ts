@@ -4,7 +4,12 @@ import * as signalR from "@microsoft/signalr";
 
 export function useSignalRChat(currentUserId?: string | null, token?: string) {
   const [connected, setConnected] = useState(false);
+  const [connectionState, setConnectionState] = useState<string>('Disconnected');
   const connectionRef = useRef<signalR.HubConnection | null>(null);
+  const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const maxReconnectAttempts = 5;
 
   const hubUrl = useMemo(() => {
     const base = process.env.NEXT_PUBLIC_CHAT_HUB_URL || "http://localhost:5162/chat";
@@ -12,21 +17,127 @@ export function useSignalRChat(currentUserId?: string | null, token?: string) {
     return uid ? `${base}${base.includes("?") ? "&" : "?"}${uid}` : base;
   }, [currentUserId]);
 
-  useEffect(() => {
-    if (!hubUrl) return;
+  // Heartbeat mechanism to keep connection alive
+  const startHeartbeat = useCallback(() => {
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current);
+    }
+    
+    heartbeatIntervalRef.current = setInterval(async () => {
+      const connection = connectionRef.current;
+      if (connection && connection.state === signalR.HubConnectionState.Connected) {
+        try {
+          // Send a simple method to keep the connection alive
+          // Use a method that exists on the server or just check connection state
+          await connection.invoke("GetConnectionId");
+        } catch (error) {
+          console.warn('Heartbeat check failed:', error);
+          // If heartbeat fails, the connection might be dead, trigger reconnection
+          setConnected(false);
+          setConnectionState('Reconnecting');
+        }
+      }
+    }, 30000); // Send heartbeat every 30 seconds
+  }, []);
+
+  const stopHeartbeat = useCallback(() => {
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current);
+      heartbeatIntervalRef.current = null;
+    }
+  }, []);
+
+  // Enhanced reconnection logic with exponential backoff
+  const attemptReconnect = useCallback(async () => {
+    if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+      console.warn('Max reconnection attempts reached');
+      setConnectionState('Failed');
+      return;
+    }
+
+    const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000);
+    reconnectAttemptsRef.current++;
+    
+    setConnectionState('Reconnecting');
+    console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts})`);
+    
+    reconnectTimeoutRef.current = setTimeout(async () => {
+      try {
+        const connection = connectionRef.current;
+        if (connection) {
+          await connection.start();
+          setConnected(true);
+          setConnectionState('Connected');
+          reconnectAttemptsRef.current = 0;
+          startHeartbeat();
+        }
+      } catch (error) {
+        console.error('Reconnection failed:', error);
+        attemptReconnect();
+      }
+    }, delay);
+  }, [startHeartbeat]);
+
+  const createConnection = useCallback(() => {
+    if (!hubUrl) return null;
+    
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(hubUrl, {
         accessTokenFactory: () => token || localStorage.getItem("token") || "",
-        // Let SignalR negotiate the best available transport (WebSockets/ServerSentEvents/LongPolling)
+        transport: signalR.HttpTransportType.WebSockets, // Prefer WebSockets for better performance
+        skipNegotiation: false,
       })
-      .withAutomaticReconnect([0, 1000, 2000, 5000])
-      .configureLogging(signalR.LogLevel.Information)
+      .withAutomaticReconnect({
+        nextRetryDelayInMilliseconds: (retryContext) => {
+          // Custom retry logic with exponential backoff
+          const delay = Math.min(1000 * Math.pow(2, retryContext.previousRetryCount), 30000);
+          console.log(`Auto-reconnect attempt ${retryContext.previousRetryCount + 1}, delay: ${delay}ms`);
+          return delay;
+        }
+      })
+      .configureLogging(signalR.LogLevel.Warning) // Reduce log noise
       .build();
 
-    connectionRef.current = connection;
+    // Enhanced connection event handlers
+    connection.onclose((error) => {
+      console.log('Connection closed:', error);
+      setConnected(false);
+      setConnectionState('Disconnected');
+      stopHeartbeat();
+      
+      if (error) {
+        console.error('Connection closed with error:', error);
+        // Only attempt manual reconnect if auto-reconnect fails
+        if (reconnectAttemptsRef.current < maxReconnectAttempts) {
+          attemptReconnect();
+        }
+      }
+    });
 
-    connection.onclose(() => setConnected(false));
-    connection.onreconnected(() => setConnected(true));
+    connection.onreconnecting((error) => {
+      console.log('Connection reconnecting:', error);
+      setConnectionState('Reconnecting');
+      stopHeartbeat();
+    });
+
+    connection.onreconnected((connectionId) => {
+      console.log('Connection reconnected:', connectionId);
+      setConnected(true);
+      setConnectionState('Connected');
+      reconnectAttemptsRef.current = 0;
+      startHeartbeat();
+    });
+
+    return connection;
+  }, [hubUrl, token, startHeartbeat, stopHeartbeat, attemptReconnect]);
+
+  useEffect(() => {
+    if (!hubUrl) return;
+    
+    const connection = createConnection();
+    if (!connection) return;
+    
+    connectionRef.current = connection;
 
     let cancelled = false;
     (async () => {
@@ -38,22 +149,34 @@ export function useSignalRChat(currentUserId?: string | null, token?: string) {
           return;
         }
         setConnected(true);
-      } catch {
+        setConnectionState('Connected');
+        startHeartbeat();
+      } catch (error) {
+        console.error('Failed to start connection:', error);
         if (!cancelled) {
           setConnected(false);
+          setConnectionState('Failed');
         }
       }
     })();
 
     return () => {
       cancelled = true;
+      stopHeartbeat();
+      
+      // Clear any pending reconnection attempts
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+      
       // Avoid stopping while the connection is still starting to prevent race error
       if (connection.state === signalR.HubConnectionState.Connected) {
         connection.stop().catch(() => {});
       }
       connectionRef.current = null;
     };
-  }, [hubUrl, token]);
+  }, [hubUrl, token, createConnection, startHeartbeat, stopHeartbeat]);
 
   const getConnectionId = useCallback(async () => {
     return connectionRef.current?.invoke<string>("GetConnectionId");
@@ -130,6 +253,7 @@ export function useSignalRChat(currentUserId?: string | null, token?: string) {
 
   return {
     connected,
+    connectionState,
     getConnectionId,
     addUser,
     sendToAll,
