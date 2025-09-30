@@ -1,8 +1,8 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useSignalRChat } from "@/hooks/useSignalRChat";
 import { useRouter } from "next/navigation";
-import { createChatToken, createOrJoinChatChannel, sendChatMessage, searchUsers, getFollowing, getChatHistory, editChatMessage, deleteChatMessage, type UserSearchDTO } from "../api";
+import { createChatToken, createOrJoinChatChannel, sendChatMessage, searchUsers, getFollowing, getChatHistory, editChatMessage, deleteChatMessage, getConversationWallpaper, setConversationWallpaper, type UserSearchDTO } from "../api";
 import { 
   PaperAirplaneIcon, 
   PlusIcon, 
@@ -130,6 +130,55 @@ export default function ChatPage() {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [emojiMenuForId, setEmojiMenuForId] = useState<string | null>(null);
   const REACTIONS = ["👍","❤️","😂","🎉","👏","😮","😢","🔥","✅","❌","👌","😁","🙏","🤔","😎" ,"💖", "🍑", "🍆", "🍒"];
+
+  // Chat wallpaper state
+  const DEFAULT_WALLPAPERS: string[] = useMemo(() => ([
+    // A few tasteful, lightweight Unsplash patterns/textures
+    'https://images.unsplash.com/photo-1526318472351-c75fcf070305?q=80&w=1200&auto=format&fit=crop', // paper
+    'https://images.unsplash.com/photo-1520975922284-92da0b5c83e8?q=80&w=1200&auto=format&fit=crop', // gradient fabric
+    'https://images.unsplash.com/photo-1504805572947-34fad45aed93?q=80&w=1200&auto=format&fit=crop', // abstract shapes
+    'https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=1200&auto=format&fit=crop', // subtle waves
+    'https://images.unsplash.com/photo-1545239351-1141bd82e8a6?q=80&w=1200&auto=format&fit=crop', // soft triangles
+  ]), []);
+  const [wallpaper, setWallpaper] = useState<string | null>(null);
+  const [showWallpaperPicker, setShowWallpaperPicker] = useState(false);
+
+  const getWallpaperKey = useCallback((me: string | null | undefined, peer: string | null | undefined) => {
+    const a = (me || "").trim();
+    const b = (peer || "").trim();
+    return a && b ? `chatWallpaper:${a}:${b}` : null;
+  }, []);
+
+  const loadWallpaperForContact = useCallback((me: string | null | undefined, peer: string | null | undefined) => {
+    try {
+      const key = getWallpaperKey(me, peer);
+      if (!key) return null;
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  }, [getWallpaperKey]);
+
+  const saveWallpaperForContact = useCallback((me: string | null | undefined, peer: string | null | undefined, url: string | null) => {
+    try {
+      const key = getWallpaperKey(me, peer);
+      if (!key) return;
+      if (url) localStorage.setItem(key, url);
+      else localStorage.removeItem(key);
+    } catch {}
+  }, [getWallpaperKey]);
+
+  const handleSelectWallpaper = async (url: string | null) => {
+    setWallpaper(url);
+    saveWallpaperForContact(currentUserId, selectedContact?.id, url);
+    // Persist to server (best effort)
+    try {
+      if (currentUserId && selectedContact?.id) {
+        await setConversationWallpaper(currentUserId, selectedContact.id, url);
+      }
+    } catch {}
+    setShowWallpaperPicker(false);
+  };
 
   // Connection status indicator
   const getConnectionStatusColor = (state: string) => {
@@ -489,6 +538,22 @@ export default function ChatPage() {
     
     const conversationId = getConversationId(contact.id);
     setCurrentConversationId(conversationId);
+    // Load wallpaper for this contact (per-conversation)
+    // Load wallpaper locally first, then from server
+    const localWp = loadWallpaperForContact(currentUserId, contact.id);
+    setWallpaper(localWp || null);
+    (async () => {
+      try {
+        if (currentUserId && contact.id) {
+          const res = await getConversationWallpaper(currentUserId, contact.id);
+          const serverWp = (res && typeof res.url === 'string') ? res.url : null;
+          if (serverWp) {
+            setWallpaper(serverWp);
+            saveWallpaperForContact(currentUserId, contact.id, serverWp);
+          }
+        }
+      } catch {}
+    })();
     
     try { 
       localStorage.setItem('chatSelectedContactId', contact.id); 
@@ -571,6 +636,21 @@ export default function ChatPage() {
     setSelectedContact(contact);
     setShowSearchResults(false);
     setSearchQuery("");
+    // Load wallpaper when selecting from search results
+    const localWp = loadWallpaperForContact(currentUserId, user.id);
+    setWallpaper(localWp || null);
+    (async () => {
+      try {
+        if (currentUserId && user.id) {
+          const res = await getConversationWallpaper(currentUserId, user.id);
+          const serverWp = (res && typeof res.url === 'string') ? res.url : null;
+          if (serverWp) {
+            setWallpaper(serverWp);
+            saveWallpaperForContact(currentUserId, user.id, serverWp);
+          }
+        }
+      } catch {}
+    })();
   };
 
   return (
@@ -722,7 +802,7 @@ export default function ChatPage() {
         {selectedContact ? (
           <>
             {/* Chat Header */}
-            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 p-6 shadow-lg">
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 p-6 shadow-lg relative z-20">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <button
@@ -769,6 +849,42 @@ export default function ChatPage() {
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowWallpaperPicker(v => !v)}
+                      className="p-3 rounded-2xl hover:bg-gradient-to-r hover:from-indigo-500 hover:to-purple-600 text-gray-600 dark:text-gray-400 hover:text-white transition-all duration-200 hover:scale-105 shadow-lg"
+                      title="Change wallpaper"
+                    >
+                      🎨
+                    </button>
+                    {showWallpaperPicker && (
+                      <div className="absolute right-0 mt-2 w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-2xl p-3 z-50 pointer-events-auto">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Chat Wallpaper</span>
+                          <button
+                            className="text-xs text-red-500 hover:text-red-600"
+                            onClick={() => handleSelectWallpaper(null)}
+                          >
+                            Reset
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          {DEFAULT_WALLPAPERS.map(url => (
+                            <button
+                              key={url}
+                              onClick={() => handleSelectWallpaper(url)}
+                              className={`relative rounded-xl overflow-hidden aspect-[4/3] border ${wallpaper === url ? 'border-indigo-500 ring-2 ring-indigo-300' : 'border-gray-200/50 dark:border-gray-700/50'}`}
+                            >
+                              <img src={url} alt="Wallpaper" className="w-full h-full object-cover" />
+                              {wallpaper === url && (
+                                <div className="absolute inset-0 bg-indigo-500/10"></div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <button className="p-3 rounded-2xl hover:bg-gradient-to-r hover:from-green-500 hover:to-emerald-600 text-gray-600 dark:text-gray-400 hover:text-white transition-all duration-200 hover:scale-105 shadow-lg">
                     <PhoneIcon className="w-5 h-5" />
                   </button>
@@ -783,10 +899,19 @@ export default function ChatPage() {
             </div>
 
             {/* Messages */}
-            <div 
-              ref={listRef}
-              className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-transparent to-gray-50/30 dark:to-gray-900/30 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent"
-            >
+            <div className="relative flex-1 z-0">
+              {/* Background layer */}
+              <div
+                className="absolute inset-0 -z-10 bg-center bg-cover pointer-events-none"
+                style={wallpaper ? { backgroundImage: `url(${wallpaper})` } : {}}
+              />
+              {/* Soft overlay for readability */}
+              <div className="absolute inset-0 -z-10 bg-gradient-to-b from-white/70 via-white/40 to-white/70 dark:from-gray-900/70 dark:via-gray-900/50 dark:to-gray-900/70 pointer-events-none" />
+
+              <div 
+                ref={listRef}
+                className="h-full overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent"
+              >
               {currentMessages.length === 0 ? (
                 <div className="text-center text-gray-500 dark:text-gray-400 mt-12">
                   <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl">
@@ -894,6 +1019,7 @@ export default function ChatPage() {
                   </div>
                 ))
               )}
+              </div>
             </div>
 
             {/* Message Input */}

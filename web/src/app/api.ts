@@ -468,3 +468,14 @@ export async function deleteChatMessage(messageId: string): Promise<{ deleted: b
   const response = await axios.post(`${CHAT_API_URL}/chat/message/delete`, { messageId }, authConfig());
   return response.data;
 }
+
+// Chat preferences (e.g., per-conversation wallpaper)
+export async function getConversationWallpaper(meUserId: string, peerUserId: string): Promise<{ url: string | null }> {
+  const response = await axios.get(`${CHAT_API_URL}/chat/preferences/wallpaper?me=${encodeURIComponent(meUserId)}&peer=${encodeURIComponent(peerUserId)}`, authConfig());
+  return response.data;
+}
+
+export async function setConversationWallpaper(meUserId: string, peerUserId: string, url: string | null): Promise<{ saved: boolean }> {
+  const response = await axios.post(`${CHAT_API_URL}/chat/preferences/wallpaper`, { me: meUserId, peer: peerUserId, url }, authConfig());
+  return response.data;
+}
