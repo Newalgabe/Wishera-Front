@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useSignalRChat } from "@/hooks/useSignalRChat";
 import { useRouter } from "next/navigation";
-import { createChatToken, createOrJoinChatChannel, sendChatMessage, searchUsers, getFollowing, getChatHistory, editChatMessage, deleteChatMessage, getConversationWallpaper, setConversationWallpaper, type UserSearchDTO } from "../api";
+import { createChatToken, createOrJoinChatChannel, sendChatMessage, searchUsers, getFollowing, getChatHistory, editChatMessage, deleteChatMessage, getConversationWallpaper, setConversationWallpaper, getWallpaperCatalog, getConversationWallpaperPref, setConversationWallpaperPref, chatAssetUrl, type WallpaperCatalogItemDTO, type UserSearchDTO } from "../api";
 import { 
   PaperAirplaneIcon, 
   PlusIcon, 
@@ -141,6 +141,9 @@ export default function ChatPage() {
     'https://images.unsplash.com/photo-1545239351-1141bd82e8a6?q=80&w=1200&auto=format&fit=crop', // soft triangles
   ]), []);
   const [wallpaper, setWallpaper] = useState<string | null>(null);
+  const [wallpaperId, setWallpaperId] = useState<string | null>(null);
+  const [opacity, setOpacity] = useState<number>(0.25);
+  const [catalog, setCatalog] = useState<WallpaperCatalogItemDTO[] | null>(null);
   const [showWallpaperPicker, setShowWallpaperPicker] = useState(false);
 
   const getWallpaperKey = useCallback((me: string | null | undefined, peer: string | null | undefined) => {
@@ -168,16 +171,16 @@ export default function ChatPage() {
     } catch {}
   }, [getWallpaperKey]);
 
-  const handleSelectWallpaper = async (url: string | null) => {
+  const handleApplyWallpaper = async (id: string | null, url: string | null, nextOpacity?: number) => {
+    if (nextOpacity !== undefined) setOpacity(nextOpacity);
+    setWallpaperId(id);
     setWallpaper(url);
     saveWallpaperForContact(currentUserId, selectedContact?.id, url);
-    // Persist to server (best effort)
     try {
       if (currentUserId && selectedContact?.id) {
-        await setConversationWallpaper(currentUserId, selectedContact.id, url);
+        await setConversationWallpaperPref({ me: currentUserId, peer: selectedContact.id, wallpaperId: id, opacity: nextOpacity ?? opacity });
       }
     } catch {}
-    setShowWallpaperPicker(false);
   };
 
   // Connection status indicator
@@ -542,14 +545,37 @@ export default function ChatPage() {
     // Load wallpaper locally first, then from server
     const localWp = loadWallpaperForContact(currentUserId, contact.id);
     setWallpaper(localWp || null);
+    setWallpaperId(null);
+    setOpacity(0.25);
+    // Load catalog once
+    (async () => {
+      try {
+        if (!catalog) {
+          const items = await getWallpaperCatalog();
+          setCatalog(items);
+        }
+      } catch {}
+    })();
     (async () => {
       try {
         if (currentUserId && contact.id) {
-          const res = await getConversationWallpaper(currentUserId, contact.id);
-          const serverWp = (res && typeof res.url === 'string') ? res.url : null;
-          if (serverWp) {
-            setWallpaper(serverWp);
-            saveWallpaperForContact(currentUserId, contact.id, serverWp);
+          // Prefer new pref API (id + opacity); fallback to legacy url API
+          try {
+            const pref = await getConversationWallpaperPref(currentUserId, contact.id);
+            setWallpaperId(pref.wallpaperId);
+            setOpacity(typeof pref.opacity === 'number' ? pref.opacity : 0.25);
+            if (pref.wallpaperId) {
+              const all = catalog || [];
+              const found = all.find(c => c.id === pref.wallpaperId);
+              if (found) setWallpaper(chatAssetUrl(found.previewUrl));
+            }
+          } catch {
+            const res = await getConversationWallpaper(currentUserId, contact.id);
+            const serverWp = (res && typeof res.url === 'string') ? res.url : null;
+            if (serverWp) {
+              setWallpaper(serverWp);
+              saveWallpaperForContact(currentUserId, contact.id, serverWp);
+            }
           }
         }
       } catch {}
@@ -798,7 +824,7 @@ export default function ChatPage() {
       )}
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/30 dark:from-gray-900 dark:via-slate-900 dark:to-gray-900 relative z-0">
+      <div className="flex-1 min-h-0 flex flex-col bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/30 dark:from-gray-900 dark:via-slate-900 dark:to-gray-900 relative z-0">
         {selectedContact ? (
           <>
             {/* Chat Header */}
@@ -863,24 +889,44 @@ export default function ChatPage() {
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Chat Wallpaper</span>
                           <button
                             className="text-xs text-red-500 hover:text-red-600"
-                            onClick={() => handleSelectWallpaper(null)}
+                            onClick={() => handleApplyWallpaper(null, null, 0.25)}
                           >
                             Reset
                           </button>
                         </div>
                         <div className="grid grid-cols-3 gap-2">
-                          {DEFAULT_WALLPAPERS.map(url => (
+                          {(catalog || []).map(item => (
                             <button
-                              key={url}
-                              onClick={() => handleSelectWallpaper(url)}
-                              className={`relative rounded-xl overflow-hidden aspect-[4/3] border ${wallpaper === url ? 'border-indigo-500 ring-2 ring-indigo-300' : 'border-gray-200/50 dark:border-gray-700/50'}`}
+                              key={item.id}
+                              onClick={() => handleApplyWallpaper(item.id, chatAssetUrl(item.previewUrl))}
+                              className={`relative rounded-xl overflow-hidden aspect-[4/3] border ${wallpaperId === item.id ? 'border-indigo-500 ring-2 ring-indigo-300' : 'border-gray-200/50 dark:border-gray-700/50'}`}
+                              title={`${item.name} — ${item.description}`}
                             >
-                              <img src={url} alt="Wallpaper" className="w-full h-full object-cover" />
-                              {wallpaper === url && (
+                              <img src={chatAssetUrl(item.previewUrl)} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
+                              <span className="absolute bottom-0 left-0 right-0 text-[10px] sm:text-xs text-gray-800 bg-white/70 dark:bg-gray-900/60 dark:text-gray-200 px-1 py-0.5 truncate">{item.name}</span>
+                              {wallpaperId === item.id && (
                                 <div className="absolute inset-0 bg-indigo-500/10"></div>
                               )}
                             </button>
                           ))}
+                        </div>
+                        <div className="mt-3">
+                          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Opacity</label>
+                          <input
+                            type="range"
+                            min={0}
+                            max={100}
+                            value={Math.round(opacity * 100)}
+                            onChange={async (e) => {
+                              const v = Math.max(0, Math.min(100, Number(e.target.value)));
+                              const next = v / 100;
+                              setOpacity(next);
+                              if (currentUserId && selectedContact?.id) {
+                                try { await setConversationWallpaperPref({ me: currentUserId, peer: selectedContact.id, wallpaperId, opacity: next }); } catch {}
+                              }
+                            }}
+                            className="w-full"
+                          />
                         </div>
                       </div>
                     )}
@@ -899,14 +945,20 @@ export default function ChatPage() {
             </div>
 
             {/* Messages */}
-            <div className="relative flex-1 z-0">
+            <div className="relative flex-1 min-h-0 z-0">
               {/* Background layer */}
               <div
-                className="absolute inset-0 -z-10 bg-center bg-cover pointer-events-none"
-                style={wallpaper ? { backgroundImage: `url(${wallpaper})` } : {}}
+                className="absolute inset-0 -z-10 bg-no-repeat pointer-events-none"
+                style={wallpaper ? { backgroundImage: `url(${wallpaper})`, backgroundPosition: 'center center', backgroundSize: 'cover' } : {}}
               />
-              {/* Soft overlay for readability */}
-              <div className="absolute inset-0 -z-10 bg-gradient-to-b from-white/70 via-white/40 to-white/70 dark:from-gray-900/70 dark:via-gray-900/50 dark:to-gray-900/70 pointer-events-none" />
+              {/* Overlay with adjustable opacity for readability */}
+              <div
+                className="absolute inset-0 -z-10 pointer-events-none"
+                style={{
+                  background: `linear-gradient(to bottom, rgba(255,255,255,${opacity}), rgba(255,255,255,${Math.min(1, opacity + 0.2)}))`,
+                  // Dark mode will naturally be darker; if needed, detect prefers-color-scheme
+                }}
+              />
 
               <div 
                 ref={listRef}

@@ -117,6 +117,37 @@ export default function LoginPage() {
           </Link>
         </div>
         
+        <div className="mt-6 grid gap-3">
+  <a
+    href={`${
+      process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:5219/api'
+    }/ExternalAuth/login/Google`}
+    className="flex items-center justify-center gap-2 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 font-semibold hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors text-center"
+  >
+    <img
+      src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png"
+      alt="Google logo"
+      className="h-5 w-5"
+    />
+    Continue with Google
+  </a>
+
+  <a
+    href={`${
+      process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:5219/api'
+    }/ExternalAuth/login/Twitter`}
+    className="flex items-center justify-center gap-2 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 font-semibold hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors text-center"
+  >
+    <img
+      src="https://pngimg.com/d/x_logo_PNG14.png"
+      alt="X logo"
+      className="h-5 w-5"
+    />
+    Continue with X
+  </a>
+</div>
+
+
         <div className="mt-6 text-center text-gray-500 dark:text-gray-400 text-sm transition-colors duration-300">
           {t('auth.dontHaveAccount')}{' '}
           <Link href="/register" className="text-indigo-500 dark:text-purple-400 hover:underline font-medium transition-colors duration-300">{t('navigation.signup')}</Link>

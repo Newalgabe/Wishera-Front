@@ -479,3 +479,37 @@ export async function setConversationWallpaper(meUserId: string, peerUserId: str
   const response = await axios.post(`${CHAT_API_URL}/chat/preferences/wallpaper`, { me: meUserId, peer: peerUserId, url }, authConfig());
   return response.data;
 }
+
+// Wallpaper catalog + preferences (id/opacity-based)
+export interface WallpaperCatalogItemDTO {
+  id: string;
+  name: string;
+  description: string;
+  category: 'abstract' | 'nature' | 'minimal' | 'geometric';
+  supportsDark: boolean;
+  supportsLight: boolean;
+  previewUrl: string;
+}
+
+export async function getWallpaperCatalog(): Promise<WallpaperCatalogItemDTO[]> {
+  const response = await axios.get(`${CHAT_API_URL}/chat/wallpapers`, authConfig());
+  return response.data;
+}
+
+export interface WallpaperPrefDTO { wallpaperId: string | null; opacity: number }
+export async function getConversationWallpaperPref(meUserId: string, peerUserId: string): Promise<WallpaperPrefDTO> {
+  const response = await axios.get(`${CHAT_API_URL}/chat/preferences/wallpaper?me=${encodeURIComponent(meUserId)}&peer=${encodeURIComponent(peerUserId)}`, authConfig());
+  return response.data;
+}
+
+export async function setConversationWallpaperPref(params: { me: string; peer: string; wallpaperId: string | null; opacity?: number }): Promise<{ saved: boolean }>{
+  const response = await axios.post(`${CHAT_API_URL}/chat/preferences/wallpaper`, params, authConfig());
+  return response.data;
+}
+
+// Build absolute URLs for chat-server static assets (e.g., /wallpapers/*.svg)
+export function chatAssetUrl(relativePath: string): string {
+  const base = (CHAT_API_URL || '').replace(/\/?api$/i, '');
+  const path = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+  return `${base}${path}`;
+}
