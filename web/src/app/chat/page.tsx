@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useSignalRChat } from "@/hooks/useSignalRChat";
-import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "next/navigation";
 import { createChatToken, createOrJoinChatChannel, sendChatMessage, searchUsers, getFollowing, getChatHistory, editChatMessage, deleteChatMessage, getConversationWallpaper, setConversationWallpaper, getWallpaperCatalog, getConversationWallpaperPref, setConversationWallpaperPref, chatAssetUrl, uploadChatMedia, type WallpaperCatalogItemDTO, type UserSearchDTO } from "../api";
 import { 
@@ -37,7 +36,6 @@ type ChatContact = {
 };
 
 export default function ChatPage() {
-  const { t } = useLanguage();
   const router = useRouter();
   const [channelType, setChannelType] = useState("messaging");
   const [channelId, setChannelId] = useState("");
@@ -134,6 +132,99 @@ export default function ChatPage() {
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const REACTIONS = ["👍","❤️","😂","🎉","👏","😮","😢","🔥","✅","❌","👌","😁","🙏","🤔","😎" ,"💖", "🍑", "🍆", "🍒"];
 
+  // Render message content: support markdown image ![...](url) and @url shorthand
+  const renderMessageContent = useCallback((text: string) => {
+    const mdImg = text.match(/!\[[^\]]*\]\((https?:[^)\s]+)\)/i);
+    if (mdImg && mdImg[1]) {
+      const url = mdImg[1];
+      return (
+        <img
+          src={url}
+          alt="image"
+          className="max-w-full rounded-xl shadow-md"
+          loading="lazy"
+        />
+      );
+    }
+    // If the whole message is just a single URL, try to embed
+    const singleUrl = text.trim().match(/^https?:[^\s]+$/i);
+    if (singleUrl) {
+      const url = singleUrl[0];
+      const lower = url.toLowerCase();
+      const isImage = /(\.png|\.jpg|\.jpeg|\.gif|\.webp|\.avif)(\?|#|$)/.test(lower);
+      const isVideo = /(\.mp4|\.webm|\.ogg)(\?|#|$)/.test(lower);
+      if (isImage) {
+        return (
+          <img
+            src={url}
+            alt="image"
+            className="max-w-full rounded-xl shadow-md"
+            loading="lazy"
+          />
+        );
+      }
+      if (isVideo) {
+        return (
+          <video
+            src={url}
+            controls
+            preload="metadata"
+            className="max-w-full rounded-xl shadow-md"
+          />
+        );
+      }
+    }
+    const atUrlMatch = text.trim().match(/^@\s*(https?:[^\s]+)$/i);
+    if (atUrlMatch && atUrlMatch[1]) {
+      const url = atUrlMatch[1];
+      const lower = url.toLowerCase();
+      const isImage = /(\.png|\.jpg|\.jpeg|\.gif|\.webp|\.avif)(\?|#|$)/.test(lower);
+      const isVideo = /(\.mp4|\.webm|\.ogg)(\?|#|$)/.test(lower);
+      if (isImage) {
+        return (
+          <img
+            src={url}
+            alt="image"
+            className="max-w-full rounded-xl shadow-md"
+            loading="lazy"
+          />
+        );
+      }
+      if (isVideo) {
+        return (
+          <video
+            src={url}
+            controls
+            className="max-w-full rounded-xl shadow-md"
+          />
+        );
+      }
+      // Fallback to clickable link
+      return (
+        <a href={url} target="_blank" rel="noopener noreferrer" className="underline break-all">
+          {url}
+        </a>
+      );
+    }
+    // Linkify plain URLs in text minimally
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    if (urlRegex.test(text)) {
+      const parts = text.split(urlRegex);
+      return (
+        <span>
+          {parts.map((part, i) =>
+            urlRegex.test(part) ? (
+              <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="underline break-all">{part}</a>
+            ) : (
+              <span key={i}>{part}</span>
+            )
+          )}
+        </span>
+      );
+    }
+    return <>{text}</>;
+  }, []);
+
   // Chat wallpaper state
   const DEFAULT_WALLPAPERS: string[] = useMemo(() => ([
     // A few tasteful, lightweight Unsplash patterns/textures
@@ -199,11 +290,11 @@ export default function ChatPage() {
 
   const getConnectionStatusText = (state: string) => {
     switch (state) {
-      case 'Connected': return t('chat.connection.connected');
-      case 'Reconnecting': return t('chat.connection.reconnecting');
-      case 'Disconnected': return t('chat.connection.disconnected');
-      case 'Failed': return t('chat.connection.failed');
-      default: return t('chat.connection.unknown');
+      case 'Connected': return 'Connected';
+      case 'Reconnecting': return 'Reconnecting...';
+      case 'Disconnected': return 'Disconnected';
+      case 'Failed': return 'Connection Failed';
+      default: return 'Unknown';
     }
   };
 
@@ -217,7 +308,7 @@ export default function ChatPage() {
           id: user.id,
           name: user.username,
           avatar: user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.username)}`,
-          lastMessage: t('chat.startConversation'),
+          lastMessage: "Start a conversation!",
           lastMessageTime: "",
           unreadCount: 0,
           isOnline: false,
@@ -537,38 +628,6 @@ export default function ChatPage() {
     }
   };
 
-  function renderMessageContent(text: string) {
-    const urlRegex = /(https?:\/\/[^\s]+)/i;
-    const imageExt = /(\.png|\.jpg|\.jpeg|\.gif|\.webp)$/i;
-    const videoExt = /(\.mp4|\.webm|\.ogg)$/i;
-    // Markdown image: ![alt](url)
-    const mdImg = text.match(/^!\[[^\]]*\]\((https?:\/\/[^\s)]+)\)$/i);
-    if (mdImg) {
-      const src = mdImg[1];
-      return (
-        <img src={src} alt="image" className="max-w-xs md:max-w-sm lg:max-w-md rounded-xl shadow-md" />
-      );
-    }
-    const urlMatch = text.match(urlRegex);
-    if (urlMatch) {
-      const url = urlMatch[1];
-      if (imageExt.test(url)) {
-        return <img src={url} alt="image" className="max-w-xs md:max-w-sm lg:max-w-md rounded-xl shadow-md" />;
-      }
-      if (videoExt.test(url)) {
-        return (
-          <video src={url} controls className="max-w-xs md:max-w-sm lg:max-w-md rounded-xl shadow-md" />
-        );
-      }
-      return (
-        <a href={url} target="_blank" rel="noreferrer" className="underline break-all">
-          {url}
-        </a>
-      );
-    }
-    return <p className="leading-relaxed break-words whitespace-pre-wrap">{text}</p>;
-  }
-
   const handleContactSelect = (contact: ChatContact) => {
     setSelectedContact(contact);
     setShowSearchResults(false);
@@ -688,7 +747,7 @@ export default function ChatPage() {
       id: user.id,
       name: user.username,
       avatar: user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.username)}`,
-      lastMessage: t('chat.startConversation'),
+      lastMessage: "Start a conversation!",
       lastMessageTime: "",
       unreadCount: 0,
       isOnline: false,
@@ -722,8 +781,8 @@ export default function ChatPage() {
         <div className="p-6 border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-indigo-500 to-purple-600">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-white">{t('chat.sidebarTitle')}</h1>
-              <p className="text-indigo-100 text-sm mt-1">{t('chat.sidebarSubtitle')}</p>
+              <h1 className="text-2xl font-bold text-white">Messages</h1>
+              <p className="text-indigo-100 text-sm mt-1">Connect with your friends</p>
             </div>
             <button className="p-3 rounded-2xl bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-all duration-200 hover:scale-105 shadow-lg">
               <PlusIcon className="w-5 h-5" />
@@ -733,9 +792,9 @@ export default function ChatPage() {
           {/* Search */}
           <div className="relative">
             <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
+            <input
               type="text"
-                placeholder={t('chat.searchPlaceholder')}
+              placeholder="Search users..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 py-3 rounded-2xl border-0 bg-white/90 dark:bg-gray-700/90 backdrop-blur-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-white/50 focus:outline-none transition-all duration-200 shadow-lg"
@@ -754,7 +813,7 @@ export default function ChatPage() {
             <div className="p-4">
               <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
                 <MagnifyingGlassIcon className="w-4 h-4 mr-2" />
-                {t('chat.searchResults')}
+                Search Results
               </h3>
             </div>
             {searchResults.map((user) => (
@@ -781,7 +840,7 @@ export default function ChatPage() {
                     )}
                   </div>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    {user.isFollowing ? t('chat.following') : t('chat.notFollowing')}
+                    {user.isFollowing ? 'Following' : 'Not following'}
                   </p>
                 </div>
               </div>
@@ -796,15 +855,15 @@ export default function ChatPage() {
               <div className="w-20 h-20 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg">
                 <UserPlusIcon className="w-10 h-10 text-indigo-500 dark:text-indigo-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('chat.noContactsTitle')}</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t('chat.noContactsSubtitle')}</p>
+              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">No contacts yet</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Search for users to start conversations</p>
             </div>
           ) : (
             <>
               <div className="p-4 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800/50 dark:to-slate-800/50 border-b border-gray-200/50 dark:border-gray-700/50">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center">
                   <div className="w-2 h-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full mr-2"></div>
-                {t('chat.yourContacts')}
+                  Your Contacts
                 </h3>
               </div>
               {contacts.map((contact) => (
@@ -897,7 +956,7 @@ export default function ChatPage() {
                       <div className="flex items-center">
                         <div className={`w-2 h-2 rounded-full mr-2 ${selectedContact.isOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
                         <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                          {selectedContact.isOnline ? t('chat.online') : t('chat.offline')}
+                          {selectedContact.isOnline ? 'Online' : 'Offline'}
                         </p>
                       </div>
                       <div className="flex items-center">
@@ -914,19 +973,19 @@ export default function ChatPage() {
                     <button
                       onClick={() => setShowWallpaperPicker(v => !v)}
                       className="p-3 rounded-2xl hover:bg-gradient-to-r hover:from-indigo-500 hover:to-purple-600 text-gray-600 dark:text-gray-400 hover:text-white transition-all duration-200 hover:scale-105 shadow-lg"
-                      title={t('chat.wallpaper.buttonTitle')}
+                      title="Change wallpaper"
                     >
                       🎨
                     </button>
                     {showWallpaperPicker && (
                       <div className="absolute right-0 mt-2 w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-2xl p-3 z-50 pointer-events-auto">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('chat.wallpaper.panelTitle')}</span>
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Chat Wallpaper</span>
                           <button
                             className="text-xs text-red-500 hover:text-red-600"
                             onClick={() => handleApplyWallpaper(null, null, 0.25)}
                           >
-                            {t('chat.wallpaper.reset')}
+                            Reset
                           </button>
                         </div>
                         <div className="grid grid-cols-3 gap-2">
@@ -946,7 +1005,7 @@ export default function ChatPage() {
                           ))}
                         </div>
                         <div className="mt-3">
-                          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('chat.wallpaper.opacity')}</label>
+                          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Opacity</label>
                           <input
                             type="range"
                             min={0}
@@ -1004,8 +1063,8 @@ export default function ChatPage() {
                   <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl">
                     <PaperAirplaneIcon className="w-12 h-12 text-indigo-500 dark:text-indigo-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('chat.emptyState.noMessagesTitle')}</h3>
-                  <p className="text-sm">{t('chat.emptyState.noMessagesWith').replace('{{name}}', selectedContact.name)}</p>
+                  <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">No messages yet</h3>
+                  <p className="text-sm">Start a conversation with {selectedContact.name}!</p>
                 </div>
               ) : (
                 currentMessages.map((message) => (
@@ -1016,7 +1075,7 @@ export default function ChatPage() {
                     <div className={`max-w-[75%] ${message.userId === currentUserId ? 'order-2' : 'order-1'}`}>
                       {message.replyToMessageId && (
                         <div className="mb-2 text-xs text-gray-500 dark:text-gray-400 italic bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-lg">
-                          {t('chat.replyingTo')}
+                          Replying to...
                         </div>
                       )}
                       {message.userId !== currentUserId && (
@@ -1038,7 +1097,7 @@ export default function ChatPage() {
                             : 'bg-white/90 dark:bg-gray-800/90 text-gray-900 dark:text-white border border-gray-200/50 dark:border-gray-700/50 rounded-bl-lg'
                         }`}
                       >
-                        {renderMessageContent(message.text)}
+                        <div className="leading-relaxed break-words">{renderMessageContent(message.text)}</div>
                         {message.reactions && Object.keys(message.reactions).length > 0 && (
                           <div className="mt-3 flex gap-2 text-xs">
                             {Object.entries(message.reactions).map(([emoji, users]) => (
@@ -1060,7 +1119,7 @@ export default function ChatPage() {
                         <div className="mt-3 flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-200 relative">
                           {/* Reactions dropdown */}
                           <button onClick={() => setEmojiMenuForId(emojiMenuForId === message.id ? null : message.id)} className="text-xs cursor-pointer px-3 py-1.5 rounded-full border border-gray-300/50 dark:border-gray-600/50 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 transition-all duration-200">
-                            😊 {t('chat.actions.react')}
+                            😊 React
                           </button>
                           {emojiMenuForId === message.id && (
                             <div className={`absolute z-20 bottom-full mb-2 ${message.userId === currentUserId ? 'right-0' : 'left-0'} bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-2xl p-3 grid grid-cols-5 gap-2`}
@@ -1079,10 +1138,10 @@ export default function ChatPage() {
                             </div>
                           )}
                           <span className="mx-1 text-gray-400">|</span>
-                          <button onClick={() => setReplyTo(message)} className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors">{t('chat.actions.reply')}</button>
+                          <button onClick={() => setReplyTo(message)} className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors">Reply</button>
                           {message.userId === currentUserId && (
                             <>
-                              <button onClick={() => { setEditingId(message.id); setInput(message.text); inputRef.current?.focus(); }} className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">{t('chat.actions.edit')}</button>
+                              <button onClick={() => { setEditingId(message.id); setInput(message.text); inputRef.current?.focus(); }} className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">Edit</button>
                               <button onClick={async () => {
                                 try {
                                   await deleteChatMessage(message.id);
@@ -1097,7 +1156,7 @@ export default function ChatPage() {
                                     });
                                   }
                                 } catch {}
-                              }} className="text-xs text-red-600 hover:text-red-700 transition-colors">{t('chat.actions.delete')}</button>
+                              }} className="text-xs text-red-600 hover:text-red-700 transition-colors">Delete</button>
                             </>
                           )}
                         </div>
@@ -1116,16 +1175,16 @@ export default function ChatPage() {
                   <button
                     className="p-3 rounded-2xl hover:bg-gradient-to-r hover:from-indigo-500 hover:to-purple-600 text-gray-600 dark:text-gray-400 hover:text-white transition-all duration-200 shadow-lg"
                     onClick={() => setShowAttachMenu(v => !v)}
-                    title={t('chat.attach.title')}
+                    title="Attach"
                   >
                     <PlusIcon className="w-5 h-5" />
                   </button>
                   {showAttachMenu && (
                     <div className="absolute bottom-full mb-3 left-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-2xl p-3 z-50 w-56">
-                      <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 px-1">{t('chat.attach.title')}</div>
+                      <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 px-1">Attach</div>
                       <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
                         <span className="text-lg">📷</span>
-                        <span className="text-sm">{t('chat.attach.image')}</span>
+                        <span className="text-sm">Photo</span>
                         <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                           const f = e.target.files?.[0];
                           if (!f || !selectedContact) return;
@@ -1139,7 +1198,7 @@ export default function ChatPage() {
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
                         <span className="text-lg">🎬</span>
-                        <span className="text-sm">{t('chat.attach.video')}</span>
+                        <span className="text-sm">Video</span>
                         <input type="file" accept="video/*" className="hidden" onChange={async (e) => {
                           const f = e.target.files?.[0];
                           if (!f || !selectedContact) return;
@@ -1156,7 +1215,7 @@ export default function ChatPage() {
                 <input
                   ref={inputRef}
                   type="text"
-                  placeholder={t('chat.inputPlaceholder')}
+                  placeholder="Type a message..."
                   value={input}
                   onChange={onInputChange}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
@@ -1177,7 +1236,7 @@ export default function ChatPage() {
                     <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
                     <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                   </div>
-                  {t('chat.typing').replace('{{name}}', selectedContact?.name || '')}
+                  {selectedContact?.name} is typing...
                 </div>
               )}
               {quotePreview()}
@@ -1190,13 +1249,13 @@ export default function ChatPage() {
               <div className="w-32 h-32 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 dark:from-indigo-900/30 dark:via-purple-900/30 dark:to-pink-900/30 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl">
                 <PaperAirplaneIcon className="w-16 h-16 text-indigo-600 dark:text-indigo-400" />
               </div>
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">{t('chat.welcomeTitle')}</h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-8 text-lg leading-relaxed">{t('chat.welcomeSubtitle')}</p>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Welcome to Chat</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-8 text-lg leading-relaxed">Search for users or select a contact to start messaging and connect with your friends</p>
               <button
                 onClick={() => setShowSidebar(true)}
                 className="px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-2xl hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 hover:scale-105 shadow-xl font-semibold"
               >
-                {t('chat.openConversations')}
+                Open Conversations
               </button>
             </div>
           </div>
@@ -1208,7 +1267,7 @@ export default function ChatPage() {
         <div className="fixed top-4 right-4 z-50">
           <div className="bg-yellow-500/90 backdrop-blur-sm text-white px-4 py-2 rounded-2xl shadow-lg flex items-center space-x-2">
             <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-            <span className="text-sm font-medium">{t('chat.reconnecting')}</span>
+            <span className="text-sm font-medium">Reconnecting...</span>
           </div>
         </div>
       )}
@@ -1217,7 +1276,7 @@ export default function ChatPage() {
         <div className="fixed top-4 right-4 z-50">
           <div className="bg-red-500/90 backdrop-blur-sm text-white px-4 py-2 rounded-2xl shadow-lg flex items-center space-x-2">
             <div className="w-2 h-2 bg-white rounded-full"></div>
-            <span className="text-sm font-medium">{t('chat.connectionFailed')}</span>
+            <span className="text-sm font-medium">Connection Failed</span>
           </div>
         </div>
       )}
@@ -1230,13 +1289,13 @@ export default function ChatPage() {
               <div className="w-16 h-16 bg-gradient-to-br from-red-100 to-pink-100 dark:from-red-900/30 dark:to-pink-900/30 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <span className="text-2xl">⚠️</span>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">{t('chat.errorTitle')}</h3>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Oops! Something went wrong</h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">{error}</p>
               <button
                 onClick={() => setError(null)}
                 className="w-full px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-2xl hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 hover:scale-105 shadow-lg font-semibold"
               >
-                {t('chat.gotIt')}
+                Got it
               </button>
             </div>
           </div>

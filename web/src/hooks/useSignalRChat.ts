@@ -84,8 +84,8 @@ export function useSignalRChat(currentUserId?: string | null, token?: string) {
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(hubUrl, {
         accessTokenFactory: () => token || localStorage.getItem("token") || "",
-        transport: signalR.HttpTransportType.WebSockets,
-        skipNegotiation: true,
+        transport: signalR.HttpTransportType.WebSockets, // Prefer WebSockets for better performance
+        skipNegotiation: false,
       })
       .withAutomaticReconnect({
         nextRetryDelayInMilliseconds: (retryContext) => {

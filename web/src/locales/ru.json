@@ -307,8 +307,6 @@
       "nameDesc": "Название Я-А"
     },
     "noGiftsYet": "Подарков пока нет. Используйте панель 'Добавить подарок' выше.",
-    "noFeedTitle": "Нет постов для отображения",
-    "noFeedSubtitle": "Подпишитесь или добавьте друзей, чтобы видеть их списки желаний здесь.",
     "noImage": "Нет изображения",
     "by": "от",
     "hoursAgo": "часов назад",
@@ -360,59 +358,5 @@
     "unfollowedSuccessfully": "Успешно отписались",
     "failedToFollow": "Не удалось подписаться/отписаться",
     "failedToCopyLink": "Не удалось скопировать ссылку"
-  }
-  ,
-  "chat": {
-    "sidebarTitle": "Сообщения",
-    "sidebarSubtitle": "Общайтесь с друзьями",
-    "searchPlaceholder": "Поиск пользователей...",
-    "searchResults": "Результаты поиска",
-    "yourContacts": "Ваши контакты",
-    "noContactsTitle": "Пока нет контактов",
-    "noContactsSubtitle": "Найдите пользователей, чтобы начать общение",
-    "following": "Подписки",
-    "notFollowing": "Не подписаны",
-    "startConversation": "Начните беседу!",
-    "welcomeTitle": "Добро пожаловать в Чат",
-    "welcomeSubtitle": "Найдите пользователей или выберите контакт, чтобы начать переписку и общение с друзьями",
-    "openConversations": "Открыть диалоги",
-    "online": "В сети",
-    "offline": "Не в сети",
-    "connection": {
-      "connected": "Подключено",
-      "reconnecting": "Повторное подключение...",
-      "disconnected": "Отключено",
-      "failed": "Сбой подключения",
-      "unknown": "Неизвестно"
-    },
-    "wallpaper": {
-      "buttonTitle": "Изменить обои",
-      "panelTitle": "Обои чата",
-      "reset": "Сбросить",
-      "opacity": "Непрозрачность"
-    },
-    "emptyState": {
-      "noMessagesTitle": "Сообщений пока нет",
-      "noMessagesWith": "Начните беседу с {{name}}!"
-    },
-    "replyingTo": "Ответ на:",
-    "cancel": "Отмена",
-    "inputPlaceholder": "Напишите сообщение...",
-    "typing": "{{name}} печатает...",
-    "reconnecting": "Повторное подключение...",
-    "connectionFailed": "Сбой подключения",
-    "errorTitle": "Упс! Что-то пошло не так",
-    "gotIt": "Понятно",
-    "attach": {
-      "title": "Прикрепить",
-      "image": "Фото",
-      "video": "Видео"
-    },
-    "actions": {
-      "react": "Реакция",
-      "reply": "Ответить",
-      "edit": "Редактировать",
-      "delete": "Удалить"
-    }
   }
 }

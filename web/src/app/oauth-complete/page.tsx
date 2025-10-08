@@ -1,32 +1,34 @@
 "use client";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 
 export default function OAuthCompletePage() {
-  const router = useRouter();
+  const [message, setMessage] = useState("Completing sign-in...");
 
   useEffect(() => {
+    // This page is optional; backend currently returns JSON on callback.
+    // If backend switches to redirect here with a token, parse and store it.
     const url = new URL(window.location.href);
     const token = url.searchParams.get("token");
-    const userId = url.searchParams.get("userId");
-    const username = url.searchParams.get("username");
-
     if (token) {
       localStorage.setItem("token", token);
+      setMessage("Signed in successfully. Redirecting to dashboard...");
+      setTimeout(() => {
+        window.location.href = "/dashboard";
+      }, 1000);
+    } else {
+      setMessage("You can close this window and return to the app.");
     }
-    if (userId) {
-      localStorage.setItem("userId", userId);
-    }
-    if (username) {
-      localStorage.setItem("username", username);
-    }
-
-    router.replace("/dashboard");
-  }, [router]);
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <p>Completing sign-in…</p>
+      <div className="p-6 rounded-lg border">
+        <p>{message}</p>
+        <div className="mt-4">
+          <Link href="/login" className="text-blue-600 underline">Back to login</Link>
+        </div>
+      </div>
     </div>
   );
 }

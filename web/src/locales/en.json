@@ -27,8 +27,7 @@
     "ok": "OK",
     "done": "Done",
     "warning": "Warning",
-    "info": "Information",
-    "scroll": "Scroll"
+    "info": "Information"
   },
   "navigation": {
     "home": "Home",
@@ -319,8 +318,6 @@
       "nameDesc": "Name Z-A"
     },
     "noGiftsYet": "No gifts yet. Use the Add Gift panel above to create your first one.",
-    "noFeedTitle": "No posts to show",
-    "noFeedSubtitle": "Follow people or add friends to see their wishlists here.",
     "noImage": "No image",
     "by": "by",
     "hoursAgo": "hours ago",
@@ -330,7 +327,7 @@
     "deleteWishlist": "Delete Wishlist",
     "deleteWishlistConfirm": "Are you sure you want to delete",
     "deleteWishlistWarning": "This action cannot be undone.",
-    "titleLabel": "Title",
+    "title": "Title",
     "description": "Description",
     "publicWishlist": "Public Wishlist",
     "viewDetails": "View Details",
@@ -372,59 +369,5 @@
     "unfollowedSuccessfully": "Unfollowed successfully",
     "failedToFollow": "Failed to follow/unfollow user",
     "failedToCopyLink": "Failed to copy link"
-  }
-  ,
-  "chat": {
-    "sidebarTitle": "Messages",
-    "sidebarSubtitle": "Connect with your friends",
-    "searchPlaceholder": "Search users...",
-    "searchResults": "Search Results",
-    "yourContacts": "Your Contacts",
-    "noContactsTitle": "No contacts yet",
-    "noContactsSubtitle": "Search for users to start conversations",
-    "following": "Following",
-    "notFollowing": "Not following",
-    "startConversation": "Start a conversation!",
-    "welcomeTitle": "Welcome to Chat",
-    "welcomeSubtitle": "Search for users or select a contact to start messaging and connect with your friends",
-    "openConversations": "Open Conversations",
-    "online": "Online",
-    "offline": "Offline",
-    "connection": {
-      "connected": "Connected",
-      "reconnecting": "Reconnecting...",
-      "disconnected": "Disconnected",
-      "failed": "Connection Failed",
-      "unknown": "Unknown"
-    },
-    "wallpaper": {
-      "buttonTitle": "Change wallpaper",
-      "panelTitle": "Chat Wallpaper",
-      "reset": "Reset",
-      "opacity": "Opacity"
-    },
-    "emptyState": {
-      "noMessagesTitle": "No messages yet",
-      "noMessagesWith": "Start a conversation with {{name}}!"
-    },
-    "replyingTo": "Replying to:",
-    "cancel": "Cancel",
-    "inputPlaceholder": "Type a message...",
-    "typing": "{{name}} is typing...",
-    "reconnecting": "Reconnecting...",
-    "connectionFailed": "Connection Failed",
-    "errorTitle": "Oops! Something went wrong",
-    "gotIt": "Got it",
-    "attach": {
-      "title": "Attach",
-      "image": "Photo",
-      "video": "Video"
-    },
-    "actions": {
-      "react": "React",
-      "reply": "Reply",
-      "edit": "Edit",
-      "delete": "Delete"
-    }
   }
 }

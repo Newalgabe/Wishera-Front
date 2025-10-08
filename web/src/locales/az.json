@@ -307,8 +307,6 @@
       "nameDesc": "Ad Z-A"
     },
     "noGiftsYet": "Hələ hədiyyə yoxdur. İlk hədiyyənizi yaratmaq üçün yuxarıdakı 'Hədiyyə əlavə et' panelindən istifadə edin.",
-    "noFeedTitle": "Göstəriləcək paylaşım yoxdur",
-    "noFeedSubtitle": "Burada dostlarınızın arzu siyahılarını görmək üçün izləyin və ya dost əlavə edin.",
     "noImage": "Şəkil yoxdur",
     "by": "tərəfindən",
     "hoursAgo": "saat əvvəl",
@@ -360,59 +358,5 @@
     "unfollowedSuccessfully": "Uğurla izləməyi dayandırdınız",
     "failedToFollow": "İzləməyə/izləməyi dayandırmağa mümkün olmadı",
     "failedToCopyLink": "Linki kopyalamaq mümkün olmadı"
-  }
-  ,
-  "chat": {
-    "sidebarTitle": "Mesajlar",
-    "sidebarSubtitle": "Dostlarınızla əlaqədə olun",
-    "searchPlaceholder": "İstifadəçiləri axtarın...",
-    "searchResults": "Axtarış nəticələri",
-    "yourContacts": "Kontaktlarınız",
-    "noContactsTitle": "Hələ kontakt yoxdur",
-    "noContactsSubtitle": "Söhbətə başlamaq üçün istifadəçiləri axtarın",
-    "following": "İzlədikləri",
-    "notFollowing": "İzlənmir",
-    "startConversation": "Söhbətə başlayın!",
-    "welcomeTitle": "Söhbətə xoş gəlmisiniz",
-    "welcomeSubtitle": "İstifadəçiləri axtarın və ya kontakt seçin, dostlarınızla mesajlaşmağa başlayın",
-    "openConversations": "Söhbətləri aç",
-    "online": "Onlayn",
-    "offline": "Oflayn",
-    "connection": {
-      "connected": "Qoşuldu",
-      "reconnecting": "Yenidən qoşulur...",
-      "disconnected": "Ayrıldı",
-      "failed": "Qoşulma xətası",
-      "unknown": "Naməlum"
-    },
-    "wallpaper": {
-      "buttonTitle": "Fon şəklini dəyiş",
-      "panelTitle": "Söhbət Fon Şəkli",
-      "reset": "Sıfırla",
-      "opacity": "Şəffaflıq"
-    },
-    "emptyState": {
-      "noMessagesTitle": "Hələ mesaj yoxdur",
-      "noMessagesWith": "{{name}} ilə söhbətə başlayın!"
-    },
-    "replyingTo": "Cavab verilir:",
-    "cancel": "Ləğv et",
-    "inputPlaceholder": "Mesaj yazın...",
-    "typing": "{{name}} yazır...",
-    "reconnecting": "Yenidən qoşulur...",
-    "connectionFailed": "Qoşulma xətası",
-    "errorTitle": "Ups! Nəsə səhv oldu",
-    "gotIt": "Başa düşdüm",
-    "attach": {
-      "title": "Fayl əlavə et",
-      "image": "Foto",
-      "video": "Video"
-    },
-    "actions": {
-      "react": "Reaksiya",
-      "reply": "Cavab ver",
-      "edit": "Redaktə et",
-      "delete": "Sil"
-    }
   }
 }

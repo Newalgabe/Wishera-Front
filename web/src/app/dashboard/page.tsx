@@ -245,9 +245,6 @@ export default function Dashboard() {
           createdAt: new Date(w.createdAt).toLocaleString()
         }));
         setWishlists(mapped);
-        if (mapped.length === 0) {
-          setError(null);
-        }
         // Load suggested users
         if (currentUserId) {
           try {
@@ -949,18 +946,7 @@ export default function Dashboard() {
                 <div className="text-center text-red-500 py-6">{error}</div>
               )}
               {/* Feed and other tabs */}
-              {!loading && !error && activeTab === 'home' && uniqWishlists.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('dashboard.noFeedTitle')}</h3>
-                  <p className="text-gray-500 dark:text-gray-400">{t('dashboard.noFeedSubtitle')}</p>
-                </div>
-              )}
-              {!loading && !error && activeTab === 'home' && uniqWishlists.length > 0 && uniqWishlists.map((wishlist) => (
+              {!loading && !error && activeTab === 'home' && uniqWishlists.map((wishlist) => (
                 <motion.div
                   key={wishlist.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -1509,23 +1495,21 @@ export default function Dashboard() {
                 {suggestedUsers.map((user) => (
                   <div key={user.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
                     <div 
-                      className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity min-w-0"
+                      className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity"
                       onClick={() => router.push(`/user/${user.id}`)}
                     >
                       <div className="relative">
                         <img
                           src={user.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.username)}`}
                           alt={user.username}
-                          className="w-12 h-12 rounded-full border-2 border-gray-200 dark:border-gray-600 flex-shrink-0"
+                          className="w-12 h-12 rounded-full border-2 border-gray-200 dark:border-gray-600"
                         />
                         <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-600"></div>
                       </div>
-                      <div className="min-w-0">
-                        <div className="font-semibold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors truncate max-w-[10rem]">
-                          {formatUsername(user.username)}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[12rem]">
-                          {(user.mutualFriendsCount || 0)} {t('dashboard.mutualFriends')}
+                      <div>
+                        <div className="font-semibold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{formatUsername(user.username)}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          {user.mutualFriendsCount || 0} mutual friends
                         </div>
                       </div>
                     </div>
@@ -1547,7 +1531,7 @@ export default function Dashboard() {
                             setSuggestedUsers(prev => prev.map(u => u.id === user.id ? { ...u, isFollowing: true } : u));
                           } catch {}
                         }}
-                        className="text-sm px-3 py-2 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg"
+                        className="text-sm px-4 py-2 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:scale-105"
                       >{t('dashboard.follow')}</button>
                     )}
                   </div>
