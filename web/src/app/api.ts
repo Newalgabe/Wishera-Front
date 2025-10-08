@@ -441,6 +441,29 @@ export async function sendChatMessage(payload: SendChatMessageDTO): Promise<{ me
   return response.data;
 }
 
+export async function uploadChatMedia(file: File): Promise<{ url: string; mediaType: 'image' | 'video' }> {
+  const form = new FormData();
+  form.append('file', file);
+  const headers = { ...(authConfig().headers || {}), 'Content-Type': 'multipart/form-data' } as any;
+  // Try primary chat-server-side (5162)
+  const candidates = [
+    `${(process.env.NEXT_PUBLIC_CHAT_API_URL || 'http://localhost:5162/api').replace(/\/api$/i, '')}/api/chat/upload-media`,
+    // Fallback to chat-service-dotnet (5000)
+    `http://localhost:5000/api/chat/upload-media`
+  ];
+  let lastError: any = null;
+  for (const url of candidates) {
+    try {
+      const response = await axios.post(url, form, { ...authConfig(), headers });
+      if (response?.data?.url) return response.data;
+    } catch (e) {
+      lastError = e;
+      continue;
+    }
+  }
+  throw lastError || new Error('Upload failed');
+}
+
 // Chat history (persisted in Mongo via chat-service)
 export interface ChatHistoryItemDTO {
   id: string;

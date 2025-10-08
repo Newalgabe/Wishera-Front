@@ -252,105 +252,7 @@ function ScrollIndicator() {
   );
 }
 
-function AppMockup() {
-  const { t } = useLanguage();
-  return (
-    <motion.div
-      className="relative z-10 glass-card rounded-3xl shadow-2xl border border-gray-100/50 dark:border-gray-700/50 w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg p-4 sm:p-6 flex flex-col gap-4 transition-all duration-300 hover:-translate-y-2 hover:shadow-3xl"
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 1, delay: 0.5 }}
-      whileHover={{ scale: 1.02 }}
-    >
-      <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg sm:text-xl shadow-lg">
-          A
-        </div>
-        <div>
-          <div className="font-semibold text-gray-800 dark:text-gray-100 text-sm sm:text-base transition-colors duration-300">
-            {t('mockup.alexWishlist')}
-          </div>
-          <div className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-300 flex items-center gap-1">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            {t('common.public')}
-          </div>
-        </div>
-      </div>
-      <div className="flex flex-col gap-3">
-        <motion.div 
-          className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 transition-colors duration-300 border border-gray-200/50 dark:border-gray-600/50"
-          whileHover={{ scale: 1.02, x: 5 }}
-          transition={{ type: "spring", stiffness: 300 }}
-        >
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center">
-            <GiftIcon className="w-4 h-4 text-white" />
-          </div>
-          <div className="flex-1">
-            <div className="font-medium text-gray-700 dark:text-gray-200 text-sm sm:text-base transition-colors duration-300">
-              {t('mockup.nikeAirMax')}
-            </div>
-            <div className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-300">$150</div>
-          </div>
-          <span className="text-xs text-green-500 font-semibold bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full">
-            {t('common.available')}
-          </span>
-        </motion.div>
-        <motion.div 
-          className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 transition-colors duration-300 border border-gray-200/50 dark:border-gray-600/50"
-          whileHover={{ scale: 1.02, x: 5 }}
-          transition={{ type: "spring", stiffness: 300 }}
-        >
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
-            <GiftIcon className="w-4 h-4 text-white" />
-          </div>
-          <div className="flex-1">
-            <div className="font-medium text-gray-700 dark:text-gray-200 text-sm sm:text-base transition-colors duration-300">
-              {t('mockup.appleWatch')}
-            </div>
-            <div className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-300">$249</div>
-          </div>
-          <span className="text-xs text-gray-400 dark:text-gray-500 font-semibold bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full transition-colors duration-300">
-            {t('common.reserved')}
-          </span>
-        </motion.div>
-        <motion.div 
-          className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 transition-colors duration-300 border border-gray-200/50 dark:border-gray-600/50"
-          whileHover={{ scale: 1.02, x: 5 }}
-          transition={{ type: "spring", stiffness: 300 }}
-        >
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center">
-            <GiftIcon className="w-4 h-4 text-white" />
-          </div>
-          <div className="flex-1">
-            <div className="font-medium text-gray-700 dark:text-gray-200 text-sm sm:text-base transition-colors duration-300">
-              {t('mockup.cloudPillow')}
-            </div>
-            <div className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-300">$39</div>
-          </div>
-          <span className="text-xs text-green-500 font-semibold bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full">
-            {t('common.available')}
-          </span>
-        </motion.div>
-      </div>
-      <div className="mt-4 flex gap-3">
-        <motion.button 
-          className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 text-white font-semibold shadow-lg text-sm sm:text-base transition-all duration-300 hover:shadow-xl"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          {t('common.share')}
-        </motion.button>
-        <motion.button 
-          className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-600 dark:to-gray-700 text-gray-600 dark:text-gray-200 font-semibold shadow-lg text-sm sm:text-base transition-all duration-300 hover:shadow-xl"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          {t('common.reserve')}
-        </motion.button>
-      </div>
-    </motion.div>
-  );
-}
+// Removed sample wishlist mockup
 
 function FeaturesBackground() {
   return (
@@ -473,9 +375,7 @@ export default function Home() {
             </Link>
           </motion.div>
         </div>
-        <div className="relative z-10 flex-1 flex justify-center mb-8 md:mb-0 w-full max-w-md">
-          <AppMockup />
-        </div>
+        
         <ScrollIndicator />
       </section>
       {/* Features Section */}
