@@ -263,7 +263,6 @@ export async function unfollowUser(id: string): Promise<boolean> {
   const response = await axios.delete(`${USER_API_URL}/users/unfollow/${id}`, authConfig());
   return response.data;
 }
-
 export async function getSuggestedUsers(userId: string, page = 1, pageSize = 10): Promise<UserSearchDTO[]> {
   const response = await axios.get(`${USER_API_URL}/users/suggested?userId=${userId}&page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
