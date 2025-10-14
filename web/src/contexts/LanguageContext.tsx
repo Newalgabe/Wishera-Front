@@ -11,7 +11,7 @@ export type Language = 'en' | 'ru' | 'az';
 export interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
   languages: { code: Language; name: string; flag: string }[];
 }
 
@@ -45,8 +45,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('language', language);
   }, [language]);
 
-  // Translation function with nested key support
-  const t = (key: string): string => {
+  // Translation function with nested key support and interpolation
+  const t = (key: string, params?: Record<string, string | number>): string => {
     const keys = key.split('.');
     let value: any = translations[language];
     
@@ -67,7 +67,17 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       }
     }
     
-    return typeof value === 'string' ? value : key;
+    let result = typeof value === 'string' ? value : key;
+    
+    // Handle interpolation if params are provided
+    if (params && typeof result === 'string') {
+      Object.entries(params).forEach(([paramKey, paramValue]) => {
+        const regex = new RegExp(`{{${paramKey}}}`, 'g');
+        result = result.replace(regex, String(paramValue));
+      });
+    }
+    
+    return result;
   };
 
   const value: LanguageContextType = {

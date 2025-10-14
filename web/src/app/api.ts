@@ -610,13 +610,13 @@ export async function markAllNotificationsAsRead(): Promise<void> {
   await axios.put(`${USER_API_URL}/notifications/read-all`, null, authConfig());
 }
 
-export async function getUpcomingBirthdays(): Promise<BirthdayReminderDTO[]> {
+export async function getUpcomingBirthdays(daysAhead: number = 7): Promise<BirthdayReminderDTO[]> {
   try {
-    console.log('API: Fetching birthdays from:', `${USER_API_URL}/notifications/birthdays?daysAhead=7`);
+    console.log('API: Fetching birthdays from:', `${USER_API_URL}/notifications/birthdays?daysAhead=${daysAhead}`);
     console.log('API: USER_API_URL:', USER_API_URL);
     
     // Try the user service first
-    const response = await axios.get(`${USER_API_URL}/notifications/birthdays?daysAhead=7`, authConfig());
+    const response = await axios.get(`${USER_API_URL}/notifications/birthdays?daysAhead=${daysAhead}`, authConfig());
     console.log('API: Birthday response:', response.data);
     return response.data;
   } catch (error) {

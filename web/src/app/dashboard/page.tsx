@@ -57,6 +57,7 @@ import UserSearchAutocomplete from "../../components/UserSearchAutocomplete";
 import NotificationBadge from "../../components/NotificationBadge";
 import NotificationDropdown from "../../components/NotificationDropdown";
 import BirthdayCountdownBanner from "../../components/BirthdayCountdownBanner";
+import { useAuth } from "../../hooks/useAuth";
 
 type UIWishlist = {
   id: string;
@@ -76,6 +77,7 @@ type UIWishlist = {
 export default function Dashboard() {
   const { t } = useLanguage();
   const router = useRouter();
+  const { logout } = useAuth();
   const [wishlists, setWishlists] = useState<UIWishlist[]>([]);
   const [activeTab, setActiveTab] = useState('home');
   const [loading, setLoading] = useState(true);
@@ -179,16 +181,7 @@ export default function Dashboard() {
     return isOwner;
   };
 
-  // Logout function
-  const handleLogout = () => {
-    // Clear all auth data from localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('username');
-    
-    // Redirect to login page
-    router.push('/login');
-  };
+  // Logout function is now handled by useAuth hook
 
   // Profile editing state
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
@@ -763,7 +756,7 @@ export default function Dashboard() {
                 <ChatBubbleLeftRightIcon className="h-6 w-6" />
               </button>
               <button
-                onClick={handleLogout}
+                onClick={logout}
                 className="p-2 text-gray-600 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                 title="Logout"
               >

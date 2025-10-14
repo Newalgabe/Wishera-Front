@@ -6,20 +6,17 @@ import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
 import WisheraLogo from "./WisheraLogo";
 import { useLanguage } from "../contexts/LanguageContext";
+import { useAuth } from "../hooks/useAuth";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
 export default function Navbar() {
   const { t } = useLanguage();
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { isAuthenticated, logout } = useAuth();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    // Check if user is logged in by looking for token in localStorage
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    setIsLoggedIn(!!token);
-
     // Handle scroll effect
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
@@ -28,19 +25,6 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const handleLogout = () => {
-    // Clear all auth data from localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('username');
-    
-    // Update state
-    setIsLoggedIn(false);
-    
-    // Redirect to login page
-    router.push('/login');
-  };
 
   return (
     <motion.nav 
@@ -83,7 +67,7 @@ export default function Navbar() {
           <LanguageSelector />
           <ThemeToggle />
           
-          {isLoggedIn ? (
+          {isAuthenticated ? (
             <div className="flex gap-3">
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Link 
@@ -94,7 +78,7 @@ export default function Navbar() {
                 </Link>
               </motion.div>
               <motion.button
-                onClick={handleLogout}
+                onClick={logout}
                 className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-500 via-pink-500 to-red-600 dark:from-pink-500 dark:via-red-500 dark:to-pink-600 text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:from-red-600 hover:via-pink-600 hover:to-red-700 dark:hover:from-pink-600 dark:hover:via-red-600 dark:hover:to-pink-700 flex items-center gap-2"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

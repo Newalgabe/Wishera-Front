@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { XMarkIcon, GiftIcon as GiftIconSolid, CalendarIcon as CalendarIconSolid, CalendarDaysIcon as CalendarIcon } from '@heroicons/react/24/solid';
+import { XMarkIcon, GiftIcon as GiftIconSolid, CalendarIcon as CalendarIconSolid, CalendarDaysIcon as CalendarIcon, EyeIcon } from '@heroicons/react/24/solid';
 import { getUpcomingBirthdays } from '../app/api';
 import { BirthdayReminderDTO } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useRouter } from 'next/navigation';
 
 interface BirthdayCountdownBannerProps {
   onClose: () => void;
@@ -16,6 +17,7 @@ export default function BirthdayCountdownBanner({ onClose }: BirthdayCountdownBa
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { t } = useLanguage();
+  const router = useRouter();
 
   useEffect(() => {
     fetchBirthdays();
@@ -27,7 +29,7 @@ export default function BirthdayCountdownBanner({ onClose }: BirthdayCountdownBa
       setLoading(true);
       setError(null);
       
-      const data = await getUpcomingBirthdays();
+      const data = await getUpcomingBirthdays(30); // Request 30 days of birthdays
       console.log('BirthdayCountdownBanner: Received birthdays:', data);
       
       // Filter birthdays that should be shown
@@ -56,8 +58,10 @@ export default function BirthdayCountdownBanner({ onClose }: BirthdayCountdownBa
       return t('notifications.birthdayTomorrow', { username: birthday.username });
     } else if (daysLeft <= 7) {
       return t('notifications.birthdayThisWeek', { username: birthday.username, days: daysLeft });
+    } else if (daysLeft <= 30) {
+      return t('notifications.birthdayThisMonth', { username: birthday.username, days: daysLeft });
     } else {
-      return t('notifications.birthdayCountdown', { username: birthday.username, days: daysLeft });
+      return t('notifications.birthdayNextMonth', { username: birthday.username, days: daysLeft });
     }
   };
 
@@ -76,14 +80,17 @@ export default function BirthdayCountdownBanner({ onClose }: BirthdayCountdownBa
   const getBannerColor = (birthday: BirthdayReminderDTO) => {
     const daysLeft = getDaysUntilBirthday(birthday);
     
+    // All banners now use pinky-violet gradient
     if (birthday.isToday) {
-      return "bg-gradient-to-r from-pink-500 to-rose-500";
+      return "bg-gradient-to-r from-pink-500 via-purple-500 to-violet-500";
     } else if (birthday.isTomorrow) {
-      return "bg-gradient-to-r from-orange-500 to-red-500";
+      return "bg-gradient-to-r from-pink-400 via-purple-400 to-violet-400";
     } else if (daysLeft <= 7) {
-      return "bg-gradient-to-r from-blue-500 to-indigo-500";
+      return "bg-gradient-to-r from-pink-300 via-purple-300 to-violet-300";
+    } else if (daysLeft <= 30) {
+      return "bg-gradient-to-r from-pink-200 via-purple-200 to-violet-200";
     } else {
-      return "bg-gradient-to-r from-purple-500 to-violet-500";
+      return "bg-gradient-to-r from-pink-100 via-purple-100 to-violet-100";
     }
   };
 
@@ -97,8 +104,11 @@ export default function BirthdayCountdownBanner({ onClose }: BirthdayCountdownBa
       isTomorrow: birthday.isTomorrow
     });
     
-    // Backend logic: Show if daysUntilBirthday <= 7 and isToday = true for "today" banner
-    // Frontend logic: Show all birthdays returned by backend (since backend already filters)
+    // Show notifications for:
+    // - Today
+    // - Tomorrow  
+    // - Within 1 week (7 days)
+    // - Within 1 month (30 days)
     
     if (birthday.isToday) {
       console.log(`Showing ${birthday.username} - today`);
@@ -115,8 +125,17 @@ export default function BirthdayCountdownBanner({ onClose }: BirthdayCountdownBa
       return true;
     }
     
-    console.log(`Not showing ${birthday.username} - more than 7 days away`);
+    if (daysLeft <= 30) {
+      console.log(`Showing ${birthday.username} - within 30 days (next month)`);
+      return true;
+    }
+    
+    console.log(`Not showing ${birthday.username} - more than 30 days away`);
     return false;
+  };
+
+  const handleBrowseWishlist = (userId: string) => {
+    router.push(`/user/${userId}`);
   };
 
   if (loading) {
@@ -161,30 +180,43 @@ export default function BirthdayCountdownBanner({ onClose }: BirthdayCountdownBa
           className={`${getBannerColor(birthday)} rounded-lg p-4 mb-4 shadow-lg`}
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-4 flex-1">
               {getCountdownIcon(birthday)}
-              <div className="text-white">
-                <p className="font-semibold text-lg">
-                  {formatCountdownMessage(birthday)}
-                </p>
-                {birthday.avatarUrl && (
-                  <div className="flex items-center space-x-2 mt-1">
+              <div className="text-white flex-1">
+                <div className="flex items-center space-x-3 mb-2">
+                  {birthday.avatarUrl && (
                     <img 
                       src={birthday.avatarUrl} 
                       alt={birthday.username}
-                      className="w-6 h-6 rounded-full border-2 border-white/30"
+                      className="w-10 h-10 rounded-full border-2 border-white/30 shadow-lg"
                     />
-                    <span className="text-sm opacity-90">
+                  )}
+                  <div>
+                    <p className="font-bold text-xl">
+                      {formatCountdownMessage(birthday)}
+                    </p>
+                    <p className="text-sm opacity-90 font-medium">
                       {birthday.username}
-                    </span>
+                    </p>
                   </div>
-                )}
+                </div>
+                
+                {/* Browse Wishlist Button */}
+                <motion.button
+                  onClick={() => handleBrowseWishlist(birthday.userId)}
+                  className="inline-flex items-center space-x-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:shadow-lg"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <EyeIcon className="w-4 h-4" />
+                  <span>{t('notifications.browseWishlist')}</span>
+                </motion.button>
               </div>
             </div>
             
             <button
               onClick={onClose}
-              className="text-white/80 hover:text-white transition-colors duration-200 p-1 rounded-full hover:bg-white/10"
+              className="text-white/80 hover:text-white transition-colors duration-200 p-1 rounded-full hover:bg-white/10 ml-4"
               aria-label="Close notification"
             >
               <XMarkIcon className="w-5 h-5" />
@@ -198,7 +230,7 @@ export default function BirthdayCountdownBanner({ onClose }: BirthdayCountdownBa
                 className="bg-white/40 h-full rounded-full"
                 initial={{ width: "100%" }}
                 animate={{ 
-                  width: `${Math.max(0, (7 - getDaysUntilBirthday(birthday)) / 7 * 100)}%` 
+                  width: `${Math.max(0, (30 - getDaysUntilBirthday(birthday)) / 30 * 100)}%` 
                 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
               />

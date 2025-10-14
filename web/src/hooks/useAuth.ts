@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { User } from '../types';
+import { performCompleteLogout, getAuthDataDebugInfo } from '../utils/logoutUtils';
 
 interface UseAuthReturn {
   user: User | null;
@@ -9,6 +10,7 @@ interface UseAuthReturn {
   login: (token: string, userData: User) => void;
   logout: () => void;
   checkAuth: () => boolean;
+  debugAuthData: () => void;
 }
 
 export function useAuth(): UseAuthReturn {
@@ -44,11 +46,13 @@ export function useAuth(): UseAuthReturn {
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('username');
+    // Perform comprehensive logout - clears all auth data
+    performCompleteLogout();
+    
+    // Clear user state
     setUser(null);
+    
+    // Redirect to login page
     router.push('/login');
   }, [router]);
 
@@ -57,13 +61,20 @@ export function useAuth(): UseAuthReturn {
     setIsLoading(false);
   }, [checkAuth]);
 
+  const debugAuthData = useCallback(() => {
+    const debugInfo = getAuthDataDebugInfo();
+    console.log('Current authentication data:', debugInfo);
+    return debugInfo;
+  }, []);
+
   return {
     user,
     isAuthenticated: !!user,
     isLoading,
     login,
     logout,
-    checkAuth
+    checkAuth,
+    debugAuthData
   };
 }
 
