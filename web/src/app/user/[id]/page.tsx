@@ -227,6 +227,12 @@ export default function UserProfilePage() {
                 {profile.bio && (
                   <p className="text-gray-700 dark:text-gray-300 max-w-md">{profile.bio}</p>
                 )}
+                {profile.birthday && (
+                  <div className="flex items-center gap-2 mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    <CalendarIcon className="w-4 h-4" />
+                    <span>Birthday: {new Date(profile.birthday).toLocaleDateString()}</span>
+                  </div>
+                )}
                 {profile.interests && profile.interests.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-3">
                     {profile.interests.map((interest, idx) => (

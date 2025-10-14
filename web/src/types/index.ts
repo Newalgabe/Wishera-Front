@@ -154,6 +154,36 @@ export interface ButtonProps extends BaseComponentProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
+// Notification Types
+export interface NotificationDTO {
+  id: string;
+  type: 'birthday' | 'friend_request' | 'gift_reserved' | 'wishlist_liked' | 'system';
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+  expiresAt?: string;
+  relatedUserId?: string;
+  relatedUsername?: string;
+  relatedUserAvatar?: string;
+}
+
+export interface BirthdayReminderDTO {
+  id: string;
+  userId: string;
+  username: string;
+  avatarUrl?: string;
+  birthday: string;
+  isToday: boolean;
+  isTomorrow: boolean;
+  daysUntilBirthday: number;
+}
+
+export interface NotificationCountDTO {
+  unreadCount: number;
+  totalCount: number;
+}
+
 // Utility Types
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 export type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>;

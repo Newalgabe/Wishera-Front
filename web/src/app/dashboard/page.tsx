@@ -54,6 +54,9 @@ import { useRouter } from "next/navigation";
 import ThemeToggle from "../../components/ThemeToggle";
 import LanguageSelector from "../../components/LanguageSelector";
 import UserSearchAutocomplete from "../../components/UserSearchAutocomplete";
+import NotificationBadge from "../../components/NotificationBadge";
+import NotificationDropdown from "../../components/NotificationDropdown";
+import BirthdayCountdownBanner from "../../components/BirthdayCountdownBanner";
 
 type UIWishlist = {
   id: string;
@@ -112,6 +115,16 @@ export default function Dashboard() {
   const [editWishlistLoading, setEditWishlistLoading] = useState(false);
   const [deleteWishlistLoading, setDeleteWishlistLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Notification state
+  const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
+  const [showBirthdayNotification, setShowBirthdayNotification] = useState(true);
+
+  // Debug birthday notification state
+  useEffect(() => {
+    console.log('Dashboard: showBirthdayNotification state:', showBirthdayNotification);
+  }, [showBirthdayNotification]);
+
 
   // Get current user ID (kept in state so it updates if we derive it from JWT)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -183,7 +196,8 @@ export default function Dashboard() {
     username: "",
     bio: "",
     interests: [] as string[],
-    isPrivate: false
+    isPrivate: false,
+    birthday: ""
   });
   const [editProfileError, setEditProfileError] = useState<string | null>(null);
   const [editProfileLoading, setEditProfileLoading] = useState(false);
@@ -732,9 +746,16 @@ export default function Dashboard() {
                 <LanguageSelector />
                 <ThemeToggle />
               </div>
-              <button className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
-                <BellIcon className="h-6 w-6" />
-              </button>
+              <div className="relative">
+                <NotificationBadge 
+                  onClick={() => setShowNotificationDropdown(!showNotificationDropdown)}
+                  size="md"
+                />
+                <NotificationDropdown 
+                  isOpen={showNotificationDropdown}
+                  onClose={() => setShowNotificationDropdown(false)}
+                />
+              </div>
               <button
                 onClick={() => router.push('/chat')}
                 className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
@@ -764,6 +785,7 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
 
       <div className="flex pt-16">
         {/* Left Sidebar */}
@@ -833,6 +855,17 @@ export default function Dashboard() {
         <div className="flex-1 ml-64 mr-80 p-6">
           <div className="max-w-6xl mx-auto">
 
+            {/* Birthday Countdown Banner */}
+            {showBirthdayNotification && (
+              <div className="mb-6">
+                <BirthdayCountdownBanner 
+                  onClose={() => {
+                    console.log('Birthday banner closed');
+                    setShowBirthdayNotification(false);
+                  }}
+                />
+              </div>
+            )}
 
             {/* Feed / Profile */}
             <div className="space-y-6">
@@ -860,7 +893,8 @@ export default function Dashboard() {
                           username: profile.username,
                           bio: profile.bio || "",
                           interests: profile.interests || [],
-                          isPrivate: profile.isPrivate || false
+                          isPrivate: profile.isPrivate || false,
+                          birthday: profile.birthday || ""
                         });
                         setIsEditProfileOpen(true);
                       }}
@@ -1728,6 +1762,24 @@ export default function Dashboard() {
                   />
                 </div>
 
+                {/* Birthday */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {t('dashboard.birthday')}
+                  </label>
+                  <input
+                    type="date"
+                    value={editProfileForm.birthday}
+                    onChange={(e) => setEditProfileForm({ ...editProfileForm, birthday: e.target.value })}
+                    max={new Date().toISOString().split('T')[0]}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                    placeholder={t('dashboard.birthdayPlaceholder')}
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    {t('dashboard.birthdayHelp')}
+                  </p>
+                </div>
+
                 {/* Interests */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -1833,7 +1885,8 @@ export default function Dashboard() {
                         username: editProfileForm.username,
                         bio: editProfileForm.bio,
                         interests: editProfileForm.interests,
-                        isPrivate: editProfileForm.isPrivate
+                        isPrivate: editProfileForm.isPrivate,
+                        birthday: editProfileForm.birthday
                       });
                       
                       // Update local profile state
@@ -1844,6 +1897,7 @@ export default function Dashboard() {
                           bio: updatedProfile.bio,
                           interests: updatedProfile.interests,
                           isPrivate: updatedProfile.isPrivate,
+                          birthday: updatedProfile.birthday,
                           avatarUrl: avatarFile ? updatedProfile.avatarUrl : profile.avatarUrl
                         });
                       }

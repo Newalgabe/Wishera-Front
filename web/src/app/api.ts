@@ -1,10 +1,11 @@
 import axios, { type AxiosRequestConfig } from 'axios';
+import { BirthdayReminderDTO } from '../types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? '/api' : 'http://localhost:5155/api');
 const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:5219/api';
-const CHAT_API_URL = process.env.NEXT_PUBLIC_CHAT_API_URL || 'http://localhost:5162/api';
-const GIFT_API_URL = process.env.NEXT_PUBLIC_GIFT_API_URL || 'http://localhost:5221/api';
-const USER_API_URL = process.env.NEXT_PUBLIC_USER_API_URL || 'http://localhost:5220/api';
+const CHAT_API_URL = process.env.NEXT_PUBLIC_CHAT_API_URL || 'http://localhost:5002/api';
+const GIFT_API_URL = process.env.NEXT_PUBLIC_GIFT_API_URL || 'http://localhost:5003/api';
+const USER_API_URL = process.env.NEXT_PUBLIC_USER_API_URL || 'http://localhost:5001/api';
 
 // Ensure Authorization header is attached to all requests when token exists
 axios.defaults.timeout = 10000;
@@ -63,13 +64,49 @@ export type WishlistCategory = typeof WISHLIST_CATEGORIES[number];
 
 // Auth endpoints (no auth header required)
 export async function login(email: string, password: string) {
-  const response = await axios.post(`${AUTH_API_URL}/auth/login`, { email, password });
-  return response.data;
+  try {
+    console.log('API: Attempting login to:', `${AUTH_API_URL}/auth/login`);
+    const response = await axios.post(`${AUTH_API_URL}/auth/login`, { email, password });
+    console.log('API: Login successful');
+    return response.data;
+  } catch (error) {
+    console.error('API: Login failed:', error);
+    if (axios.isAxiosError(error)) {
+      if (error.code === 'ECONNREFUSED') {
+        throw new Error('Authentication service is not available. Please check if the auth service is running on port 5219.');
+      }
+      if (error.response?.status === 401) {
+        throw new Error('Invalid email or password.');
+      }
+      if (error.response?.status === 404) {
+        throw new Error('Login endpoint not found. Please check the auth service configuration.');
+      }
+    }
+    throw error;
+  }
 }
 
 export async function register(username: string, email: string, password: string) {
-  const response = await axios.post(`${AUTH_API_URL}/auth/register`, { username, email, password });
-  return response.data;
+  try {
+    console.log('API: Attempting registration to:', `${AUTH_API_URL}/auth/register`);
+    const response = await axios.post(`${AUTH_API_URL}/auth/register`, { username, email, password });
+    console.log('API: Registration successful');
+    return response.data;
+  } catch (error) {
+    console.error('API: Registration failed:', error);
+    if (axios.isAxiosError(error)) {
+      if (error.code === 'ECONNREFUSED') {
+        throw new Error('Authentication service is not available. Please check if the auth service is running on port 5219.');
+      }
+      if (error.response?.status === 400) {
+        throw new Error('Registration failed. Please check your input data.');
+      }
+      if (error.response?.status === 409) {
+        throw new Error('Username or email already exists.');
+      }
+    }
+    throw error;
+  }
 }
 
 export async function forgotPassword(email: string) {
@@ -218,6 +255,7 @@ export interface UserProfileDTO {
   bio?: string | null;
   interests?: string[] | null;
   avatarUrl?: string | null;
+  birthday?: string | null;
   createdAt: string;
   followingCount: number;
   followersCount: number;
@@ -263,6 +301,7 @@ export async function unfollowUser(id: string): Promise<boolean> {
   const response = await axios.delete(`${USER_API_URL}/users/unfollow/${id}`, authConfig());
   return response.data;
 }
+
 export async function getSuggestedUsers(userId: string, page = 1, pageSize = 10): Promise<UserSearchDTO[]> {
   const response = await axios.get(`${USER_API_URL}/users/suggested?userId=${userId}&page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
@@ -273,6 +312,7 @@ export async function updateUserProfile(updateData: {
   bio?: string;
   interests?: string[];
   isPrivate?: boolean;
+  birthday?: string;
 }): Promise<UserProfileDTO> {
   const response = await axios.put(`${USER_API_URL}/users/profile`, updateData, authConfig());
   return response.data;
@@ -526,4 +566,101 @@ export async function uploadChatMedia(file: File): Promise<{ url: string; mediaT
     }
   });
   return response.data;
+}
+
+// Notifications API
+export interface NotificationDTO {
+  id: string;
+  type: 'birthday' | 'friend_request' | 'gift_reserved' | 'wishlist_liked' | 'system';
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+  expiresAt?: string;
+  relatedUserId?: string;
+  relatedUsername?: string;
+  relatedUserAvatar?: string;
+}
+
+
+export interface NotificationCountDTO {
+  unreadCount: number;
+  totalCount: number;
+}
+
+export async function getNotifications(page = 1, pageSize = 20): Promise<NotificationDTO[]> {
+  // Use user service since NotificationsController is in user_service
+  const response = await axios.get(`${USER_API_URL}/notifications?page=${page}&pageSize=${pageSize}`, authConfig());
+  return response.data;
+}
+
+export async function getUnreadNotificationCount(): Promise<number> {
+  // Use user service since NotificationsController is in user_service
+  const response = await axios.get(`${USER_API_URL}/notifications/unread-count`, authConfig());
+  return response.data.unreadCount;
+}
+
+export async function markNotificationAsRead(notificationId: string): Promise<void> {
+  // Use user service since NotificationsController is in user_service
+  await axios.put(`${USER_API_URL}/notifications/${notificationId}/read`, null, authConfig());
+}
+
+export async function markAllNotificationsAsRead(): Promise<void> {
+  // Use user service since NotificationsController is in user_service
+  await axios.put(`${USER_API_URL}/notifications/read-all`, null, authConfig());
+}
+
+export async function getUpcomingBirthdays(): Promise<BirthdayReminderDTO[]> {
+  try {
+    console.log('API: Fetching birthdays from:', `${USER_API_URL}/notifications/birthdays?daysAhead=7`);
+    console.log('API: USER_API_URL:', USER_API_URL);
+    
+    // Try the user service first
+    const response = await axios.get(`${USER_API_URL}/notifications/birthdays?daysAhead=7`, authConfig());
+    console.log('API: Birthday response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('API: Error fetching birthdays:', error);
+    
+    if (axios.isAxiosError(error)) {
+      console.error('API: Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url,
+        method: error.config?.method
+      });
+      
+      // If it's a 404, try alternative endpoints
+      if (error.response?.status === 404) {
+        console.log('API: Trying alternative endpoints...');
+        
+        // Try main API
+        try {
+          const mainResponse = await axios.get(`${API_URL}/notifications/birthdays?daysAhead=7`, authConfig());
+          console.log('API: Main API success:', mainResponse.data);
+          return mainResponse.data;
+        } catch (mainError) {
+          console.error('API: Main API failed:', mainError);
+        }
+        
+        // Try without /api prefix
+        try {
+          const altResponse = await axios.get(`${USER_API_URL.replace('/api', '')}/notifications/birthdays?daysAhead=7`, authConfig());
+          console.log('API: Alternative endpoint success:', altResponse.data);
+          return altResponse.data;
+        } catch (altError) {
+          console.error('API: Alternative endpoint failed:', altError);
+        }
+      }
+    }
+    
+    // No fallback - return empty array if all endpoints fail
+    console.log('API: All endpoints failed, returning empty array');
+    return [];
+  }
+}
+
+export async function updateUserBirthday(birthday: string): Promise<void> {
+  await axios.put(`${USER_API_URL}/users/birthday`, { birthday }, authConfig());
 }

@@ -272,6 +272,9 @@
     "username": "İstifadəçi adı",
     "bio": "Haqqında",
     "bioPlaceholder": "Özünüz haqqında danışın...",
+    "birthday": "Ad günü",
+    "birthdayPlaceholder": "Ad gününüzü seçin",
+    "birthdayHelp": "Ad gününüz dostlarınızın sizi təbrik etməyini unutmamasına kömək edəcək!",
     "interests": "Maraqlar",
     "interestsPlaceholder": "məsələn, texnologiya, yemək bişirmə, səyahət",
     "privateProfile": "Şəxsi profil",
@@ -358,5 +361,26 @@
     "unfollowedSuccessfully": "Uğurla izləməyi dayandırdınız",
     "failedToFollow": "İzləməyə/izləməyi dayandırmağa mümkün olmadı",
     "failedToCopyLink": "Linki kopyalamaq mümkün olmadı"
+  },
+  "notifications": {
+    "title": "Bildirişlər",
+    "loading": "Bildirişlər yüklənir...",
+    "empty": "Hələ bildiriş yoxdur",
+    "markAllRead": "Hamısını oxunmuş kimi işarələ",
+    "markAsRead": "Oxunmuş kimi işarələ",
+    "viewAll": "Bütün bildirişləri göstər",
+    "unreadCount": "{{count}} oxunmamış",
+    "totalBirthdays": "ad günü",
+    "birthdayReminder": "Ad günü xatırlatması",
+    "birthdayToday": "🎉 {{username}}-in ad günü bu gündür!",
+    "birthdayTomorrow": "🎂 {{username}}-in ad günü sabahdır!",
+    "birthdayThisWeek": "📅 {{username}}-in ad günü {{days}} gün sonradır!",
+    "birthdayThisMonth": "📅 {{username}}-in ad günü {{days}} gün sonradır!",
+    "birthdayCountdown": "📅 {{username}}-in ad günü {{days}} gün sonradır!",
+    "daysLeft": "gün qalıb",
+    "justNow": "İndi",
+    "minutesAgo": "{{minutes}}dəq əvvəl",
+    "hoursAgo": "{{hours}}saat əvvəl",
+    "daysAgo": "{{days}}gün əvvəl"
   }
 }

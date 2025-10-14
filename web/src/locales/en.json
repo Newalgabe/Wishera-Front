@@ -283,6 +283,9 @@
     "username": "Username",
     "bio": "Bio",
     "bioPlaceholder": "Tell us about yourself...",
+    "birthday": "Birthday",
+    "birthdayPlaceholder": "Select your birthday",
+    "birthdayHelp": "Your birthday helps friends remember to celebrate with you!",
     "interests": "Interests",
     "interestsPlaceholder": "e.g., technology, cooking, travel",
     "privateProfile": "Private Profile",
@@ -369,5 +372,26 @@
     "unfollowedSuccessfully": "Unfollowed successfully",
     "failedToFollow": "Failed to follow/unfollow user",
     "failedToCopyLink": "Failed to copy link"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "loading": "Loading notifications...",
+    "empty": "No notifications yet",
+    "markAllRead": "Mark all as read",
+    "markAsRead": "Mark as read",
+    "viewAll": "View all notifications",
+    "unreadCount": "{{count}} unread",
+    "totalBirthdays": "birthdays",
+    "birthdayReminder": "Birthday Reminder",
+    "birthdayToday": "🎉 {{username}}'s birthday is today!",
+    "birthdayTomorrow": "🎂 {{username}}'s birthday is tomorrow!",
+    "birthdayThisWeek": "📅 {{username}}'s birthday is in {{days}} days!",
+    "birthdayThisMonth": "📅 {{username}}'s birthday is in {{days}} days!",
+    "birthdayCountdown": "📅 {{username}}'s birthday is in {{days}} days!",
+    "daysLeft": "days left",
+    "justNow": "Just now",
+    "minutesAgo": "{{minutes}}m ago",
+    "hoursAgo": "{{hours}}h ago",
+    "daysAgo": "{{days}}d ago"
   }
 }
