@@ -155,6 +155,7 @@ export interface WishlistFeedDTO {
   likeCount: number;
   commentCount: number;
   isLiked: boolean;
+  gifts?: { id: string; name: string; price?: number | null; image?: string | null }[];
 }
 
 export interface WishlistItemDTO {
@@ -334,6 +335,12 @@ export async function updateUserAvatar(file: File): Promise<{ avatarUrl: string 
 // User wishlists
 export async function getUserWishlists(userId: string, page = 1, pageSize = 20): Promise<WishlistFeedDTO[]> {
   const response = await axios.get(`${GIFT_API_URL}/wishlists/user/${userId}?page=${page}&pageSize=${pageSize}`, authConfig());
+  return response.data;
+}
+
+// Liked wishlists
+export async function getLikedWishlists(page = 1, pageSize = 20): Promise<WishlistFeedDTO[]> {
+  const response = await axios.get(`${GIFT_API_URL}/wishlists/liked?page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 

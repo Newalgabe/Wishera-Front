@@ -41,6 +41,7 @@ import {
   deleteWishlist,
   type CreateWishlistDTO,
   WISHLIST_CATEGORIES,
+  getLikedWishlists,
     // Gifts
     createGift,
     getMyGifts,
@@ -58,6 +59,7 @@ import NotificationBadge from "../../components/NotificationBadge";
 import NotificationDropdown from "../../components/NotificationDropdown";
 import BirthdayCountdownBanner from "../../components/BirthdayCountdownBanner";
 import { useAuth } from "../../hooks/useAuth";
+import { getBirthdayCountdownMessage } from "../../utils/birthdayUtils";
 
 type UIWishlist = {
   id: string;
@@ -79,6 +81,7 @@ export default function Dashboard() {
   const router = useRouter();
   const { logout } = useAuth();
   const [wishlists, setWishlists] = useState<UIWishlist[]>([]);
+  const [likedWishlists, setLikedWishlists] = useState<WishlistFeedDTO[]>([]);
   const [activeTab, setActiveTab] = useState('home');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,13 +95,39 @@ export default function Dashboard() {
     bio?: string | null;
     interests?: string[] | null;
     isPrivate?: boolean;
+    birthday?: string | null;
     followers: UserSearchDTO[];
     following: UserSearchDTO[];
     myWishlists: UIWishlist[];
   }>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [createForm, setCreateForm] = useState({ title: "", description: "", category: "", isPublic: true, allowedViewerIds: [] as string[] });
+  const [createForm, setCreateForm] = useState({ 
+    title: "", 
+    description: "", 
+    category: "", 
+    isPublic: true, 
+    allowedViewerIds: [] as string[],
+    gifts: [] as Array<{ name: string; price: string; category: string; imageFile?: File }>
+  });
   const [createError, setCreateError] = useState<string | null>(null);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [availableGifts, setAvailableGifts] = useState<GiftDTO[]>([]);
+  const [availableGiftsLoading, setAvailableGiftsLoading] = useState(false);
+  const [selectedExistingGifts, setSelectedExistingGifts] = useState<string[]>([]);
+
+  // Load available gifts when create modal opens
+  const loadAvailableGifts = async () => {
+    try {
+      setAvailableGiftsLoading(true);
+      const gifts = await getMyGifts();
+      setAvailableGifts(gifts);
+    } catch (error) {
+      console.error('Failed to load available gifts:', error);
+      setAvailableGifts([]);
+    } finally {
+      setAvailableGiftsLoading(false);
+    }
+  };
 
   // Wishlist management state
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -303,6 +332,33 @@ export default function Dashboard() {
     return () => { isCancelled = true; };
   }, [wishlists.length]);
 
+  // After liked wishlists load, fetch wishlist item details lazily for each card
+  useEffect(() => {
+    let isCancelled = false;
+    async function hydrateLikedItems() {
+      const targets = likedWishlists.filter(w => !(w as any).gifts || (w as any).gifts.length === 0).slice(0, 6);
+      for (const w of targets) {
+        try {
+          const details = await getWishlistDetails(w.id);
+          if (isCancelled) return;
+          const items = (details.items || []).slice(0, 6).map((it, idx) => ({
+            id: `${w.id}-${idx}`,
+            name: it.title,
+            price: it.price ?? null,
+            image: it.imageUrl ?? null,
+          }));
+          setLikedWishlists(prev => prev.map(x => x.id === w.id ? { ...x, gifts: items } as any : x));
+        } catch {
+          // ignore individual failures
+        }
+      }
+    }
+    if (likedWishlists.length > 0) {
+      hydrateLikedItems();
+    }
+    return () => { isCancelled = true; };
+  }, [likedWishlists.length]);
+
   // Load My Gifts when tab is active
   useEffect(() => {
     async function loadGifts() {
@@ -326,6 +382,28 @@ export default function Dashboard() {
       }
     }
     loadGifts();
+  }, [activeTab]);
+
+  // Load Liked Wishlists when tab is active
+  useEffect(() => {
+    async function loadLikedWishlists() {
+      if (activeTab !== 'liked') return;
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await getLikedWishlists();
+        setLikedWishlists(data);
+      } catch (e: any) {
+        if (e?.response?.status === 401) {
+          router.push('/login');
+          return;
+        }
+        setError(e?.response?.data?.message || 'Failed to load liked wishlists');
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadLikedWishlists();
   }, [activeTab]);
 
   // Load profile tab information when selected
@@ -369,6 +447,7 @@ export default function Dashboard() {
           bio: userProfile.bio,
           interests: userProfile.interests,
           isPrivate: userProfile.isPrivate,
+          birthday: userProfile.birthday,
           followers,
           following,
           myWishlists: mappedMy
@@ -834,7 +913,10 @@ export default function Dashboard() {
             {/* Create New Wishlist Button */}
             <div className="mt-8">
               <button
-                onClick={() => setIsCreateOpen(true)}
+                onClick={() => {
+                  setIsCreateOpen(true);
+                  loadAvailableGifts();
+                }}
                 className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 px-4 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl transform hover:scale-105 font-semibold"
               >
                 <PlusIcon className="h-5 w-5 mr-2" />
@@ -846,7 +928,7 @@ export default function Dashboard() {
 
         {/* Main Content */}
         <div className="flex-1 ml-64 mr-80 p-6">
-          <div className="max-w-6xl mx-auto">
+          <div className={`mx-auto ${activeTab === 'liked' ? 'w-full' : 'max-w-6xl'}`}>
 
             {/* Birthday Countdown Banner */}
             {showBirthdayNotification && (
@@ -878,6 +960,11 @@ export default function Dashboard() {
                         <div className="text-sm text-gray-500 dark:text-gray-400">
                           {profile.followers.length} {t('dashboard.followers')} • {profile.following.length} {t('dashboard.following')}
                         </div>
+                        {profile.birthday && (
+                          <div className="mt-2 text-xs text-pink-600 dark:text-pink-400 font-medium">
+                            {getBirthdayCountdownMessage(profile.birthday, true)}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <button
@@ -1116,7 +1203,7 @@ export default function Dashboard() {
                   </div>
 
                   {/* Wishlist Content */}
-                  <div className="p-6">
+                  <div className="p-6 min-h-0">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1134,9 +1221,11 @@ export default function Dashboard() {
                         )}
                       </div>
                     </div>
-                    <p className="text-gray-600 dark:text-gray-300 mb-6 text-lg leading-relaxed">
-                      {wishlist.description}
-                    </p>
+                    <div className="mb-6">
+                      <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed text-center break-words whitespace-normal overflow-visible px-2 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        {wishlist.description}
+                      </p>
+                    </div>
 
                     {/* Gifts Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
@@ -1284,16 +1373,50 @@ export default function Dashboard() {
                                 category: giftForm.category.trim() || 'General',
                                 hasImage: !!giftForm.imageFile
                               });
+                              
+                              // Get user's wishlists to associate the gift with one
+                              let wishlistId: string | undefined;
+                              try {
+                                const userWishlists = await getUserWishlists(currentUserId || '');
+                                if (userWishlists.length > 0) {
+                                  // Use the first wishlist
+                                  wishlistId = userWishlists[0].id;
+                                  console.log('Associating gift with wishlist:', wishlistId);
+                                } else {
+                                  // Create a default wishlist for the user
+                                  console.log('No wishlists found, creating default wishlist');
+                                  const defaultWishlist = await createWishlist({
+                                    title: 'My Wishlist',
+                                    description: 'Default wishlist for my gifts',
+                                    category: 'General',
+                                    isPublic: false,
+                                    allowedViewerIds: []
+                                  });
+                                  wishlistId = defaultWishlist.id;
+                                  console.log('Created default wishlist:', wishlistId);
+                                }
+                              } catch (error) {
+                                console.error('Failed to get/create wishlist:', error);
+                                // Continue without wishlistId - gift will be orphaned but created
+                              }
+                              
                               await createGift({
                                 name: giftForm.name.trim(),
                                 price: priceNumber,
                                 category: giftForm.category.trim() || 'General',
+                                wishlistId: wishlistId,
                                 imageFile: giftForm.imageFile || undefined,
                               });
                               setGiftForm({ name: '', price: '', category: '', imageFile: null });
                               const refreshed = await getMyGifts({ category: giftCategoryFilter || undefined, sortBy: giftSortBy || undefined });
                               setGifts(refreshed);
                               console.log('Gift created successfully');
+                              
+                              // If we're on a wishlist details page, refresh it to show the new gift
+                              if (typeof window !== 'undefined' && window.location.pathname.startsWith('/wishlist/')) {
+                                console.log('Refreshing wishlist details page to show new gift');
+                                window.location.reload();
+                              }
                             } catch (error: unknown) {
                               console.error('Failed to create gift:', error);
                               const errorMessage = error && typeof error === 'object' && 'response' in error 
@@ -1499,6 +1622,204 @@ export default function Dashboard() {
                   </div>
                 </div>
               )}
+
+              {/* Liked Wishlists tab */}
+              {!loading && !error && activeTab === 'liked' && likedWishlists.length === 0 && (
+                <div className="text-center text-gray-500 dark:text-gray-400 py-12">
+                  <HeartIcon className="h-16 w-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+                  <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    {t('dashboard.noLikedWishlists') || 'No liked wishlists yet'}
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    {t('dashboard.noLikedWishlistsDescription') || 'Start liking wishlists to see them here!'}
+                  </p>
+                </div>
+              )}
+
+              {!loading && !error && activeTab === 'liked' && likedWishlists.map((wishlist) => (
+                <motion.div
+                  key={wishlist.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden hover:shadow-xl transition-all duration-300"
+                >
+                  {/* Wishlist Header */}
+                  <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div 
+                          className="relative cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => router.push(`/user/${wishlist.userId}`)}
+                        >
+                          <img
+                            src={wishlist.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(wishlist.username)}`}
+                            alt={wishlist.username}
+                            className="w-12 h-12 rounded-full border-2 border-white dark:border-gray-600 shadow-md"
+                          />
+                          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-600"></div>
+                        </div>
+                        <div 
+                          className="cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => router.push(`/user/${wishlist.userId}`)}
+                        >
+                          <div className="font-bold text-gray-900 dark:text-white text-lg hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                            {wishlist.username}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {new Date(wishlist.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="relative dropdown-container">
+                        <button 
+                          onClick={() => setActiveDropdown(wishlist.id === activeDropdown ? null : wishlist.id)}
+                          className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                        >
+                          <EllipsisHorizontalIcon className="h-5 w-5" />
+                        </button>
+                        
+                        {/* Dropdown Menu */}
+                        {activeDropdown === wishlist.id && (
+                          <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                            <div className="py-2">
+                              {/* View Details */}
+                              <button
+                                onClick={() => {
+                                  setActiveDropdown(null);
+                                  router.push(`/wishlist/${wishlist.id}`);
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <EyeIcon className="h-4 w-4" />
+                                  {t('dashboard.viewDetails')}
+                                </div>
+                              </button>
+                              
+                              {/* Share */}
+                              <button
+                                onClick={async () => {
+                                  setActiveDropdown(null);
+                                  try {
+                                    const shareUrl = `${window.location.origin}/wishlist/${wishlist.id}`;
+                                    await navigator.clipboard.writeText(shareUrl);
+                                    setSuccessMessage(t('dashboard.wishlistShared'));
+                                    setTimeout(() => setSuccessMessage(null), 3000);
+                                  } catch (error) {
+                                    console.error('Failed to copy to clipboard:', error);
+                                    const textArea = document.createElement('textarea');
+                                    textArea.value = `${window.location.origin}/wishlist/${wishlist.id}`;
+                                    document.body.appendChild(textArea);
+                                    textArea.select();
+                                    document.execCommand('copy');
+                                    document.body.removeChild(textArea);
+                                    setSuccessMessage(t('dashboard.wishlistShared'));
+                                    setTimeout(() => setSuccessMessage(null), 3000);
+                                  }
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <ShareIcon className="h-4 w-4" />
+                                  {t('dashboard.share')}
+                                </div>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Wishlist Content */}
+                  <div className="p-6 min-h-0">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-white cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                            onClick={() => router.push(`/wishlist/${wishlist.id}`)}>
+                          {wishlist.title}
+                        </h2>
+                        {wishlist.category && (
+                          <span className="inline-block px-2 py-1 text-xs font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded-full mt-1">
+                            {getTranslatedCategoryLabel(wishlist.category)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="mb-6">
+                      <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed text-center break-words whitespace-normal overflow-visible px-2 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        {wishlist.description}
+                      </p>
+                    </div>
+
+                    {/* Gifts Grid */}
+                    {(wishlist as any).gifts && (wishlist as any).gifts.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                        {(wishlist as any).gifts.map((gift: any) => (
+                          <div key={gift.id} className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1">
+                            {gift.image && (
+                              <img
+                                src={gift.image}
+                                alt={gift.name}
+                                className="w-full h-36 object-cover"
+                              />
+                            )}
+                            <div className="p-4">
+                              <h4 className="font-semibold text-gray-900 dark:text-white text-sm mb-2">
+                                {gift.name}
+                              </h4>
+                              {gift.price != null && (
+                                <div className="flex items-center justify-between">
+                                  <p className="text-lg font-bold text-indigo-600 dark:text-purple-400">
+                                    ${gift.price}
+                                  </p>
+                                  <div className="w-6 h-6 bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 rounded-full flex items-center justify-center">
+                                    <svg className="w-3 h-3 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                                    </svg>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center space-x-6">
+                        <button
+                          onClick={() => handleLike(wishlist.id)}
+                          className="flex items-center space-x-2 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-2 rounded-lg transition-all duration-200"
+                        >
+                          {wishlist.isLiked ? (
+                            <HeartIconSolid className="h-5 w-5" />
+                          ) : (
+                            <HeartIcon className="h-5 w-5" />
+                          )}
+                          <span className="text-sm font-medium">{wishlist.likeCount}</span>
+                        </button>
+                        <button className="flex items-center space-x-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-3 py-2 rounded-lg transition-all duration-200">
+                          <ShareIcon className="h-5 w-5" />
+                          <span className="text-sm font-medium">{t('dashboard.share')}</span>
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => router.push(`/wishlist/${wishlist.id}`)}
+                        className="px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:scale-105"
+                      >
+                        {t('dashboard.view')}
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </div>
         </div>
@@ -1592,61 +1913,247 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
         {/* Create Wishlist Modal */}
         {isCreateOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md p-6 border border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 border border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('dashboard.createWishlist')}</h3>
               {createError && <div className="text-red-500 text-sm mb-2">{createError}</div>}
-              <div className="space-y-3">
-                <input
-                  type="text"
-                  value={createForm.title}
-                  onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
-                  placeholder={t('dashboard.title')}
-                  className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-                <textarea
-                  value={createForm.description}
-                  onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
-                  placeholder={t('dashboard.description')}
-                  className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-                <select
-                  value={createForm.category}
-                  onChange={(e) => setCreateForm({ ...createForm, category: e.target.value })}
-                  className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  <option value="">{t('dashboard.selectCategory')}</option>
-                  {getTranslatedCategories().map((category) => (
-                    <option key={category.value} value={category.value}>
-                      {category.label}
-                    </option>
-                  ))}
-                </select>
-                {!createForm.isPublic && (
-                  <UserSearchAutocomplete
-                    value={createForm.allowedViewerIds}
-                    onChange={(userIds) => setCreateForm({ ...createForm, allowedViewerIds: userIds })}
-                    placeholder="Search and add people to share with..."
-                    className="w-full"
-                  />
-                )}
-                <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <div className="space-y-4">
+                {/* Wishlist Details */}
+                <div className="space-y-3">
+                  <h4 className="font-medium text-gray-900 dark:text-white">Wishlist Details</h4>
                   <input
-                    type="checkbox"
-                    checked={createForm.isPublic}
-                    onChange={(e) => setCreateForm({ ...createForm, isPublic: e.target.checked })}
+                    type="text"
+                    value={createForm.title}
+                    onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
+                    placeholder={t('dashboard.title')}
+                    className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
-                  {createForm.isPublic ? t('dashboard.public') : t('dashboard.private')}
-                </label>
+                  <textarea
+                    value={createForm.description}
+                    onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+                    placeholder={t('dashboard.description')}
+                    className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                  <select
+                    value={createForm.category}
+                    onChange={(e) => setCreateForm({ ...createForm, category: e.target.value })}
+                    className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    <option value="">{t('dashboard.selectCategory')}</option>
+                    {getTranslatedCategories().map((category) => (
+                      <option key={category.value} value={category.value}>
+                        {category.label}
+                      </option>
+                    ))}
+                  </select>
+                  {!createForm.isPublic && (
+                    <UserSearchAutocomplete
+                      value={createForm.allowedViewerIds}
+                      onChange={(userIds) => setCreateForm({ ...createForm, allowedViewerIds: userIds })}
+                      placeholder="Search and add people to share with..."
+                      className="w-full"
+                    />
+                  )}
+                  <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                    <input
+                      type="checkbox"
+                      checked={createForm.isPublic}
+                      onChange={(e) => setCreateForm({ ...createForm, isPublic: e.target.checked })}
+                    />
+                    {createForm.isPublic ? t('dashboard.public') : t('dashboard.private')}
+                  </label>
+                </div>
+
+                {/* Existing Gifts Section */}
+                <div className="space-y-3">
+                  <h4 className="font-medium text-gray-900 dark:text-white">Add Existing Gifts</h4>
+                  {availableGiftsLoading ? (
+                    <div className="text-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600 mx-auto"></div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Loading your gifts...</p>
+                    </div>
+                  ) : availableGifts.length > 0 ? (
+                    <div className="max-h-48 overflow-y-auto space-y-2">
+                      {availableGifts.map((gift) => (
+                        <label key={gift.id} className="flex items-center space-x-3 p-2 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedExistingGifts.includes(gift.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedExistingGifts([...selectedExistingGifts, gift.id]);
+                              } else {
+                                setSelectedExistingGifts(selectedExistingGifts.filter(id => id !== gift.id));
+                              }
+                            }}
+                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2">
+                              {gift.imageUrl && (
+                                <img 
+                                  src={gift.imageUrl} 
+                                  alt={gift.name}
+                                  className="w-8 h-8 rounded object-cover"
+                                />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                  {gift.name}
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  {gift.category} • ${gift.price}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                      No existing gifts found. Create new gifts below!
+                    </p>
+                  )}
+                </div>
+
+                {/* New Gifts Section */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-gray-900 dark:text-white">Create New Gifts</h4>
+                    <button
+                      type="button"
+                      onClick={() => setCreateForm({
+                        ...createForm,
+                        gifts: [...createForm.gifts, { name: "", price: "", category: "" }]
+                      })}
+                      className="px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors"
+                    >
+                      + Add New Gift
+                    </button>
+                  </div>
+                  
+                  {createForm.gifts.map((gift, index) => (
+                    <div key={index} className="p-3 border border-gray-200 dark:border-gray-600 rounded-lg space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Gift {index + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => setCreateForm({
+                            ...createForm,
+                            gifts: createForm.gifts.filter((_, i) => i !== index)
+                          })}
+                          className="text-red-500 hover:text-red-700 text-sm"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        value={gift.name}
+                        onChange={(e) => {
+                          const newGifts = [...createForm.gifts];
+                          newGifts[index] = { ...newGifts[index], name: e.target.value };
+                          setCreateForm({ ...createForm, gifts: newGifts });
+                        }}
+                        placeholder="Gift name"
+                        className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="number"
+                          value={gift.price}
+                          onChange={(e) => {
+                            const newGifts = [...createForm.gifts];
+                            newGifts[index] = { ...newGifts[index], price: e.target.value };
+                            setCreateForm({ ...createForm, gifts: newGifts });
+                          }}
+                          placeholder="Price"
+                          className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
+                        />
+                        <select
+                          value={gift.category}
+                          onChange={(e) => {
+                            const newGifts = [...createForm.gifts];
+                            newGifts[index] = { ...newGifts[index], category: e.target.value };
+                            setCreateForm({ ...createForm, gifts: newGifts });
+                          }}
+                          className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
+                        >
+                          <option value="">Category</option>
+                          {getTranslatedCategories().map((category) => (
+                            <option key={category.value} value={category.value}>
+                              {category.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const newGifts = [...createForm.gifts];
+                            newGifts[index] = { ...newGifts[index], imageFile: file };
+                            setCreateForm({ ...createForm, gifts: newGifts });
+                          }
+                        }}
+                        className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                  ))}
+                  
+                  {createForm.gifts.length === 0 && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                      No new gifts added yet. Click "Add New Gift" to get started!
+                    </p>
+                  )}
+                </div>
+
+                {/* Summary Section */}
+                {(selectedExistingGifts.length > 0 || createForm.gifts.some(g => g.name.trim())) && (
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <h5 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Wishlist Summary</h5>
+                    <div className="text-sm text-blue-800 dark:text-blue-200">
+                      <p>• {selectedExistingGifts.length} existing gift{selectedExistingGifts.length !== 1 ? 's' : ''} selected</p>
+                      <p>• {createForm.gifts.filter(g => g.name.trim()).length} new gift{createForm.gifts.filter(g => g.name.trim()).length !== 1 ? 's' : ''} to create</p>
+                      <p className="font-medium mt-1">
+                        Total: {selectedExistingGifts.length + createForm.gifts.filter(g => g.name.trim()).length} gift{selectedExistingGifts.length + createForm.gifts.filter(g => g.name.trim()).length !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="mt-5 flex justify-end gap-2">
-                <button onClick={() => setIsCreateOpen(false)} className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200">{t('common.cancel')}</button>
+                <button 
+                  onClick={() => {
+                    setIsCreateOpen(false);
+                    setCreateForm({ 
+                      title: '', 
+                      description: '', 
+                      category: '', 
+                      isPublic: true, 
+                      allowedViewerIds: [],
+                      gifts: []
+                    });
+                    setSelectedExistingGifts([]);
+                  }} 
+                  className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={createLoading}
+                >
+                  {t('common.cancel')}
+                </button>
                 <button
                   onClick={async () => {
                     try {
                       setCreateError(null);
+                      setCreateLoading(true);
+                      
+                      // Create the wishlist first
                       const payload: CreateWishlistDTO = {
                         title: createForm.title,
                         description: createForm.description || undefined,
@@ -1657,6 +2164,84 @@ export default function Dashboard() {
                           : createForm.allowedViewerIds
                       };
                       const created = await createWishlist(payload);
+                      
+                      // Add existing gifts to the wishlist
+                      const addedGifts: Array<{ id: string; name: string; price: number; category: string; imageUrl: string | null }> = [];
+                      
+                      // Add selected existing gifts
+                      for (const giftId of selectedExistingGifts) {
+                        const existingGift = availableGifts.find(g => g.id === giftId);
+                        if (existingGift) {
+                          try {
+                            // Update the existing gift to link it to this wishlist
+                            const giftResponse = await fetch(`${process.env.NEXT_PUBLIC_GIFT_API_URL || 'http://localhost:5003/api'}/gifts/${giftId}`, {
+                              method: 'PUT',
+                              headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                                'Content-Type': 'application/json'
+                              },
+                              body: JSON.stringify({
+                                name: existingGift.name,
+                                price: existingGift.price,
+                                category: existingGift.category,
+                                wishlistId: created.id
+                              })
+                            });
+                            
+                            if (giftResponse.ok) {
+                              addedGifts.push({
+                                id: existingGift.id,
+                                name: existingGift.name,
+                                price: existingGift.price,
+                                category: existingGift.category,
+                                imageUrl: existingGift.imageUrl
+                              });
+                            }
+                          } catch (giftError) {
+                            console.error('Failed to add existing gift:', giftError);
+                            // Continue with other gifts even if one fails
+                          }
+                        }
+                      }
+                      
+                      // Create new gifts if any were added
+                      for (const gift of createForm.gifts) {
+                        if (gift.name.trim()) {
+                          try {
+                            const giftData = new FormData();
+                            giftData.append('name', gift.name);
+                            giftData.append('price', gift.price || '0');
+                            giftData.append('category', gift.category || '');
+                            giftData.append('wishlistId', created.id);
+                            if (gift.imageFile) {
+                              giftData.append('imageFile', gift.imageFile);
+                            }
+                            
+                            const giftResponse = await fetch(`${process.env.NEXT_PUBLIC_GIFT_API_URL || 'http://localhost:5003/api'}/gifts`, {
+                              method: 'POST',
+                              headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                              },
+                              body: giftData
+                            });
+                            
+                            if (giftResponse.ok) {
+                              const giftResult = await giftResponse.json();
+                              addedGifts.push({
+                                id: giftResult.id,
+                                name: gift.name,
+                                price: parseFloat(gift.price) || 0,
+                                category: gift.category,
+                                imageUrl: gift.imageFile ? 'uploaded' : null
+                              });
+                            }
+                          } catch (giftError) {
+                            console.error('Failed to create gift:', giftError);
+                            // Continue with other gifts even if one fails
+                          }
+                        }
+                      }
+                      
                       // Prepend to feed for instant feedback (dedupe by id)
                       setWishlists(prev => dedupeById([{
                         id: created.id,
@@ -1665,21 +2250,33 @@ export default function Dashboard() {
                         description: created.description,
                         category: created.category,
                         isPublic: created.isPublic,
-                        gifts: [],
+                        gifts: addedGifts,
                         likes: created.likeCount,
                         isLiked: created.isLiked,
                         isBookmarked: false,
                         createdAt: new Date(created.createdAt).toLocaleString()
                       }, ...prev]));
+                      
                       setIsCreateOpen(false);
-                      setCreateForm({ title: '', description: '', category: '', isPublic: true, allowedViewerIds: [] });
+                      setCreateForm({ 
+                        title: '', 
+                        description: '', 
+                        category: '', 
+                        isPublic: true, 
+                        allowedViewerIds: [],
+                        gifts: []
+                      });
+                      setSelectedExistingGifts([]);
                     } catch (e: any) {
                       setCreateError(e?.response?.data?.message || 'Failed to create');
+                    } finally {
+                      setCreateLoading(false);
                     }
                   }}
-                  className="px-4 py-2 rounded bg-indigo-600 dark:bg-purple-600 text-white"
+                  className="px-4 py-2 rounded bg-indigo-600 dark:bg-purple-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={createLoading}
                 >
-                  {t('common.save')}
+                  {createLoading ? 'Creating...' : t('common.save')}
                 </button>
               </div>
             </div>

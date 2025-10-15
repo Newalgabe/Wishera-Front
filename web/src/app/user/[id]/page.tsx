@@ -16,6 +16,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartIconSolid } from "@heroicons/react/24/solid";
 import { useLanguage } from "../../../contexts/LanguageContext";
+import { getBirthdayInfo } from "../../../utils/birthdayUtils";
 import {
   getUserProfile,
   followUser,
@@ -227,12 +228,25 @@ export default function UserProfilePage() {
                 {profile.bio && (
                   <p className="text-gray-700 dark:text-gray-300 max-w-md">{profile.bio}</p>
                 )}
-                {profile.birthday && (
-                  <div className="flex items-center gap-2 mt-2 text-sm text-gray-600 dark:text-gray-400">
-                    <CalendarIcon className="w-4 h-4" />
-                    <span>Birthday: {new Date(profile.birthday).toLocaleDateString()}</span>
-                  </div>
-                )}
+                {profile.birthday && (() => {
+                  const birthdayInfo = getBirthdayInfo(profile.birthday, false);
+                  return (
+                    <div className="mt-3 p-3 bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20 rounded-xl border border-pink-200 dark:border-pink-800">
+                      <div className="flex items-center gap-2 text-sm">
+                        <CalendarIcon className="w-4 h-4 text-pink-600 dark:text-pink-400" />
+                        <span className="font-medium text-gray-700 dark:text-gray-300">
+                          {birthdayInfo.formattedDate}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                        Age: {birthdayInfo.age} years old
+                      </div>
+                      <div className="mt-1 text-xs text-pink-600 dark:text-pink-400 font-medium">
+                        {birthdayInfo.countdownMessage}
+                      </div>
+                    </div>
+                  );
+                })()}
                 {profile.interests && profile.interests.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-3">
                     {profile.interests.map((interest, idx) => (

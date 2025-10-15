@@ -321,6 +321,8 @@
       "nameDesc": "Name Z-A"
     },
     "noGiftsYet": "No gifts yet. Use the Add Gift panel above to create your first one.",
+    "noLikedWishlists": "No liked wishlists yet",
+    "noLikedWishlistsDescription": "Start liking wishlists to see them here!",
     "noImage": "No image",
     "by": "by",
     "hoursAgo": "hours ago",
