@@ -46,14 +46,17 @@ import {
   deleteEvent,
   respondToInvitation,
   getFollowing,
+  type UserSearchDTO
+} from "../api";
+import { 
   type Event,
   type EventInvitation,
   type CreateEventRequest,
   type UpdateEventRequest,
   type RespondToInvitationRequest,
-  type UserSearchDTO
-} from "../api";
-import { InvitationStatus } from "../../types";
+  type EventListResponse,
+  InvitationStatus
+} from "../../types";
 
 interface CreateEventModalProps {
   isOpen: boolean;
@@ -519,11 +522,11 @@ export default function EventsPage() {
       const promises = [
         getMyEvents().catch(err => {
           console.error("Failed to load my events:", err);
-          return { events: [] };
+          return { events: [], totalCount: 0, page: 1, pageSize: 10, totalPages: 0 } as EventListResponse;
         }),
         getInvitedEvents().catch(err => {
           console.error("Failed to load invited events:", err);
-          return { events: [] };
+          return { events: [], totalCount: 0, page: 1, pageSize: 10, totalPages: 0 } as EventListResponse;
         }),
         user ? getFollowing(user.id, 1, 100).catch(err => {
           console.error("Failed to load friends:", err);
@@ -535,9 +538,14 @@ export default function EventsPage() {
 
       console.log("Events data loaded:", { myEventsData, invitedEventsData, friendsData });
 
-      setMyEvents(myEventsData.events || []);
-      setInvitedEvents(invitedEventsData.events || []);
-      setFriends(friendsData || []);
+      // Type-safe data extraction
+      const myEvents = (myEventsData as EventListResponse).events || [];
+      const invitedEvents = (invitedEventsData as EventListResponse).events || [];
+      const friends = friendsData as UserSearchDTO[] || [];
+
+      setMyEvents(myEvents);
+      setInvitedEvents(invitedEvents);
+      setFriends(friends);
     } catch (err) {
       console.error("Error loading events:", err);
       setError("Some data failed to load, but you can still use the events page.");
@@ -712,9 +720,12 @@ export default function EventsPage() {
                 >
                   <NotificationBadge />
                 </button>
-                {showNotificationDropdown && (
-                  <NotificationDropdown onClose={() => setShowNotificationDropdown(false)} />
-                )}
+                         {showNotificationDropdown && (
+                           <NotificationDropdown 
+                             isOpen={showNotificationDropdown}
+                             onClose={() => setShowNotificationDropdown(false)} 
+                           />
+                         )}
               </div>
 
               {/* Chat */}
