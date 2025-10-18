@@ -36,6 +36,26 @@ export function useAuth(): UseAuthReturn {
         return false;
       }
     }
+    
+    // Check for legacy format (userId and username stored separately)
+    const userId = localStorage.getItem('userId');
+    const username = localStorage.getItem('username');
+    
+    if (token && userId && username) {
+      const user: User = {
+        id: userId,
+        username: username,
+        email: '', // We don't have email in localStorage
+        firstName: '',
+        lastName: '',
+        avatarUrl: '',
+        createdAt: '',
+        updatedAt: ''
+      };
+      setUser(user);
+      return true;
+    }
+    
     return false;
   }, []);
 

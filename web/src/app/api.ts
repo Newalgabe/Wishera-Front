@@ -1,5 +1,5 @@
 import axios, { type AxiosRequestConfig } from 'axios';
-import { BirthdayReminderDTO } from '../types';
+import { BirthdayReminderDTO, Event, EventInvitation, EventInvitationListResponse, EventListResponse, InvitationStatus, CreateEventRequest, UpdateEventRequest, RespondToInvitationRequest } from '../types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? '/api' : 'http://localhost:5155/api');
 const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:5219/api';
@@ -670,4 +670,73 @@ export async function getUpcomingBirthdays(daysAhead: number = 7): Promise<Birth
 
 export async function updateUserBirthday(birthday: string): Promise<void> {
   await axios.put(`${USER_API_URL}/users/birthday`, { birthday }, authConfig());
+}
+
+// Events API
+export async function createEvent(eventData: CreateEventRequest): Promise<Event> {
+  // Convert eventTime from "HH:mm" to "HH:mm:ss" format for TimeSpan
+  const formattedData = {
+    ...eventData,
+    eventTime: eventData.eventTime ? `${eventData.eventTime}:00` : undefined
+  };
+  
+  const response = await axios.post(`${USER_API_URL}/events`, formattedData, authConfig());
+  return response.data;
+}
+
+export async function getEventById(id: string): Promise<Event> {
+  const response = await axios.get(`${USER_API_URL}/events/${id}`, authConfig());
+  return response.data;
+}
+
+export async function getMyEvents(page = 1, pageSize = 10): Promise<EventListResponse> {
+  const response = await axios.get(`${USER_API_URL}/events/my-events?page=${page}&pageSize=${pageSize}`, authConfig());
+  return response.data;
+}
+
+export async function getInvitedEvents(page = 1, pageSize = 10): Promise<EventListResponse> {
+  const response = await axios.get(`${USER_API_URL}/events/invited-events?page=${page}&pageSize=${pageSize}`, authConfig());
+  return response.data;
+}
+
+export async function updateEvent(id: string, eventData: UpdateEventRequest): Promise<Event> {
+  // Convert eventTime from "HH:mm" to "HH:mm:ss" format for TimeSpan
+  const formattedData = {
+    ...eventData,
+    eventTime: eventData.eventTime ? `${eventData.eventTime}:00` : undefined
+  };
+  
+  const response = await axios.put(`${USER_API_URL}/events/${id}`, formattedData, authConfig());
+  return response.data;
+}
+
+export async function cancelEvent(id: string): Promise<{ message: string; success: boolean }> {
+  const response = await axios.put(`${USER_API_URL}/events/${id}/cancel`, null, authConfig());
+  return response.data;
+}
+
+export async function deleteEvent(id: string): Promise<{ message: string; success: boolean }> {
+  const response = await axios.delete(`${USER_API_URL}/events/${id}`, authConfig());
+  return response.data;
+}
+
+export async function getEventInvitations(eventId: string): Promise<EventInvitation[]> {
+  const response = await axios.get(`${USER_API_URL}/events/${eventId}/invitations`, authConfig());
+  return response.data;
+}
+
+// Event Invitations API
+export async function getMyInvitations(page = 1, pageSize = 10): Promise<EventInvitationListResponse> {
+  const response = await axios.get(`${USER_API_URL}/eventinvitations?page=${page}&pageSize=${pageSize}`, authConfig());
+  return response.data;
+}
+
+export async function getPendingInvitations(page = 1, pageSize = 10): Promise<EventInvitationListResponse> {
+  const response = await axios.get(`${USER_API_URL}/eventinvitations/pending?page=${page}&pageSize=${pageSize}`, authConfig());
+  return response.data;
+}
+
+export async function respondToInvitation(invitationId: string, response: RespondToInvitationRequest): Promise<EventInvitation> {
+  const axiosResponse = await axios.put(`${USER_API_URL}/eventinvitations/${invitationId}/respond`, response, authConfig());
+  return axiosResponse.data;
 }
