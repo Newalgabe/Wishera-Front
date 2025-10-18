@@ -137,7 +137,7 @@ export interface GiftFilters {
 }
 
 // Theme and Language Types
-export type Theme = 'light' | 'dark';
+export type Theme = 'light' | 'dark' | 'auto';
 export type Language = 'en' | 'ru' | 'az';
 
 // Component Props Types

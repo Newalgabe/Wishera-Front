@@ -1,5 +1,19 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Features
+
+### Automatic Theme Switching
+
+The application includes an intelligent theme system that automatically adapts to your device's day/night settings:
+
+- **Auto Mode**: Automatically follows your system theme preference (default)
+- **Light Mode**: Always use light theme
+- **Dark Mode**: Always use dark theme
+
+The theme toggle cycles through: Light → Dark → Auto → Light
+
+When in Auto mode, the app will automatically switch between light and dark themes based on your system settings, and will update in real-time when you change your system theme preference.
+
 ## Getting Started
 
 First, run the development server:
