@@ -32,13 +32,19 @@ export function calculateAge(birthday: string): number {
 export function getDaysUntilBirthday(birthday: string): number {
   const birthDate = new Date(birthday);
   const today = new Date();
-  const thisYearBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
-  
-  if (thisYearBirthday < today) {
-    thisYearBirthday.setFullYear(today.getFullYear() + 1);
+
+  // Use start-of-day to avoid fractional-day rounding issues
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  let thisYearBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+
+  if (thisYearBirthday < todayStart) {
+    thisYearBirthday = new Date(today.getFullYear() + 1, birthDate.getMonth(), birthDate.getDate());
   }
-  
-  return Math.ceil((thisYearBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+  const dayMs = 1000 * 60 * 60 * 24;
+  const diffDays = Math.round((thisYearBirthday.getTime() - todayStart.getTime()) / dayMs);
+  // Clamp to 0..365 to avoid showing 366 days (leap year) which leads to 13 months
+  return Math.max(0, Math.min(365, diffDays));
 }
 
 /**
@@ -82,7 +88,9 @@ export function getBirthdayCountdownMessage(birthday: string, isOwn: boolean = f
   } else if (daysUntil <= 30) {
     return `📅 ${prefix} birthday is in ${daysUntil} days`;
   } else {
-    return `📅 ${prefix} birthday is in ${Math.ceil(daysUntil / 30)} months`;
+    // Convert days to months, cap at 12 to avoid "13 months"
+    const approxMonths = Math.max(1, Math.min(12, Math.round(daysUntil / 30.44)));
+    return `📅 ${prefix} birthday is in ${approxMonths} month${approxMonths === 1 ? '' : 's'}`;
   }
 }
 
