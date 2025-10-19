@@ -184,6 +184,93 @@ export interface NotificationCountDTO {
   totalCount: number;
 }
 
+// Event Types
+export interface Event {
+  id: string;
+  title: string;
+  description: string;
+  eventDate: string;
+  eventTime?: string;
+  location: string;
+  additionalNotes: string;
+  creatorId: string;
+  creatorUsername: string;
+  creatorAvatarUrl: string;
+  inviteeIds: string[];
+  createdAt: string;
+  updatedAt: string;
+  isCancelled: boolean;
+  eventType: string;
+  acceptedCount: number;
+  declinedCount: number;
+  pendingCount: number;
+  userResponse?: InvitationStatus;
+}
+
+export interface EventInvitation {
+  id: string;
+  eventId: string;
+  inviteeId: string;
+  inviterId: string;
+  status: InvitationStatus;
+  invitedAt: string;
+  respondedAt?: string;
+  responseMessage?: string;
+  event?: Event;
+  inviterUsername: string;
+  inviterAvatarUrl: string;
+}
+
+export enum InvitationStatus {
+  Pending = 0,
+  Accepted = 1,
+  Declined = 2,
+  Maybe = 3
+}
+
+export interface CreateEventRequest {
+  title: string;
+  description: string;
+  eventDate: string;
+  eventTime?: string;
+  location: string;
+  additionalNotes: string;
+  inviteeIds: string[];
+  eventType: string;
+}
+
+export interface UpdateEventRequest {
+  title?: string;
+  description?: string;
+  eventDate?: string;
+  eventTime?: string;
+  location?: string;
+  additionalNotes?: string;
+  inviteeIds?: string[];
+  eventType?: string;
+}
+
+export interface RespondToInvitationRequest {
+  status: InvitationStatus;
+  responseMessage?: string;
+}
+
+export interface EventListResponse {
+  events: Event[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface EventInvitationListResponse {
+  invitations: EventInvitation[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 // Utility Types
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 export type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>;

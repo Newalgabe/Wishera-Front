@@ -14,7 +14,8 @@ import {
   EllipsisHorizontalIcon,
   ShareIcon,
   EyeIcon,
-  ArrowRightOnRectangleIcon
+  ArrowRightOnRectangleIcon,
+  CalendarIcon
 } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartIconSolid } from "@heroicons/react/24/solid";
 import { useLanguage } from "../../contexts/LanguageContext";
@@ -896,6 +897,13 @@ export default function Dashboard() {
               >
                 <GiftIcon className="h-5 w-5 mr-3" />
                 <span className="font-medium">{t('dashboard.myGifts')}</span>
+              </button>
+              <button
+                onClick={() => router.push('/events')}
+                className="w-full flex items-center px-4 py-4 text-left rounded-xl transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md"
+              >
+                <CalendarIcon className="h-5 w-5 mr-3" />
+                <span className="font-medium">Events</span>
               </button>
               <button
                 onClick={() => setActiveTab('liked')}

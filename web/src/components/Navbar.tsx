@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { HomeIcon, ArrowRightOnRectangleIcon, SparklesIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, ArrowRightOnRectangleIcon, SparklesIcon, CalendarIcon } from "@heroicons/react/24/outline";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
 import WisheraLogo from "./WisheraLogo";
@@ -60,6 +60,17 @@ export default function Navbar() {
               {t('navigation.about')}
             </Link>
           </motion.div>
+          {isAuthenticated && (
+            <motion.div whileHover={{ y: -2 }} transition={{ type: "spring", stiffness: 300 }}>
+              <Link 
+                href="/events" 
+                className="flex items-center gap-2 hover:text-indigo-500 dark:hover:text-purple-400 transition-colors duration-200 group"
+              >
+                <CalendarIcon className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
+                Events
+              </Link>
+            </motion.div>
+          )}
         </div>
 
         {/* Language selector, Theme toggle and Auth buttons */}
