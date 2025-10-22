@@ -1,8 +1,13 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useSignalRChat } from "@/hooks/useSignalRChat";
+import { useCall } from "@/hooks/useCall";
 import { useRouter } from "next/navigation";
 import { createChatToken, createOrJoinChatChannel, sendChatMessage, searchUsers, getFollowing, getChatHistory, editChatMessage, deleteChatMessage, getConversationWallpaper, setConversationWallpaper, getWallpaperCatalog, getConversationWallpaperPref, setConversationWallpaperPref, chatAssetUrl, uploadChatMedia, getPinnedMessages, pinChatMessage, unpinChatMessage, uploadCustomWallpaper, getCustomWallpapers, deleteCustomWallpaper, type WallpaperCatalogItemDTO, type UserSearchDTO, type PinnedMessageDTO, type PinScope, type CustomWallpaperUploadDTO } from "../api";
+import EmojiGifPicker from "@/components/EmojiGifPicker";
+import EmojiPicker from "@/components/EmojiPicker";
+import CallModal from "@/components/CallModal";
+import CallNotification from "@/components/CallNotification";
 import { 
   PaperAirplaneIcon, 
   PlusIcon, 
@@ -132,6 +137,49 @@ export default function ChatPage() {
   }, []);
 
   const chat = useSignalRChat(currentUserId);
+  
+  // Test SignalR connection when component mounts
+  useEffect(() => {
+    if (chat.connected && chat.testConnection) {
+      chat.testConnection().then(success => {
+        console.log('SignalR connection test result:', success);
+      });
+    }
+  }, [chat.connected, chat.testConnection]);
+  
+  // Call functionality
+  const {
+    currentCall,
+    localStream,
+    remoteStream,
+    isMuted,
+    isVideoEnabled,
+    startCall,
+    acceptCall,
+    rejectCall,
+    endCall,
+    toggleMute,
+    toggleVideo,
+    localVideoRef,
+    remoteVideoRef,
+  } = useCall(currentUserId, {
+    onCallInitiated: (callInfo) => {
+      console.log("Call initiated:", callInfo);
+    },
+    onCallAccepted: (callInfo) => {
+      console.log("Call accepted:", callInfo);
+    },
+    onCallRejected: (callInfo) => {
+      console.log("Call rejected:", callInfo);
+    },
+    onCallEnded: (callInfo) => {
+      console.log("Call ended:", callInfo);
+    },
+    onCallFailed: (callInfo) => {
+      console.log("Call failed:", callInfo);
+    },
+  });
+
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
@@ -140,7 +188,37 @@ export default function ChatPage() {
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [pinMenuForId, setPinMenuForId] = useState<string | null>(null);
   const [pendingAttachment, setPendingAttachment] = useState<{ url: string; mediaType: 'image' | 'video' | 'file'; name?: string } | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const REACTIONS = ["👍","❤️","😂","🎉","👏","😮","😢","🔥","✅","❌","👌","😁","🙏","🤔","😎" ,"💖", "🍑", "🍆", "🍒"];
+
+  // Call handlers
+  const handleStartAudioCall = useCallback(() => {
+    if (selectedContact) {
+      startCall(selectedContact.id, "audio");
+    }
+  }, [selectedContact, startCall]);
+
+  const handleStartVideoCall = useCallback(() => {
+    if (selectedContact) {
+      startCall(selectedContact.id, "video");
+    }
+  }, [selectedContact, startCall]);
+
+  const handleAcceptCall = useCallback(() => {
+    if (currentCall) {
+      acceptCall(currentCall);
+    }
+  }, [currentCall, acceptCall]);
+
+  const handleRejectCall = useCallback(() => {
+    if (currentCall) {
+      rejectCall(currentCall);
+    }
+  }, [currentCall, rejectCall]);
+
+  const handleEndCall = useCallback(() => {
+    endCall();
+  }, [endCall]);
   const convKeyPair = useCallback((a: string | null | undefined, b: string | null | undefined) => {
     const x = String(a || '').trim();
     const y = String(b || '').trim();
@@ -284,41 +362,98 @@ export default function ChatPage() {
     );
   }, [getFilenameFromUrl, looksLikeImageUrl, looksLikeVideoUrl]);
 
-  // Render message content: support markdown image ![...](url) and @url shorthand
+  // Render message content: support markdown image ![...](url), GIFs, emojis, and @url shorthand
   const renderMessageContent = useCallback((text: string, opts?: { compact?: boolean }) => {
+    // Check for GIF format: ![GIF](url)
+    const gifMatch = text.match(/!\[GIF\]\((https?:[^)\s]+)\)/i);
+    if (gifMatch && gifMatch[1]) {
+      const url = gifMatch[1];
+      if (opts?.compact) {
+        return (
+          <div className="flex items-center gap-2">
+            <img src={url} alt="GIF" className="w-8 h-8 object-cover rounded" />
+            <span className="text-sm text-gray-500 dark:text-gray-400">GIF</span>
+          </div>
+        );
+      }
+      return (
+        <a href={url} target="_blank" rel="noopener noreferrer" className="inline-block relative group">
+          <img 
+            src={url} 
+            alt="GIF" 
+            className={`${opts?.compact ? 'max-h-24' : 'max-w-full'} rounded-xl shadow-md hover:shadow-lg transition-shadow`}
+            loading="lazy"
+          />
+          {/* GIF indicator overlay */}
+          <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded-full font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+            </svg>
+            GIF
+          </div>
+        </a>
+      );
+    }
+
+    // Check for regular markdown image ![...](url)
     const mdImg = text.match(/!\[[^\]]*\]\((https?:[^)\s]+)\)/i);
     if (mdImg && mdImg[1]) {
       const url = mdImg[1];
       return renderUrlAsMediaOrFilename(url, opts?.compact);
     }
+
     // If the whole message is just a single URL, try to embed
     const singleUrl = text.trim().match(/^https?:[^\s]+$/i);
     if (singleUrl) {
       const url = singleUrl[0];
       return renderUrlAsMediaOrFilename(url, opts?.compact);
     }
+
     const atUrlMatch = text.trim().match(/^@\s*(https?:[^\s]+)$/i);
     if (atUrlMatch && atUrlMatch[1]) {
       const url = atUrlMatch[1];
       return renderUrlAsMediaOrFilename(url, opts?.compact);
     }
-    // Linkify plain URLs in text minimally
+
+    // Enhanced text rendering with emoji support and URL linking
     const urlRegex = /(https?:\/\/[^\s]+)/g;
-    if (urlRegex.test(text)) {
+    const emojiRegex = /(\p{Emoji_Presentation}|\p{Extended_Pictographic})/gu;
+    
+    if (urlRegex.test(text) || emojiRegex.test(text)) {
       const parts = text.split(urlRegex);
       return (
-        <span>
-          {parts.map((part, i) =>
-            urlRegex.test(part) ? (
-              <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="underline break-all">{getFilenameFromUrl(part) || part}</a>
-            ) : (
-              <span key={i}>{part}</span>
-            )
-          )}
+        <span className="leading-relaxed">
+          {parts.map((part, i) => {
+            if (urlRegex.test(part)) {
+              return (
+                <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="underline break-all text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">
+                  {getFilenameFromUrl(part) || part}
+                </a>
+              );
+            } else {
+              // Split by emojis to render them properly
+              const emojiParts = part.split(/(\p{Emoji_Presentation}|\p{Extended_Pictographic})/gu);
+              return (
+                <span key={i}>
+                  {emojiParts.map((emojiPart, j) => {
+                    if (emojiRegex.test(emojiPart)) {
+                      return (
+                        <span key={j} className="inline-block text-lg leading-none" style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif' }}>
+                          {emojiPart}
+                        </span>
+                      );
+                    }
+                    return <span key={j}>{emojiPart}</span>;
+                  })}
+                </span>
+              );
+            }
+          })}
         </span>
       );
     }
-    return <>{text}</>;
+
+    return <span className="leading-relaxed">{text}</span>;
   }, [getFilenameFromUrl, renderUrlAsMediaOrFilename]);
 
   // Chat wallpaper state
@@ -645,6 +780,9 @@ export default function ChatPage() {
         return updated;
       });
     });
+    
+    // Call event handlers are managed by the useCall hook
+    
     return () => {
       offMsg?.();
       offUsers?.();
@@ -775,7 +913,14 @@ export default function ChatPage() {
   }
 
   function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setInput(e.target.value);
+    const value = e.target.value;
+    setInput(value);
+    
+    // Handle colon shortcut for emoji picker
+    if (value.endsWith(':') && !value.endsWith('::')) {
+      setShowEmojiPicker(true);
+    }
+    
     if (selectedContact?.id) {
       chat.startTyping(selectedContact.id);
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
@@ -1314,10 +1459,20 @@ export default function ChatPage() {
                 >
                   📌
                 </button>
-                  <button className="p-2 rounded-2xl hover:bg-gradient-to-r hover:from-green-500 hover:to-emerald-600 text-gray-600 dark:text-gray-400 hover:text-white transition-all duration-200 shadow-lg">
+                  <button 
+                    onClick={handleStartAudioCall}
+                    disabled={!selectedContact || !!currentCall}
+                    className="p-2 rounded-2xl hover:bg-gradient-to-r hover:from-green-500 hover:to-emerald-600 text-gray-600 dark:text-gray-400 hover:text-white transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Start audio call"
+                  >
                     <PhoneIcon className="w-5 h-5" />
                   </button>
-                  <button className="p-2 rounded-2xl hover:bg-gradient-to-r hover:from-blue-500 hover:to-indigo-600 text-gray-600 dark:text-gray-400 hover:text-white transition-all duration-200 shadow-lg">
+                  <button 
+                    onClick={handleStartVideoCall}
+                    disabled={!selectedContact || !!currentCall}
+                    className="p-2 rounded-2xl hover:bg-gradient-to-r hover:from-blue-500 hover:to-indigo-600 text-gray-600 dark:text-gray-400 hover:text-white transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Start video call"
+                  >
                     <VideoCameraIcon className="w-5 h-5" />
                   </button>
                   <button className="p-2 rounded-2xl hover:bg-gray-100/80 dark:hover:bg-gray-700/80 text-gray-600 dark:text-gray-400 transition-all duration-200 shadow-lg">
@@ -1584,15 +1739,80 @@ export default function ChatPage() {
                     </div>
                   )}
                 </div>
-                <input
-                  ref={inputRef}
-                  type="text"
-                  placeholder="Type a message..."
-                  value={input}
-                  onChange={onInputChange}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
-                  className="flex-1 px-5 py-3 rounded-3xl border-0 bg-gray-100/80 dark:bg-gray-700/80 backdrop-blur-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none transition-all duration-200 shadow-lg"
-                />
+                <div className="flex-1 relative">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    placeholder="Type a message..."
+                    value={input}
+                    onChange={onInputChange}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
+                    className="w-full px-5 py-3 rounded-3xl border-0 bg-gray-100/80 dark:bg-gray-700/80 backdrop-blur-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none transition-all duration-200 shadow-lg pr-20"
+                  />
+                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                    <EmojiGifPicker
+                      onEmojiSelect={(emoji) => {
+                        // Remove the colon if it was typed for the shortcut
+                        const newInput = input.endsWith(':') ? input.slice(0, -1) + emoji : input + emoji;
+                        setInput(newInput);
+                        setShowEmojiPicker(false);
+                        inputRef.current?.focus();
+                      }}
+                      onGifSelect={async (gifUrl, gifTitle) => {
+                        // Send GIF immediately using the same pattern as handleSend
+                        const gifMessage = `![GIF](${gifUrl})`;
+                        if (!currentUserId || !selectedContact?.id) return;
+                        
+                        // Check connection status before sending
+                        if (!chat.connected) {
+                          setError('Connection lost. Please wait for reconnection...');
+                          return;
+                        }
+                        
+                        try {
+                          const id = crypto.randomUUID();
+                          const newMessage: ChatMessage = {
+                            id,
+                            text: gifMessage,
+                            userId: currentUserId,
+                            createdAt: new Date().toISOString(),
+                            username: currentUserId
+                          };
+                          
+                          // Add to local conversation immediately
+                          addMessageToConversation(currentConversationId, newMessage);
+                          
+                          // Send via SignalR
+                          await chat.sendToUserWithMeta(selectedContact.id, gifMessage, undefined, id);
+                          
+                          setInput('');
+                          setShowEmojiPicker(false);
+                        } catch (error) {
+                          console.error('Failed to send GIF:', error);
+                          // Fallback: put in input field if send fails
+                          setInput(gifMessage);
+                          setShowEmojiPicker(false);
+                          inputRef.current?.focus();
+                        }
+                      }}
+                    />
+                  </div>
+                  {/* Show emoji picker when colon is typed */}
+                  {showEmojiPicker && (
+                    <div className="absolute bottom-full mb-2 left-0 right-0 z-50">
+                      <EmojiPicker
+                        onEmojiSelect={(emoji) => {
+                          const newInput = input.endsWith(':') ? input.slice(0, -1) + emoji : input + emoji;
+                          setInput(newInput);
+                          setShowEmojiPicker(false);
+                          inputRef.current?.focus();
+                        }}
+                        onClose={() => setShowEmojiPicker(false)}
+                        isOpen={showEmojiPicker}
+                      />
+                    </div>
+                  )}
+                </div>
                 <button
                   onClick={handleSend}
                   disabled={!input.trim() && !pendingAttachment}
@@ -1699,6 +1919,33 @@ export default function ChatPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Call Components */}
+      {currentCall && (
+        <CallModal
+          callInfo={currentCall}
+          localStream={localStream}
+          remoteStream={remoteStream}
+          isMuted={isMuted}
+          isVideoEnabled={isVideoEnabled}
+          onAccept={handleAcceptCall}
+          onReject={handleRejectCall}
+          onEnd={handleEndCall}
+          onToggleMute={toggleMute}
+          onToggleVideo={toggleVideo}
+          localVideoRef={localVideoRef}
+          remoteVideoRef={remoteVideoRef}
+        />
+      )}
+
+      {/* Call Notification for incoming calls */}
+      {currentCall && currentCall.isIncoming && currentCall.state === "ringing" && (
+        <CallNotification
+          callInfo={currentCall}
+          onAccept={handleAcceptCall}
+          onReject={handleRejectCall}
+        />
       )}
     </div>
   );
