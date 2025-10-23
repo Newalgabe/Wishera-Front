@@ -24,6 +24,7 @@ import {
   ChatBubbleLeftRightIcon,
   BookmarkIcon,
   EllipsisHorizontalIcon,
+  EllipsisVerticalIcon,
   ShareIcon,
   ArrowRightOnRectangleIcon
 } from "@heroicons/react/24/outline";
@@ -41,11 +42,12 @@ import {
   createEvent,
   getMyEvents,
   getInvitedEvents,
+  getMyInvitations,
   updateEvent,
   cancelEvent,
   deleteEvent,
   respondToInvitation,
-  getFollowing,
+  getMyFriends,
   type UserSearchDTO
 } from "../api";
 import { 
@@ -55,6 +57,7 @@ import {
   type UpdateEventRequest,
   type RespondToInvitationRequest,
   type EventListResponse,
+  type EventInvitationListResponse,
   InvitationStatus
 } from "../../types";
 
@@ -277,6 +280,33 @@ interface EventCardProps {
 
 function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: EventCardProps) {
   const router = useRouter();
+  const [showResponseMenu, setShowResponseMenu] = useState(false);
+  
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      // Don't close if clicking on the menu button or menu content
+      if (!target.closest('.response-menu-container')) {
+        setShowResponseMenu(false);
+      }
+    };
+    
+    if (showResponseMenu) {
+      // Add a small delay to prevent immediate closure
+      const timeoutId = setTimeout(() => {
+        document.addEventListener('click', handleClickOutside);
+      }, 100);
+      
+      return () => {
+        clearTimeout(timeoutId);
+        document.removeEventListener('click', handleClickOutside);
+      };
+    }
+  }, [showResponseMenu]);
+  
+  // Debug logging for userResponse
+  console.log(`EventCard ${event.id} - userResponse:`, event.userResponse, 'isOwner:', isOwner);
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       weekday: 'long',
@@ -388,7 +418,7 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
           </div>
         </div>
 
-        {!isOwner && event.userResponse !== undefined && (
+        {!isOwner && (
           <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(event.userResponse)}`}>
             {getStatusText(event.userResponse)}
           </span>
@@ -397,15 +427,16 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
 
       <div className="flex justify-end space-x-2">
         {isOwner ? (
-          <>
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit?.(event);
               }}
-              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+              className="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-1"
             >
-              <PencilIcon className="h-4 w-4" />
+              <PencilIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Edit</span>
             </button>
             {!event.isCancelled && (
               <button
@@ -413,7 +444,7 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
                   e.stopPropagation();
                   onCancel?.(event.id);
                 }}
-                className="px-3 py-1 text-sm bg-yellow-600 text-white rounded hover:bg-yellow-700"
+                className="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-yellow-600 text-white rounded hover:bg-yellow-700"
               >
                 Cancel
               </button>
@@ -423,41 +454,118 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
                 e.stopPropagation();
                 onDelete?.(event.id);
               }}
-              className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+              className="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-1"
             >
-              <TrashIcon className="h-4 w-4" />
+              <TrashIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Delete</span>
             </button>
-          </>
+          </div>
         ) : (
-          !event.isCancelled && event.userResponse === undefined && (
-            <div className="flex space-x-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRespond?.(event.id, InvitationStatus.Accepted);
-                }}
-                className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
-              >
-                Accept
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRespond?.(event.id, InvitationStatus.Declined);
-                }}
-                className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
-              >
-                Decline
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRespond?.(event.id, InvitationStatus.Maybe);
-                }}
-                className="px-3 py-1 text-sm bg-yellow-600 text-white rounded hover:bg-yellow-700"
-              >
-                Maybe
-              </button>
+          !event.isCancelled && (
+            <div className="flex flex-col space-y-2">
+              {/* Show current response status */}
+              <div className={`px-3 py-1 text-sm rounded text-center ${getStatusColor(event.userResponse)}`}>
+                {getStatusText(event.userResponse)}
+              </div>
+              
+              {/* Show buttons only if no response yet, otherwise show 3-dots menu */}
+              {event.userResponse === undefined ? (
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRespond?.(event.id, InvitationStatus.Accepted);
+                    }}
+                    className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded hover:opacity-80 flex-1 min-w-0 bg-green-600 text-white hover:bg-green-700"
+                  >
+                    Accept
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRespond?.(event.id, InvitationStatus.Declined);
+                    }}
+                    className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded hover:opacity-80 flex-1 min-w-0 bg-red-600 text-white hover:bg-red-700"
+                  >
+                    Decline
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRespond?.(event.id, InvitationStatus.Maybe);
+                    }}
+                    className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded hover:opacity-80 flex-1 min-w-0 bg-yellow-600 text-white hover:bg-yellow-700"
+                  >
+                    Maybe
+                  </button>
+                </div>
+              ) : (
+                <div className="relative response-menu-container">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      console.log("3-dots menu clicked, current state:", showResponseMenu);
+                      setShowResponseMenu(!showResponseMenu);
+                      console.log("3-dots menu state set to:", !showResponseMenu);
+                    }}
+                    className="flex items-center justify-center w-full px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                  >
+                    <EllipsisVerticalIcon className="h-4 w-4" />
+                  </button>
+                  
+                  {showResponseMenu && (
+                    <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-10">
+                      <div className="py-1">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            console.log("Accept clicked for event:", event.id);
+                            onRespond?.(event.id, InvitationStatus.Accepted);
+                            setShowResponseMenu(false);
+                          }}
+                          className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                            event.userResponse === InvitationStatus.Accepted 
+                              ? 'bg-green-50 dark:bg-green-900 text-green-800 dark:text-green-200' 
+                              : 'text-gray-700 dark:text-gray-300'
+                          }`}
+                        >
+                          ✓ Accept
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            console.log("Decline clicked for event:", event.id);
+                            onRespond?.(event.id, InvitationStatus.Declined);
+                            setShowResponseMenu(false);
+                          }}
+                          className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                            event.userResponse === InvitationStatus.Declined 
+                              ? 'bg-red-50 dark:bg-red-900 text-red-800 dark:text-red-200' 
+                              : 'text-gray-700 dark:text-gray-300'
+                          }`}
+                        >
+                          ✗ Decline
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            console.log("Maybe clicked for event:", event.id);
+                            onRespond?.(event.id, InvitationStatus.Maybe);
+                            setShowResponseMenu(false);
+                          }}
+                          className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                            event.userResponse === InvitationStatus.Maybe 
+                              ? 'bg-yellow-50 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' 
+                              : 'text-gray-700 dark:text-gray-300'
+                          }`}
+                        >
+                          ? Maybe
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )
         )}
@@ -473,6 +581,7 @@ export default function EventsPage() {
   const [activeTab, setActiveTab] = useState<'my-events' | 'invited-events'>('my-events');
   const [myEvents, setMyEvents] = useState<Event[]>([]);
   const [invitedEvents, setInvitedEvents] = useState<Event[]>([]);
+  const [myInvitations, setMyInvitations] = useState<EventInvitation[]>([]);
   const [friends, setFriends] = useState<UserSearchDTO[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -481,6 +590,7 @@ export default function EventsPage() {
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
   const [showBirthdayNotification, setShowBirthdayNotification] = useState(true);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     console.log("Events page useEffect - user:", user);
@@ -515,6 +625,8 @@ export default function EventsPage() {
   const loadData = async () => {
     try {
       console.log("Loading events data...");
+      console.log("User:", user);
+      console.log("Auth loading:", authLoading);
       setIsLoading(true);
       setError(null);
       
@@ -528,23 +640,35 @@ export default function EventsPage() {
           console.error("Failed to load invited events:", err);
           return { events: [], totalCount: 0, page: 1, pageSize: 10, totalPages: 0 } as EventListResponse;
         }),
-        user ? getFollowing(user.id, 1, 100).catch(err => {
+        getMyInvitations().catch(err => {
+          console.error("Failed to load my invitations:", err);
+          return { invitations: [], totalCount: 0, page: 1, pageSize: 10, totalPages: 0 } as EventInvitationListResponse;
+        }),
+         // Try to load friends, but don't fail if it doesn't work
+         user ? getMyFriends(1, 100).catch(err => {
           console.error("Failed to load friends:", err);
+          console.log("Continuing without friends data");
           return [];
         }) : Promise.resolve([])
       ];
 
-      const [myEventsData, invitedEventsData, friendsData] = await Promise.all(promises);
+      const [myEventsData, invitedEventsData, invitationsData, friendsData] = await Promise.all(promises);
 
-      console.log("Events data loaded:", { myEventsData, invitedEventsData, friendsData });
+      console.log("Events data loaded:", { myEventsData, invitedEventsData, invitationsData, friendsData });
 
       // Type-safe data extraction
       const myEvents = (myEventsData as EventListResponse).events || [];
       const invitedEvents = (invitedEventsData as EventListResponse).events || [];
+      const invitations = (invitationsData as EventInvitationListResponse).invitations || [];
       const friends = friendsData as UserSearchDTO[] || [];
+      
+      console.log("Processed events:", { myEvents, invitedEvents, invitations });
+      console.log("Invited events with invitation IDs:", invitedEvents.map(e => ({ id: e.id, title: e.title, invitationId: e.invitationId, userResponse: e.userResponse })));
+      console.log("Raw invitations:", invitations.map(i => ({ id: i.id, eventId: i.eventId, status: i.status })));
 
       setMyEvents(myEvents);
       setInvitedEvents(invitedEvents);
+      setMyInvitations(invitations);
       setFriends(friends);
     } catch (err) {
       console.error("Error loading events:", err);
@@ -568,37 +692,153 @@ export default function EventsPage() {
     }
   };
 
-  const handleCancelEvent = async (eventId: string) => {
+  const handleEditEvent = async (event: Event) => {
     try {
-      await cancelEvent(eventId);
-      await loadData();
+      console.log("Edit event clicked:", event.id);
+      // Navigate to the event edit page
+      router.push(`/events/${event.id}`);
     } catch (err) {
-      console.error("Error cancelling event:", err);
+      console.error("Error navigating to edit event:", err);
+      setError("Failed to open event editor. Please try again.");
     }
   };
 
   const handleDeleteEvent = async (eventId: string) => {
-    if (window.confirm("Are you sure you want to delete this event?")) {
-      try {
+    try {
+      console.log("Delete event clicked:", eventId);
+      if (window.confirm("Are you sure you want to delete this event?")) {
+        console.log("User confirmed deletion");
         await deleteEvent(eventId);
-        await loadData();
-      } catch (err) {
-        console.error("Error deleting event:", err);
+        console.log("Event deleted successfully");
+        
+        // Update local state instead of reloading everything
+        setMyEvents(prevEvents => prevEvents.filter(event => event.id !== eventId));
+        setInvitedEvents(prevEvents => prevEvents.filter(event => event.id !== eventId));
+        
+        console.log("Event removed from local state");
       }
+    } catch (err) {
+      console.error("Error deleting event:", err);
+      setError("Failed to delete event. Please try again.");
+    }
+  };
+
+  const handleCancelEvent = async (eventId: string) => {
+    try {
+      console.log("Cancel event clicked:", eventId);
+      if (window.confirm("Are you sure you want to cancel this event?")) {
+        console.log("User confirmed cancellation");
+        await cancelEvent(eventId);
+        console.log("Event cancelled successfully");
+        
+        // Update local state instead of reloading everything
+        setMyEvents(prevEvents => 
+          prevEvents.map(event => 
+            event.id === eventId 
+              ? { ...event, isCancelled: true }
+              : event
+          )
+        );
+        setInvitedEvents(prevEvents => 
+          prevEvents.map(event => 
+            event.id === eventId 
+              ? { ...event, isCancelled: true }
+              : event
+          )
+        );
+        
+        console.log("Event cancelled in local state");
+      }
+    } catch (err) {
+      console.error("Error cancelling event:", err);
+      setError("Failed to cancel event. Please try again.");
     }
   };
 
   const handleRespondToEvent = async (eventId: string, status: InvitationStatus) => {
     try {
+      console.log("handleRespondToEvent called with:", { eventId, status });
+      console.log("myInvitations:", myInvitations);
+      
       // Find the invitation for this event
-      const invitation = invitedEvents.find(e => e.id === eventId);
+      const invitation = myInvitations.find(i => i.eventId === eventId);
+      console.log("Found invitation:", invitation);
+      
       if (invitation) {
-        await respondToInvitation(invitation.id, { status });
-        await loadData();
+        console.log("Responding to invitation:", invitation.id, "with status:", status);
+        const response = await respondToInvitation(invitation.id, { status });
+        console.log("Response sent successfully:", response);
+        
+        // Update local state instead of reloading everything
+        updateEventCardState(eventId, status);
+        
+        const statusText = status === InvitationStatus.Accepted ? 'accepted' : 
+                           status === InvitationStatus.Declined ? 'declined' : 'maybe';
+        setSuccessMessage(`Successfully ${statusText} the invitation!`);
+        setError(null);
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccessMessage(null), 3000);
+      } else {
+        console.error("No invitation found for event:", eventId);
+        console.error("Available invitations:", myInvitations.map(i => ({ id: i.id, eventId: i.eventId })));
+        
+        // Fallback: Try to find invitation by event ID in invited events
+        const invitedEvent = invitedEvents.find(e => e.id === eventId);
+        if (invitedEvent && invitedEvent.invitationId) {
+          console.log("Found invitation ID in event:", invitedEvent.invitationId);
+          const response = await respondToInvitation(invitedEvent.invitationId, { status });
+          console.log("Response sent successfully using event invitation ID:", response);
+          
+          // Update local state instead of reloading everything
+          updateEventCardState(eventId, status);
+          
+          const statusText = status === InvitationStatus.Accepted ? 'accepted' : 
+                             status === InvitationStatus.Declined ? 'declined' : 'maybe';
+          setSuccessMessage(`Successfully ${statusText} the invitation!`);
+          setError(null);
+          
+          // Clear success message after 3 seconds
+          setTimeout(() => setSuccessMessage(null), 3000);
+        } else {
+          setError("Unable to respond to invitation. Please try again.");
+        }
       }
     } catch (err) {
       console.error("Error responding to event:", err);
+      console.error("Error details:", {
+        eventId,
+        status,
+        myInvitations: myInvitations.map(i => ({ id: i.id, eventId: i.eventId })),
+        invitedEvents: invitedEvents.map(e => ({ id: e.id, invitationId: e.invitationId }))
+      });
+      setError("Failed to respond to invitation. Please try again.");
     }
+  };
+
+  // Function to update only the specific event card state without reloading everything
+  const updateEventCardState = (eventId: string, newStatus: InvitationStatus) => {
+    console.log("Updating event card state for:", eventId, "with status:", newStatus);
+    
+    // Update invited events
+    setInvitedEvents(prevEvents => 
+      prevEvents.map(event => 
+        event.id === eventId 
+          ? { ...event, userResponse: newStatus }
+          : event
+      )
+    );
+    
+    // Update my invitations
+    setMyInvitations(prevInvitations =>
+      prevInvitations.map(invitation =>
+        invitation.eventId === eventId
+          ? { ...invitation, status: newStatus }
+          : invitation
+      )
+    );
+    
+    console.log("Event card state updated successfully");
   };
 
   // Manual auth check function
@@ -714,18 +954,15 @@ export default function EventsPage() {
               
               {/* Notifications */}
               <div className="relative">
-                <button
+                <NotificationBadge 
                   onClick={() => setShowNotificationDropdown(!showNotificationDropdown)}
-                  className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-                >
-                  <NotificationBadge />
-                </button>
-                         {showNotificationDropdown && (
-                           <NotificationDropdown 
-                             isOpen={showNotificationDropdown}
-                             onClose={() => setShowNotificationDropdown(false)} 
-                           />
-                         )}
+                />
+                {showNotificationDropdown && (
+                  <NotificationDropdown 
+                    isOpen={showNotificationDropdown}
+                    onClose={() => setShowNotificationDropdown(false)} 
+                  />
+                )}
               </div>
 
               {/* Chat */}
@@ -793,32 +1030,32 @@ export default function EventsPage() {
       </div>
 
       {/* Main Content */}
-      <div className="ml-64 mr-80 pt-16 min-h-screen">
-        <div className="p-6">
+      <div className="ml-0 xl:ml-64 mr-0 xl:mr-80 pt-16 min-h-screen">
+        <div className="p-3 sm:p-4 lg:p-6">
           {/* Birthday Banner */}
           {showBirthdayNotification && (
             <BirthdayCountdownBanner onClose={() => setShowBirthdayNotification(false)} />
           )}
 
           {/* Header */}
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Events</h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">Manage your events and invitations</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Events</h1>
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1 sm:mt-2">Manage your events and invitations</p>
             </div>
             <button
               onClick={() => setIsCreateModalOpen(true)}
-              className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200"
+              className="flex items-center px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base"
             >
-              <PlusIcon className="h-5 w-5 mr-2" />
+              <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
               Create Event
             </button>
           </div>
 
           {/* Tabs */}
-          <div className="mb-8">
+          <div className="mb-6 sm:mb-8">
             <div className="border-b border-gray-200 dark:border-gray-700">
-              <nav className="-mb-px flex space-x-8">
+              <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto">
                 <button
                   onClick={() => setActiveTab('my-events')}
                   className={`py-2 px-1 border-b-2 font-medium text-sm ${
@@ -852,9 +1089,17 @@ export default function EventsPage() {
               <p>Data Loading: {isLoading ? 'Yes' : 'No'}</p>
               <p>My Events: {myEvents.length}</p>
               <p>Invited Events: {invitedEvents.length}</p>
+              <p>My Invitations: {myInvitations.length}</p>
               <p>Friends: {friends.length}</p>
             </div>
           </div>
+
+          {/* Success Message */}
+          {successMessage && (
+            <div className="mb-6 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-md p-4">
+              <p className="text-green-800 dark:text-green-200">{successMessage}</p>
+            </div>
+          )}
 
           {/* Error Message */}
           {error && (
@@ -886,12 +1131,13 @@ export default function EventsPage() {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
               {currentEvents.map((event) => (
                 <EventCard
                   key={event.id}
                   event={event}
                   isOwner={activeTab === 'my-events'}
+                  onEdit={handleEditEvent}
                   onCancel={handleCancelEvent}
                   onDelete={handleDeleteEvent}
                   onRespond={handleRespondToEvent}
@@ -903,8 +1149,8 @@ export default function EventsPage() {
       </div>
 
       {/* Right Sidebar */}
-      <div className="w-80 bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-l border-gray-200 dark:border-gray-700 fixed right-0 top-16 bottom-0 overflow-y-auto">
-        <div className="p-6">
+      <div className="hidden xl:block w-80 bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-l border-gray-200 dark:border-gray-700 fixed right-0 top-16 bottom-0 overflow-y-auto">
+        <div className="p-4 sm:p-6">
           {/* Quick Actions */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 mb-6">
             <div className="flex items-center gap-3 mb-6">

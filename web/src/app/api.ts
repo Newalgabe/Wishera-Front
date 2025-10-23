@@ -293,6 +293,11 @@ export async function getFollowing(id: string, page = 1, pageSize = 10): Promise
   return response.data;
 }
 
+export async function getMyFriends(page = 1, pageSize = 10): Promise<UserSearchDTO[]> {
+  const response = await axios.get(`${USER_API_URL}/users/my-friends?page=${page}&pageSize=${pageSize}`, authConfig());
+  return response.data;
+}
+
 export async function followUser(id: string): Promise<boolean> {
   const response = await axios.post(`${USER_API_URL}/users/follow/${id}`, null, authConfig());
   return response.data;
@@ -625,7 +630,26 @@ export async function getUpcomingBirthdays(daysAhead: number = 7): Promise<Birth
     // Try the user service first
     const response = await axios.get(`${USER_API_URL}/notifications/birthdays?daysAhead=${daysAhead}`, authConfig());
     console.log('API: Birthday response:', response.data);
-    return response.data;
+    
+    // Transform notification data to BirthdayReminderDTO format
+    const notifications = response.data || [];
+    const birthdayReminders: BirthdayReminderDTO[] = notifications.map((notification: any) => {
+      const metadata = notification.metadata || {};
+      const daysUntilBirthday = metadata.daysUntilBirthday || 0;
+      
+      return {
+        id: notification.id,
+        userId: notification.relatedUserId,
+        username: metadata.friendUsername || notification.relatedUserUsername || 'Unknown',
+        avatarUrl: notification.relatedUserAvatarUrl || '',
+        birthday: metadata.birthday || '',
+        isToday: daysUntilBirthday === 0,
+        isTomorrow: daysUntilBirthday === 1,
+        daysUntilBirthday: daysUntilBirthday
+      };
+    });
+    
+    return birthdayReminders;
   } catch (error) {
     console.error('API: Error fetching birthdays:', error);
     
@@ -700,13 +724,7 @@ export async function getInvitedEvents(page = 1, pageSize = 10): Promise<EventLi
 }
 
 export async function updateEvent(id: string, eventData: UpdateEventRequest): Promise<Event> {
-  // Convert eventTime from "HH:mm" to "HH:mm:ss" format for TimeSpan
-  const formattedData = {
-    ...eventData,
-    eventTime: eventData.eventTime ? `${eventData.eventTime}:00` : undefined
-  };
-  
-  const response = await axios.put(`${USER_API_URL}/events/${id}`, formattedData, authConfig());
+  const response = await axios.put(`${USER_API_URL}/events/${id}`, eventData, authConfig());
   return response.data;
 }
 
@@ -727,16 +745,16 @@ export async function getEventInvitations(eventId: string): Promise<EventInvitat
 
 // Event Invitations API
 export async function getMyInvitations(page = 1, pageSize = 10): Promise<EventInvitationListResponse> {
-  const response = await axios.get(`${USER_API_URL}/eventinvitations?page=${page}&pageSize=${pageSize}`, authConfig());
+  const response = await axios.get(`${USER_API_URL}/events/my-invitations?page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
 export async function getPendingInvitations(page = 1, pageSize = 10): Promise<EventInvitationListResponse> {
-  const response = await axios.get(`${USER_API_URL}/eventinvitations/pending?page=${page}&pageSize=${pageSize}`, authConfig());
+  const response = await axios.get(`${USER_API_URL}/events/my-invitations?page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
 export async function respondToInvitation(invitationId: string, response: RespondToInvitationRequest): Promise<EventInvitation> {
-  const axiosResponse = await axios.put(`${USER_API_URL}/eventinvitations/${invitationId}/respond`, response, authConfig());
+  const axiosResponse = await axios.post(`${USER_API_URL}/events/invitations/${invitationId}/respond`, response, authConfig());
   return axiosResponse.data;
 }

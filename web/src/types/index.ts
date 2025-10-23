@@ -205,6 +205,7 @@ export interface Event {
   declinedCount: number;
   pendingCount: number;
   userResponse?: InvitationStatus;
+  invitationId?: string;
 }
 
 export interface EventInvitation {

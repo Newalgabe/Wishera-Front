@@ -68,7 +68,10 @@ export default function NotificationDropdown({
         getNotifications(1, 20),
         getUnreadNotificationCount()
       ]);
-      setNotifications(notificationsData);
+      
+      // Ensure notifications is always an array
+      const notificationsArray = Array.isArray(notificationsData) ? notificationsData : [];
+      setNotifications(notificationsArray);
       setUnreadCount(unreadCountData);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
@@ -222,7 +225,7 @@ export default function NotificationDropdown({
               </div>
             ) : (
               <div className="divide-y divide-gray-200/50 dark:divide-gray-700/50">
-                {notifications.map((notification) => (
+                {(Array.isArray(notifications) ? notifications : []).map((notification) => (
                   <motion.div
                     key={notification.id}
                     initial={{ opacity: 0, x: -20 }}

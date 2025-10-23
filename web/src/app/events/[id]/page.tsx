@@ -23,9 +23,11 @@ import {
   deleteEvent,
   respondToInvitation,
   getEventInvitations,
+  getMyFriends,
   type Event,
   type EventInvitation,
-  type UpdateEventRequest
+  type UpdateEventRequest,
+  type UserSearchDTO
 } from "../../api";
 import { InvitationStatus } from "../../../types";
 
@@ -42,6 +44,8 @@ export default function EventDetailPage({}: EventDetailPageProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<UpdateEventRequest>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [friends, setFriends] = useState<UserSearchDTO[]>([]);
+  const [selectedInvitees, setSelectedInvitees] = useState<string[]>([]);
 
   const eventId = params?.id as string;
 
@@ -56,21 +60,25 @@ export default function EventDetailPage({}: EventDetailPageProps) {
       setIsLoading(true);
       setError(null);
       
-      const [eventData, invitationsData] = await Promise.all([
+      const [eventData, invitationsData, friendsData] = await Promise.all([
         getEventById(eventId),
-        getEventInvitations(eventId)
+        getEventInvitations(eventId),
+        getMyFriends(1, 100).catch(() => []) // Load friends, fallback to empty array if fails
       ]);
 
       setEvent(eventData);
       setInvitations(invitationsData);
+      setFriends(friendsData);
+      setSelectedInvitees(eventData.inviteeIds || []);
       setEditForm({
         title: eventData.title,
         description: eventData.description,
-        eventDate: eventData.eventDate,
-        eventTime: eventData.eventTime,
+        eventDate: eventData.eventDate ? new Date(eventData.eventDate).toISOString().split('T')[0] : '',
+        eventTime: eventData.eventTime ? eventData.eventTime.substring(0, 5) : '', // Convert "HH:mm:ss" to "HH:mm"
         location: eventData.location,
         additionalNotes: eventData.additionalNotes,
-        eventType: eventData.eventType
+        eventType: eventData.eventType,
+        inviteeIds: eventData.inviteeIds || []
       });
     } catch (err) {
       console.error("Error loading event:", err);
@@ -83,13 +91,52 @@ export default function EventDetailPage({}: EventDetailPageProps) {
   const handleUpdateEvent = async () => {
     if (!event) return;
     
+    // Validate required fields
+    if (!editForm.title || editForm.title.trim() === '') {
+      setError("Event title is required");
+      return;
+    }
+    
     setIsSubmitting(true);
     try {
-      const updatedEvent = await updateEvent(event.id, editForm);
+      // Filter out empty/undefined values to avoid validation errors
+      const filteredForm: UpdateEventRequest = {};
+      
+      if (editForm.title && editForm.title.trim() !== '') {
+        filteredForm.title = editForm.title.trim();
+      }
+      if (editForm.description && editForm.description.trim() !== '') {
+        filteredForm.description = editForm.description.trim();
+      }
+      if (editForm.eventDate) {
+        // Convert "YYYY-MM-DD" to ISO string format
+        filteredForm.eventDate = new Date(editForm.eventDate).toISOString();
+      }
+      if (editForm.eventTime) {
+        // Convert "HH:mm" to "HH:mm:ss" format for TimeSpan
+        filteredForm.eventTime = `${editForm.eventTime}:00`;
+      }
+      if (editForm.location && editForm.location.trim() !== '') {
+        filteredForm.location = editForm.location.trim();
+      }
+      if (editForm.additionalNotes && editForm.additionalNotes.trim() !== '') {
+        filteredForm.additionalNotes = editForm.additionalNotes.trim();
+      }
+      if (editForm.eventType && editForm.eventType.trim() !== '') {
+        filteredForm.eventType = editForm.eventType.trim();
+      }
+      if (selectedInvitees.length > 0) {
+        filteredForm.inviteeIds = selectedInvitees;
+      }
+      
+      console.log("Sending update request:", filteredForm);
+      const updatedEvent = await updateEvent(event.id, filteredForm);
       setEvent(updatedEvent);
       setIsEditing(false);
+      setError(null);
     } catch (err) {
       console.error("Error updating event:", err);
+      setError("Failed to update event. Please check your input and try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -241,9 +288,14 @@ export default function EventDetailPage({}: EventDetailPageProps) {
             >
               {isEditing ? (
                 <div className="space-y-4">
+                  {error && (
+                    <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-md p-4">
+                      <p className="text-red-800 dark:text-red-200">{error}</p>
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Event Title
+                      Event Title *
                     </label>
                     <input
                       type="text"
@@ -315,6 +367,43 @@ export default function EventDetailPage({}: EventDetailPageProps) {
                     />
                   </div>
 
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Invite Friends
+                    </label>
+                    <div className="space-y-2">
+                      {friends.map((friend) => (
+                        <label key={friend.id} className="flex items-center space-x-3 p-2 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={selectedInvitees.includes(friend.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedInvitees(prev => [...prev, friend.id]);
+                              } else {
+                                setSelectedInvitees(prev => prev.filter(id => id !== friend.id));
+                              }
+                            }}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                          <div className="flex items-center space-x-2">
+                            {friend.avatarUrl ? (
+                              <img src={friend.avatarUrl} alt={friend.username} className="h-6 w-6 rounded-full" />
+                            ) : (
+                              <div className="h-6 w-6 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                                <UserGroupIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                              </div>
+                            )}
+                            <span className="text-sm text-gray-900 dark:text-white">{friend.username}</span>
+                          </div>
+                        </label>
+                      ))}
+                      {friends.length === 0 && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400">No friends available to invite.</p>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="flex justify-end space-x-3">
                     <button
                       onClick={() => setIsEditing(false)}
@@ -340,7 +429,10 @@ export default function EventDetailPage({}: EventDetailPageProps) {
                     </div>
                     <div className="flex space-x-2">
                       <button
-                        onClick={() => setIsEditing(true)}
+                        onClick={() => {
+                          setIsEditing(true);
+                          setError(null);
+                        }}
                         className="p-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
                       >
                         <PencilIcon className="h-5 w-5" />
