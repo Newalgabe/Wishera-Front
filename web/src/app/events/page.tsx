@@ -42,7 +42,6 @@ import {
   createEvent,
   getMyEvents,
   getInvitedEvents,
-  getMyInvitations,
   updateEvent,
   cancelEvent,
   deleteEvent,
@@ -640,10 +639,6 @@ export default function EventsPage() {
           console.error("Failed to load invited events:", err);
           return { events: [], totalCount: 0, page: 1, pageSize: 10, totalPages: 0 } as EventListResponse;
         }),
-        getMyInvitations().catch(err => {
-          console.error("Failed to load my invitations:", err);
-          return { invitations: [], totalCount: 0, page: 1, pageSize: 10, totalPages: 0 } as EventInvitationListResponse;
-        }),
          // Try to load friends, but don't fail if it doesn't work
          user ? getMyFriends(1, 100).catch(err => {
           console.error("Failed to load friends:", err);
@@ -652,23 +647,19 @@ export default function EventsPage() {
         }) : Promise.resolve([])
       ];
 
-      const [myEventsData, invitedEventsData, invitationsData, friendsData] = await Promise.all(promises);
+      const [myEventsData, invitedEventsData, friendsData] = await Promise.all(promises);
 
-      console.log("Events data loaded:", { myEventsData, invitedEventsData, invitationsData, friendsData });
+      console.log("Events data loaded:", { myEventsData, invitedEventsData, friendsData });
 
       // Type-safe data extraction
       const myEvents = (myEventsData as EventListResponse).events || [];
       const invitedEvents = (invitedEventsData as EventListResponse).events || [];
-      const invitations = (invitationsData as EventInvitationListResponse).invitations || [];
       const friends = friendsData as UserSearchDTO[] || [];
       
-      console.log("Processed events:", { myEvents, invitedEvents, invitations });
-      console.log("Invited events with invitation IDs:", invitedEvents.map(e => ({ id: e.id, title: e.title, invitationId: e.invitationId, userResponse: e.userResponse })));
-      console.log("Raw invitations:", invitations.map(i => ({ id: i.id, eventId: i.eventId, status: i.status })));
+      console.log("Processed events:", { myEvents, invitedEvents });
 
       setMyEvents(myEvents);
       setInvitedEvents(invitedEvents);
-      setMyInvitations(invitations);
       setFriends(friends);
     } catch (err) {
       console.error("Error loading events:", err);
