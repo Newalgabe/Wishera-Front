@@ -520,6 +520,109 @@ export async function deleteChatMessage(messageId: string): Promise<{ deleted: b
   return response.data;
 }
 
+// Chat pins (server-side)
+export type PinScope = 'global' | 'personal';
+export interface PinnedMessageDTO {
+  id: string;
+  conversationId: string;
+  messageId: string;
+  scope: PinScope;
+  pinnedByUserId: string;
+  createdAt: string;
+}
+
+function convKey(a: string, b: string): string {
+  const [x, y] = [String(a || '').trim(), String(b || '').trim()].sort();
+  return `${x}:${y}`;
+}
+
+export async function getPinnedMessages(meUserId: string, peerUserId: string): Promise<PinnedMessageDTO[]> {
+  try {
+    // Skip network if we've learned pins API isn't available
+    if (typeof window !== 'undefined') {
+      const supported = localStorage.getItem('chat:pins:supported');
+      if (supported === '0') throw { response: { status: 404 } } as any;
+    }
+    const response = await axios.get(`${CHAT_API_URL}/chat/pins?me=${encodeURIComponent(meUserId)}&peer=${encodeURIComponent(peerUserId)}`, authConfig());
+    if (typeof window !== 'undefined') localStorage.setItem('chat:pins:supported', '1');
+    return response.data;
+  } catch (e: any) {
+    if (e?.response?.status === 404 && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('chat:pins:supported', '0');
+        const key = `chat:pins:global:${convKey(meUserId, peerUserId)}`;
+        const raw = localStorage.getItem(key);
+        const ids: string[] = raw ? JSON.parse(raw) : [];
+        return ids.map((messageId, idx) => ({
+          id: `local-${idx}-${messageId}`,
+          conversationId: convKey(meUserId, peerUserId),
+          messageId,
+          scope: 'global' as PinScope,
+          pinnedByUserId: meUserId,
+          createdAt: new Date().toISOString()
+        }));
+      } catch { return []; }
+    }
+    throw e;
+  }
+}
+
+export async function pinChatMessage(params: { me: string; peer: string; messageId: string; scope: PinScope }): Promise<{ pinned: boolean; id: string }>{
+  try {
+    if (typeof window !== 'undefined') {
+      const supported = localStorage.getItem('chat:pins:supported');
+      if (supported === '0') throw { response: { status: 404 } } as any;
+    }
+    const response = await axios.post(`${CHAT_API_URL}/chat/pins`, params, authConfig());
+    if (typeof window !== 'undefined') localStorage.setItem('chat:pins:supported', '1');
+    return response.data;
+  } catch (e: any) {
+    if (e?.response?.status === 404 && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('chat:pins:supported', '0');
+        if (params.scope === 'global') {
+          const key = `chat:pins:global:${convKey(params.me, params.peer)}`;
+          const raw = localStorage.getItem(key);
+          const ids: string[] = raw ? JSON.parse(raw) : [];
+          if (!ids.includes(params.messageId)) {
+            const next = [params.messageId, ...ids];
+            localStorage.setItem(key, JSON.stringify(next));
+          }
+          return { pinned: true, id: `local-${params.messageId}` };
+        }
+      } catch {}
+    }
+    throw e;
+  }
+}
+
+export async function unpinChatMessage(params: { me: string; peer: string; messageId: string; scope?: PinScope }): Promise<{ unpinned: boolean }>{
+  try {
+    if (typeof window !== 'undefined') {
+      const supported = localStorage.getItem('chat:pins:supported');
+      if (supported === '0') throw { response: { status: 404 } } as any;
+    }
+    const response = await axios.request({ method: 'DELETE', url: `${CHAT_API_URL}/chat/pins`, data: params, ...authConfig() });
+    if (typeof window !== 'undefined') localStorage.setItem('chat:pins:supported', '1');
+    return response.data;
+  } catch (e: any) {
+    if (e?.response?.status === 404 && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('chat:pins:supported', '0');
+        if (params.scope === 'global') {
+          const key = `chat:pins:global:${convKey(params.me, params.peer)}`;
+          const raw = localStorage.getItem(key);
+          const ids: string[] = raw ? JSON.parse(raw) : [];
+          const next = ids.filter(id => id !== params.messageId);
+          localStorage.setItem(key, JSON.stringify(next));
+          return { unpinned: true };
+        }
+      } catch {}
+    }
+    throw e;
+  }
+}
+
 // Chat preferences (e.g., per-conversation wallpaper)
 export async function getConversationWallpaper(meUserId: string, peerUserId: string): Promise<{ url: string | null }> {
   const response = await axios.get(`${CHAT_API_URL}/chat/preferences/wallpaper?me=${encodeURIComponent(meUserId)}&peer=${encodeURIComponent(peerUserId)}`, authConfig());
@@ -536,18 +639,71 @@ export interface WallpaperCatalogItemDTO {
   id: string;
   name: string;
   description: string;
-  category: 'abstract' | 'nature' | 'minimal' | 'geometric';
+  category: 'abstract' | 'nature' | 'minimal' | 'geometric' | 'custom';
   supportsDark: boolean;
   supportsLight: boolean;
   previewUrl: string;
 }
 
-export async function getWallpaperCatalog(): Promise<WallpaperCatalogItemDTO[]> {
-  const response = await axios.get(`${CHAT_API_URL}/chat/wallpapers`, authConfig());
+export async function getWallpaperCatalog(userId?: string): Promise<WallpaperCatalogItemDTO[]> {
+  const url = userId ? `${CHAT_API_URL}/chat/wallpapers?userId=${encodeURIComponent(userId)}` : `${CHAT_API_URL}/chat/wallpapers`;
+  const response = await axios.get(url, authConfig());
   return response.data;
 }
 
-export interface WallpaperPrefDTO { wallpaperId: string | null; opacity: number }
+// Custom wallpaper management
+export interface CustomWallpaperUploadDTO {
+  wallpaperId: string;
+  url: string;
+  name: string;
+  description: string;
+  category: string;
+  supportsDark: boolean;
+  supportsLight: boolean;
+}
+
+export async function uploadCustomWallpaper(
+  file: File, 
+  userId: string, 
+  name?: string, 
+  description?: string, 
+  category?: string, 
+  supportsDark: boolean = true, 
+  supportsLight: boolean = true
+): Promise<CustomWallpaperUploadDTO> {
+  const form = new FormData();
+  form.append('file', file);
+  form.append('userId', userId);
+  if (name) form.append('name', name);
+  if (description) form.append('description', description);
+  if (category) form.append('category', category);
+  form.append('supportsDark', supportsDark.toString());
+  form.append('supportsLight', supportsLight.toString());
+
+  const response = await axios.post(`${CHAT_API_URL}/chat/upload-wallpaper`, form, {
+    ...authConfig(),
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+}
+
+export async function getCustomWallpapers(userId: string): Promise<WallpaperCatalogItemDTO[]> {
+  const response = await axios.get(`${CHAT_API_URL}/chat/custom-wallpapers?userId=${encodeURIComponent(userId)}`, authConfig());
+  return response.data;
+}
+
+export async function deleteCustomWallpaper(wallpaperId: string, userId: string): Promise<{ deleted: boolean }> {
+  const response = await axios.delete(`${CHAT_API_URL}/chat/custom-wallpapers/${encodeURIComponent(wallpaperId)}?userId=${encodeURIComponent(userId)}`, authConfig());
+  return response.data;
+}
+
+export interface WallpaperPrefDTO { 
+  wallpaperId: string | null; 
+  opacity: number; 
+  wallpaperUrl?: string | null; 
+}
 export async function getConversationWallpaperPref(meUserId: string, peerUserId: string): Promise<WallpaperPrefDTO> {
   const response = await axios.get(`${CHAT_API_URL}/chat/preferences/wallpaper?me=${encodeURIComponent(meUserId)}&peer=${encodeURIComponent(peerUserId)}`, authConfig());
   return response.data;

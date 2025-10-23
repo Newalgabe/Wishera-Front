@@ -81,11 +81,18 @@ export function useSignalRChat(currentUserId?: string | null, token?: string) {
   const createConnection = useCallback(() => {
     if (!hubUrl) return null;
     
+    console.log('Creating SignalR connection to:', hubUrl);
+    
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(hubUrl, {
-        accessTokenFactory: () => token || localStorage.getItem("token") || "",
+        accessTokenFactory: () => {
+          const tokenValue = token || localStorage.getItem("token") || "";
+          console.log('Using token for SignalR connection:', tokenValue ? 'Token present' : 'No token');
+          return tokenValue;
+        },
         transport: signalR.HttpTransportType.WebSockets, // Prefer WebSockets for better performance
         skipNegotiation: false,
+        withCredentials: true,
       })
       .withAutomaticReconnect({
         nextRetryDelayInMilliseconds: (retryContext) => {
@@ -95,18 +102,18 @@ export function useSignalRChat(currentUserId?: string | null, token?: string) {
           return delay;
         }
       })
-      .configureLogging(signalR.LogLevel.Warning) // Reduce log noise
+      .configureLogging(signalR.LogLevel.Information) // Enable more detailed logging for debugging
       .build();
 
     // Enhanced connection event handlers
     connection.onclose((error) => {
-      console.log('Connection closed:', error);
+      console.log('SignalR connection closed:', error);
       setConnected(false);
       setConnectionState('Disconnected');
       stopHeartbeat();
       
       if (error) {
-        console.error('Connection closed with error:', error);
+        console.error('SignalR connection closed with error:', error);
         // Only attempt manual reconnect if auto-reconnect fails
         if (reconnectAttemptsRef.current < maxReconnectAttempts) {
           attemptReconnect();
@@ -115,13 +122,13 @@ export function useSignalRChat(currentUserId?: string | null, token?: string) {
     });
 
     connection.onreconnecting((error) => {
-      console.log('Connection reconnecting:', error);
+      console.log('SignalR connection reconnecting:', error);
       setConnectionState('Reconnecting');
       stopHeartbeat();
     });
 
     connection.onreconnected((connectionId) => {
-      console.log('Connection reconnected:', connectionId);
+      console.log('SignalR connection reconnected:', connectionId);
       setConnected(true);
       setConnectionState('Connected');
       reconnectAttemptsRef.current = 0;
@@ -142,17 +149,19 @@ export function useSignalRChat(currentUserId?: string | null, token?: string) {
     let cancelled = false;
     (async () => {
       try {
+        console.log('Starting SignalR connection...');
         await connection.start();
         if (cancelled) {
           // If the effect was cleaned up while starting, stop the connection safely
           await connection.stop().catch(() => {});
           return;
         }
+        console.log('SignalR connection started successfully');
         setConnected(true);
         setConnectionState('Connected');
         startHeartbeat();
       } catch (error) {
-        console.error('Failed to start connection:', error);
+        console.error('Failed to start SignalR connection:', error);
         if (!cancelled) {
           setConnected(false);
           setConnectionState('Failed');
@@ -212,8 +221,18 @@ export function useSignalRChat(currentUserId?: string | null, token?: string) {
   }, []);
 
   const onReceiveActiveUsers = useCallback((handler: (ids: string[]) => void) => {
-    connectionRef.current?.on("ReceiveActiveUsers", handler);
-    return () => connectionRef.current?.off("ReceiveActiveUsers", handler);
+    if (!connectionRef.current) {
+      console.log('No connection available for ReceiveActiveUsers handler');
+      return () => {};
+    }
+    console.log('Registering ReceiveActiveUsers handler');
+    connectionRef.current.on("ReceiveActiveUsers", handler);
+    return () => {
+      console.log('Unregistering ReceiveActiveUsers handler');
+      if (connectionRef.current) {
+        connectionRef.current.off("ReceiveActiveUsers", handler);
+      }
+    };
   }, []);
 
   const onTyping = useCallback((handler: (data: { userId: string; isTyping: boolean }) => void) => {
@@ -251,6 +270,144 @@ export function useSignalRChat(currentUserId?: string | null, token?: string) {
     return connectionRef.current?.invoke<number>("MarkMessagesRead", peerUserId, messageIds);
   }, []);
 
+  // Test connection method
+  const testConnection = useCallback(async () => {
+    if (!connectionRef.current) {
+      console.log('No SignalR connection available');
+      return false;
+    }
+    
+    try {
+      const connectionId = await connectionRef.current.invoke<string>("GetConnectionId");
+      console.log('SignalR connection test successful, connection ID:', connectionId);
+      return true;
+    } catch (error) {
+      console.error('SignalR connection test failed:', error);
+      return false;
+    }
+  }, []);
+
+  // Call signaling methods
+  const initiateCall = useCallback(async (calleeUserId: string, callType: string) => {
+    console.log("SignalR: Initiating call to", calleeUserId, "type:", callType);
+    if (!connectionRef.current) {
+      console.error("No SignalR connection available for initiateCall");
+      return;
+    }
+    try {
+      const result = await connectionRef.current.invoke("InitiateCall", calleeUserId, callType);
+      console.log("InitiateCall result:", result);
+      return result;
+    } catch (error) {
+      console.error("Error initiating call:", error);
+      throw error;
+    }
+  }, []);
+
+  const acceptCall = useCallback(async (callerUserId: string, callId: string) => {
+    console.log("SignalR: Accepting call from", callerUserId, "callId:", callId);
+    if (!connectionRef.current) {
+      console.error("No SignalR connection available for acceptCall");
+      return;
+    }
+    try {
+      const result = await connectionRef.current.invoke("AcceptCall", callerUserId, callId);
+      console.log("AcceptCall result:", result);
+      return result;
+    } catch (error) {
+      console.error("Error accepting call:", error);
+      throw error;
+    }
+  }, []);
+
+  const rejectCall = useCallback(async (callerUserId: string, callId: string) => {
+    return connectionRef.current?.invoke("RejectCall", callerUserId, callId);
+  }, []);
+
+  const endCall = useCallback(async (otherUserId: string, callId: string) => {
+    return connectionRef.current?.invoke("EndCall", otherUserId, callId);
+  }, []);
+
+  const sendCallSignal = useCallback(async (otherUserId: string, callId: string, signalType: string, signalData: any) => {
+    console.log("SignalR: Sending call signal", signalType, "to", otherUserId, "callId:", callId);
+    if (!connectionRef.current) {
+      console.error("No SignalR connection available for sendCallSignal");
+      return;
+    }
+    try {
+      const result = await connectionRef.current.invoke("SendCallSignal", otherUserId, callId, signalType, signalData);
+      console.log("SendCallSignal result:", result);
+      return result;
+    } catch (error) {
+      console.error("Error sending call signal:", error);
+      throw error;
+    }
+  }, []);
+
+  // Call event handlers
+  const onCallInitiated = useCallback((handler: (payload: any) => void) => {
+    if (!connectionRef.current) {
+      console.log('No connection available for callinitiated handler');
+      return () => {};
+    }
+    console.log('Registering callinitiated handler');
+    connectionRef.current.on("callinitiated", handler);
+    return () => {
+      console.log('Unregistering callinitiated handler');
+      if (connectionRef.current) {
+        connectionRef.current.off("callinitiated", handler);
+      }
+    };
+  }, []);
+
+  const onCallAccepted = useCallback((handler: (payload: any) => void) => {
+    if (!connectionRef.current) return () => {};
+    console.log('Registering callaccepted handler');
+    connectionRef.current.on("callaccepted", handler);
+    return () => {
+      console.log('Unregistering callaccepted handler');
+      if (connectionRef.current) {
+        connectionRef.current.off("callaccepted", handler);
+      }
+    };
+  }, []);
+
+  const onCallRejected = useCallback((handler: (payload: any) => void) => {
+    if (!connectionRef.current) return () => {};
+    console.log('Registering callrejected handler');
+    connectionRef.current.on("callrejected", handler);
+    return () => {
+      console.log('Unregistering callrejected handler');
+      if (connectionRef.current) {
+        connectionRef.current.off("callrejected", handler);
+      }
+    };
+  }, []);
+
+  const onCallEnded = useCallback((handler: (payload: any) => void) => {
+    if (!connectionRef.current) return () => {};
+    console.log('Registering callended handler');
+    connectionRef.current.on("callended", handler);
+    return () => {
+      console.log('Unregistering callended handler');
+      if (connectionRef.current) {
+        connectionRef.current.off("callended", handler);
+      }
+    };
+  }, []);
+
+  const onCallSignal = useCallback((handler: (payload: any) => void) => {
+    if (!connectionRef.current) return () => {};
+    console.log('Registering callsignal handler');
+    connectionRef.current.on("callsignal", handler);
+    return () => {
+      console.log('Unregistering callsignal handler');
+      if (connectionRef.current) {
+        connectionRef.current.off("callsignal", handler);
+      }
+    };
+  }, []);
+
   return {
     connected,
     connectionState,
@@ -271,6 +428,18 @@ export function useSignalRChat(currentUserId?: string | null, token?: string) {
     markMessagesRead,
     onReceiveMessage,
     onReceiveActiveUsers,
+    // Call methods
+    initiateCall,
+    acceptCall,
+    rejectCall,
+    endCall,
+    sendCallSignal,
+    onCallInitiated,
+    onCallAccepted,
+    onCallRejected,
+    onCallEnded,
+    onCallSignal,
+    testConnection,
   };
 }
 
