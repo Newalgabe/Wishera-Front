@@ -34,7 +34,9 @@ export type CallHandlers = {
   onCallSignal?: (callInfo: CallInfo, signalType: string, signalData: any) => void;
 };
 
-export function useCall(currentUserId: string | null, handlers: CallHandlers = {}) {
+export type ChatConnection = ReturnType<typeof useSignalRChat>;
+
+export function useCall(currentUserId: string | null, chat: ChatConnection, handlers: CallHandlers = {}) {
   const [currentCall, setCurrentCall] = useState<CallInfo | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
@@ -45,7 +47,6 @@ export function useCall(currentUserId: string | null, handlers: CallHandlers = {
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
-  const chat = useSignalRChat(currentUserId);
   const handlersRef = useRef(handlers);
   
   // Update handlers ref when handlers change
@@ -67,10 +68,24 @@ export function useCall(currentUserId: string | null, handlers: CallHandlers = {
     
     // Handle incoming remote stream
     peerConnection.ontrack = (event) => {
-      console.log("Received remote stream");
-      setRemoteStream(event.streams[0]);
+      console.log("Received remote track:", event.track.kind, event.track);
+      const stream = event.streams[0];
+      console.log("Remote stream:", stream);
+      console.log("Remote stream tracks:");
+      stream.getTracks().forEach((track, index) => {
+        console.log(`  Remote track ${index}: ${track.kind}`, {
+          id: track.id,
+          enabled: track.enabled,
+          muted: track.muted,
+          readyState: track.readyState,
+          label: track.label,
+        });
+      });
+      
+      setRemoteStream(stream);
       if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = event.streams[0];
+        console.log("Setting remote stream on video element");
+        remoteVideoRef.current.srcObject = stream;
       }
     };
 
@@ -155,9 +170,22 @@ export function useCall(currentUserId: string | null, handlers: CallHandlers = {
         } : false,
       };
 
+      console.log("Requesting user media with constraints:", constraints);
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       localStreamRef.current = stream;
       setLocalStream(stream);
+      
+      // Log the tracks we got
+      console.log("Got local stream with tracks:");
+      stream.getTracks().forEach((track, index) => {
+        console.log(`  Track ${index}: ${track.kind}`, {
+          id: track.id,
+          enabled: track.enabled,
+          muted: track.muted,
+          readyState: track.readyState,
+          label: track.label,
+        });
+      });
       
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
@@ -173,6 +201,92 @@ export function useCall(currentUserId: string | null, handlers: CallHandlers = {
       }
       
       throw error;
+    }
+  }, []);
+
+  // Create WebRTC offer
+  const createOffer = useCallback(async () => {
+    if (!peerConnectionRef.current || !currentCall) {
+      console.log("Cannot create offer: no peer connection or current call");
+      return;
+    }
+    
+    try {
+      console.log("Creating WebRTC offer...");
+      const offer = await peerConnectionRef.current.createOffer();
+      await peerConnectionRef.current.setLocalDescription(offer);
+      console.log("Offer created:", offer);
+      
+      // Send the offer to the other party
+      const otherUserId = currentCall.callerUserId === currentUserId 
+        ? currentCall.calleeUserId 
+        : currentCall.callerUserId;
+      
+      console.log("Sending offer to:", otherUserId);
+      chat.sendCallSignal?.(
+        otherUserId,
+        currentCall.callId,
+        "offer",
+        offer
+      );
+    } catch (error) {
+      console.error("Error creating offer:", error);
+      setCurrentCall(prev => prev ? { ...prev, state: "failed" } : null);
+    }
+  }, [currentUserId, currentCall, chat]);
+
+  // Handle WebRTC offer
+  const handleOffer = useCallback(async (offer: RTCSessionDescriptionInit) => {
+    if (!peerConnectionRef.current || !currentCall) return;
+
+    try {
+      console.log("Received offer, creating answer...");
+      await peerConnectionRef.current.setRemoteDescription(offer);
+      const answer = await peerConnectionRef.current.createAnswer();
+      await peerConnectionRef.current.setLocalDescription(answer);
+      console.log("Answer created and set as local description");
+
+      const otherUserId = currentCall.callerUserId === currentUserId 
+        ? currentCall.calleeUserId 
+        : currentCall.callerUserId;
+      
+      console.log("Sending answer to other party");
+      chat.sendCallSignal?.(
+        otherUserId,
+        currentCall.callId,
+        "answer",
+        answer
+      );
+    } catch (error) {
+      console.error("Error handling offer:", error);
+      setCurrentCall(prev => prev ? { ...prev, state: "failed" } : null);
+    }
+  }, [currentUserId, currentCall, chat]);
+
+  // Handle WebRTC answer
+  const handleAnswer = useCallback(async (answer: RTCSessionDescriptionInit) => {
+    if (!peerConnectionRef.current) return;
+    
+    try {
+      console.log("Received answer, setting remote description...");
+      await peerConnectionRef.current.setRemoteDescription(answer);
+      console.log("Remote description set successfully");
+    } catch (error) {
+      console.error("Error handling answer:", error);
+      setCurrentCall(prev => prev ? { ...prev, state: "failed" } : null);
+    }
+  }, []);
+
+  // Handle ICE candidate
+  const handleIceCandidate = useCallback(async (candidate: RTCIceCandidateInit) => {
+    if (!peerConnectionRef.current) return;
+    
+    try {
+      console.log("Received ICE candidate, adding to peer connection...");
+      await peerConnectionRef.current.addIceCandidate(candidate);
+      console.log("ICE candidate added successfully");
+    } catch (error) {
+      console.error("Error handling ICE candidate:", error);
     }
   }, []);
 
@@ -201,9 +315,12 @@ export function useCall(currentUserId: string | null, handlers: CallHandlers = {
       
       // Add local stream to peer connection
       if (localStreamRef.current) {
+        console.log("Adding local tracks to peer connection (caller):");
         localStreamRef.current.getTracks().forEach(track => {
+          console.log(`  Adding ${track.kind} track:`, track.id);
           peerConnectionRef.current?.addTrack(track, localStreamRef.current!);
         });
+        console.log("All tracks added to peer connection");
       }
 
       // Test SignalR connection first
@@ -213,7 +330,7 @@ export function useCall(currentUserId: string | null, handlers: CallHandlers = {
 
       // Send call initiation signal
       console.log("Sending call initiation signal to:", calleeUserId);
-      chat.initiateCall?.(calleeUserId, callType);
+      await chat.initiateCall?.(calleeUserId, callType, callInfo.callId);
       
       setCurrentCall(prev => prev ? { ...prev, state: "ringing" } : null);
       
@@ -258,9 +375,12 @@ export function useCall(currentUserId: string | null, handlers: CallHandlers = {
       
       // Add local stream to peer connection
       if (localStreamRef.current) {
+        console.log("Adding local tracks to peer connection (callee):");
         localStreamRef.current.getTracks().forEach(track => {
+          console.log(`  Adding ${track.kind} track:`, track.id);
           peerConnectionRef.current?.addTrack(track, localStreamRef.current!);
         });
+        console.log("All tracks added to peer connection");
       }
 
       // Send accept signal
@@ -269,10 +389,8 @@ export function useCall(currentUserId: string | null, handlers: CallHandlers = {
       
       setCurrentCall(prev => prev ? { ...prev, state: "connecting" } : null);
       
-      // If we're the callee, create an offer after accepting
-      if (callInfo.calleeUserId === currentUserId && peerConnectionRef.current) {
-        createOffer();
-      }
+      // Note: The caller will create the offer when they receive the "callaccepted" event
+      // The callee waits for the offer and then creates an answer
       
       // Call the handler if it exists
       setTimeout(() => {
@@ -530,90 +648,6 @@ export function useCall(currentUserId: string | null, handlers: CallHandlers = {
       }, 100);
     };
 
-    // Create WebRTC offer
-    const createOffer = async () => {
-      if (!peerConnectionRef.current) return;
-      
-      try {
-        console.log("Creating WebRTC offer...");
-        const offer = await peerConnectionRef.current.createOffer();
-        await peerConnectionRef.current.setLocalDescription(offer);
-        
-        // Send the offer to the other party
-        setTimeout(() => {
-          const call = currentCall;
-          if (call) {
-            chat.sendCallSignal?.(
-              call.callerUserId === currentUserId ? call.calleeUserId : call.callerUserId,
-              call.callId,
-              "offer",
-              offer
-            );
-          }
-        }, 100);
-      } catch (error) {
-        console.error("Error creating offer:", error);
-        setCurrentCall(prev => prev ? { ...prev, state: "failed" } : null);
-      }
-    };
-
-    // Handle WebRTC offer
-    const handleOffer = async (offer: RTCSessionDescriptionInit) => {
-      if (!peerConnectionRef.current) return;
-
-      try {
-        console.log("Received offer, creating answer...");
-        await peerConnectionRef.current.setRemoteDescription(offer);
-        const answer = await peerConnectionRef.current.createAnswer();
-        await peerConnectionRef.current.setLocalDescription(answer);
-        console.log("Answer created and set as local description");
-
-        // Use a timeout to ensure currentCall is set
-        setTimeout(() => {
-          const call = currentCall;
-          if (call) {
-            console.log("Sending answer to other party");
-            chat.sendCallSignal?.(
-              call.callerUserId === currentUserId ? call.calleeUserId : call.callerUserId,
-              call.callId,
-              "answer",
-              answer
-            );
-          }
-        }, 100);
-      } catch (error) {
-        console.error("Error handling offer:", error);
-        setCurrentCall(prev => prev ? { ...prev, state: "failed" } : null);
-      }
-    };
-
-    // Handle WebRTC answer
-    const handleAnswer = async (answer: RTCSessionDescriptionInit) => {
-      if (!peerConnectionRef.current) return;
-      
-      try {
-        console.log("Received answer, setting remote description...");
-        await peerConnectionRef.current.setRemoteDescription(answer);
-        console.log("Remote description set successfully");
-      } catch (error) {
-        console.error("Error handling answer:", error);
-        setCurrentCall(prev => prev ? { ...prev, state: "failed" } : null);
-      }
-    };
-
-    // Handle ICE candidate
-    const handleIceCandidate = async (candidate: RTCIceCandidateInit) => {
-      if (!peerConnectionRef.current) return;
-      
-      try {
-        console.log("Received ICE candidate, adding to peer connection...");
-        await peerConnectionRef.current.addIceCandidate(candidate);
-        console.log("ICE candidate added successfully");
-      } catch (error) {
-        console.error("Error handling ICE candidate:", error);
-      }
-    };
-
     // Register event listeners using the proper SignalR hook methods
     console.log("Registering SignalR call event handlers...");
     console.log("Registering handlers with connection state:", chat.connectionState);
@@ -638,7 +672,7 @@ export function useCall(currentUserId: string | null, handlers: CallHandlers = {
       offCallEnded?.();
       offCallSignal?.();
     };
-  }, [currentUserId, chat.connected]);
+  }, [currentUserId, chat.connected, chat.onCallInitiated, chat.onCallAccepted, chat.onCallRejected, chat.onCallEnded, chat.onCallSignal, chat.initiateCall, chat.acceptCall, chat.rejectCall, chat.endCall, chat.sendCallSignal, createOffer, handleOffer, handleAnswer, handleIceCandidate]);
 
   // Cleanup on unmount
   useEffect(() => {

@@ -207,6 +207,10 @@ export function useSignalRChat(currentUserId?: string | null, token?: string) {
     return connectionRef.current?.invoke("SendMessageToUserWithMeta", userId, message, replyToMessageId ?? null, clientMessageId ?? null);
   }, []);
 
+  const sendToUserWithCustomData = useCallback(async (userId: string, message: string, customData: Record<string, any>, replyToMessageId?: string | null, clientMessageId?: string | null) => {
+    return connectionRef.current?.invoke("SendMessageToUserWithCustomData", userId, message, customData, replyToMessageId ?? null, clientMessageId ?? null);
+  }, []);
+
   const editMessage = useCallback(async (messageId: string, newText: string) => {
     return connectionRef.current?.invoke<boolean>("EditMessage", messageId, newText);
   }, []);
@@ -226,11 +230,11 @@ export function useSignalRChat(currentUserId?: string | null, token?: string) {
       return () => {};
     }
     console.log('Registering ReceiveActiveUsers handler');
-    connectionRef.current.on("ReceiveActiveUsers", handler);
+    connectionRef.current.on("receiveactiveusers", handler);
     return () => {
       console.log('Unregistering ReceiveActiveUsers handler');
       if (connectionRef.current) {
-        connectionRef.current.off("ReceiveActiveUsers", handler);
+        connectionRef.current.off("receiveactiveusers", handler);
       }
     };
   }, []);
@@ -288,14 +292,14 @@ export function useSignalRChat(currentUserId?: string | null, token?: string) {
   }, []);
 
   // Call signaling methods
-  const initiateCall = useCallback(async (calleeUserId: string, callType: string) => {
-    console.log("SignalR: Initiating call to", calleeUserId, "type:", callType);
+  const initiateCall = useCallback(async (calleeUserId: string, callType: string, callId: string) => {
+    console.log("SignalR: Initiating call to", calleeUserId, "type:", callType, "callId:", callId);
     if (!connectionRef.current) {
       console.error("No SignalR connection available for initiateCall");
       return;
     }
     try {
-      const result = await connectionRef.current.invoke("InitiateCall", calleeUserId, callType);
+      const result = await connectionRef.current.invoke("InitiateCall", calleeUserId, callType, callId);
       console.log("InitiateCall result:", result);
       return result;
     } catch (error) {
@@ -416,6 +420,7 @@ export function useSignalRChat(currentUserId?: string | null, token?: string) {
     sendToAll,
     sendToUser,
     sendToUserWithMeta,
+    sendToUserWithCustomData,
     editMessage,
     deleteMessage,
     onTyping,

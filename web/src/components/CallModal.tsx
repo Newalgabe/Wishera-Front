@@ -24,8 +24,8 @@ interface CallModalProps {
   onEnd: () => void;
   onToggleMute: () => void;
   onToggleVideo: () => void;
-  localVideoRef: React.RefObject<HTMLVideoElement>;
-  remoteVideoRef: React.RefObject<HTMLVideoElement>;
+  localVideoRef: React.RefObject<HTMLVideoElement | null>;
+  remoteVideoRef: React.RefObject<HTMLVideoElement | null>;
 }
 
 export default function CallModal({
@@ -42,6 +42,81 @@ export default function CallModal({
   localVideoRef,
   remoteVideoRef,
 }: CallModalProps) {
+  // Ensure audio plays when remote stream is received
+  useEffect(() => {
+    if (remoteVideoRef.current && remoteStream) {
+      console.log("Setting up remote video element with stream");
+      const videoElement = remoteVideoRef.current;
+      videoElement.srcObject = remoteStream;
+      
+      // Ensure volume is at maximum
+      videoElement.volume = 1.0;
+      videoElement.muted = false;
+      
+      // Add event listeners to debug audio
+      videoElement.onloadedmetadata = () => {
+        console.log("Video element metadata loaded");
+        console.log("Video element details:", {
+          muted: videoElement.muted,
+          volume: videoElement.volume,
+          paused: videoElement.paused,
+          readyState: videoElement.readyState,
+        });
+      };
+      
+      videoElement.onplay = () => {
+        console.log("Video element started playing");
+      };
+      
+      videoElement.onerror = (e) => {
+        console.error("Video element error:", e);
+      };
+      
+      // Explicitly play the video element to ensure audio plays
+      videoElement.play().then(() => {
+        console.log("Successfully started playing remote stream");
+        console.log("Final video element state:", {
+          muted: videoElement.muted,
+          volume: videoElement.volume,
+          paused: videoElement.paused,
+        });
+      }).catch((error) => {
+        console.error("Error playing remote stream:", error);
+        console.error("Error name:", error.name);
+        console.error("Error message:", error.message);
+        // Retry after user interaction if autoplay was blocked
+        if (error.name === "NotAllowedError" || error.name === "NotSupportedError") {
+          console.log("Autoplay was blocked, will retry on user interaction");
+          // Try to play on next user interaction
+          const playOnInteraction = () => {
+            console.log("Retrying play after user interaction");
+            videoElement.play().then(() => {
+              console.log("Successfully played after user interaction");
+            }).catch(err => {
+              console.error("Still failed to play:", err);
+            });
+            document.removeEventListener('click', playOnInteraction);
+          };
+          document.addEventListener('click', playOnInteraction, { once: true });
+        }
+      });
+      
+      // Log audio tracks
+      remoteStream.getAudioTracks().forEach((track, index) => {
+        console.log(`Remote audio track ${index}:`, {
+          id: track.id,
+          enabled: track.enabled,
+          muted: track.muted,
+          readyState: track.readyState,
+        });
+        
+        // Ensure track is enabled
+        track.enabled = true;
+        console.log(`Enabled track ${index}, new state:`, track.enabled);
+      });
+    }
+  }, [remoteStream, remoteVideoRef]);
+
   if (!callInfo) return null;
 
   const isIncoming = callInfo.isIncoming;
@@ -88,13 +163,12 @@ export default function CallModal({
 
         {/* Video Area */}
         <div className="relative bg-gray-900 aspect-video">
-          {/* Remote Video */}
+          {/* Remote Video - Always render for audio playback, even in audio-only calls */}
           <video
             ref={remoteVideoRef}
             autoPlay
             playsInline
-            className="w-full h-full object-cover"
-            style={{ display: remoteStream ? "block" : "none" }}
+            className={`w-full h-full object-cover ${callInfo.callType === "audio" ? "invisible" : ""}`}
           />
           
           {/* Local Video */}
@@ -105,18 +179,27 @@ export default function CallModal({
               playsInline
               muted
               className="w-full h-full object-cover"
-              style={{ display: localStream && callInfo.callType === "video" ? "block" : "none" }}
+              style={{ 
+                display: localStream && callInfo.callType === "video" ? "block" : "none",
+                transform: "scaleX(-1)" // Mirror the video horizontally
+              }}
             />
           </div>
 
-          {/* Placeholder when no video */}
-          {!remoteStream && (
-            <div className="absolute inset-0 flex items-center justify-center">
+          {/* Placeholder when no video or during audio call */}
+          {(callInfo.callType === "audio" || !remoteStream) && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
               <div className="text-center text-white">
                 <div className="w-24 h-24 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <PhoneIcon className="w-12 h-12" />
+                  {callInfo.callType === "video" ? (
+                    <VideoCameraIcon className="w-12 h-12" />
+                  ) : (
+                    <PhoneIcon className="w-12 h-12" />
+                  )}
                 </div>
-                <p className="text-xl font-semibold">Waiting for connection...</p>
+                <p className="text-xl font-semibold">
+                  {remoteStream ? "Audio Call" : "Waiting for connection..."}
+                </p>
               </div>
             </div>
           )}

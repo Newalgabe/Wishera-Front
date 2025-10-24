@@ -8,6 +8,8 @@ import EmojiGifPicker from "@/components/EmojiGifPicker";
 import EmojiPicker from "@/components/EmojiPicker";
 import CallModal from "@/components/CallModal";
 import CallNotification from "@/components/CallNotification";
+import VoiceRecorder from "@/components/VoiceRecorder";
+import VoiceMessagePlayer from "@/components/VoiceMessagePlayer";
 import { 
   PaperAirplaneIcon, 
   PlusIcon, 
@@ -16,7 +18,8 @@ import {
   PhoneIcon,
   VideoCameraIcon,
   ArrowLeftIcon,
-  UserPlusIcon
+  UserPlusIcon,
+  MicrophoneIcon
 } from "@heroicons/react/24/outline";
 
 type ChatMessage = { 
@@ -27,6 +30,9 @@ type ChatMessage = {
   username?: string;
   replyToMessageId?: string | null;
   reactions?: Record<string, string[]>;
+  messageType?: 'text' | 'voice' | 'image' | 'video';
+  audioUrl?: string;
+  audioDuration?: number;
 };
 
 type ChatContact = {
@@ -162,7 +168,7 @@ export default function ChatPage() {
     toggleVideo,
     localVideoRef,
     remoteVideoRef,
-  } = useCall(currentUserId, {
+  } = useCall(currentUserId, chat, {
     onCallInitiated: (callInfo) => {
       console.log("Call initiated:", callInfo);
     },
@@ -189,6 +195,7 @@ export default function ChatPage() {
   const [pinMenuForId, setPinMenuForId] = useState<string | null>(null);
   const [pendingAttachment, setPendingAttachment] = useState<{ url: string; mediaType: 'image' | 'video' | 'file'; name?: string } | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const REACTIONS = ["👍","❤️","😂","🎉","👏","😮","😢","🔥","✅","❌","👌","😁","🙏","🤔","😎" ,"💖", "🍑", "🍆", "🍒"];
 
   // Call handlers
@@ -721,12 +728,21 @@ export default function ChatPage() {
         return; // do not add this hint as a chat message
       }
 
+      // Extract custom data for voice messages
+      const customData = typeof payload === 'object' ? payload?.customData : null;
+      const messageType = customData?.messageType || 'text';
+      const audioUrl = customData?.audioUrl;
+      const audioDuration = customData?.audioDuration;
+
       const newMessage: ChatMessage = {
         id,
         text,
         userId: sender,
         createdAt: serverTimestamp,
-        replyToMessageId
+        replyToMessageId,
+        messageType,
+        ...(audioUrl && { audioUrl }),
+        ...(audioDuration && { audioDuration })
       };
 
       // Determine which conversation this message belongs to
@@ -741,9 +757,10 @@ export default function ChatPage() {
         addMessageToConversation(senderConversationId, newMessage);
         
         // Update the contact's last message in the sidebar
+        const lastMessagePreview = messageType === 'voice' ? '🎤 Voice message' : text;
         setContacts(prev => prev.map(contact => 
           contact.id === sender 
-            ? { ...contact, lastMessage: text, lastMessageTime: nowIso }
+            ? { ...contact, lastMessage: lastMessagePreview, lastMessageTime: nowIso }
             : contact
         ));
       }
@@ -911,6 +928,64 @@ export default function ChatPage() {
     }
     setReplyTo(null);
   }
+
+  // Voice message handlers
+  const handleSendVoiceMessage = async (audioBlob: Blob, duration: number) => {
+    try {
+      setIsRecordingVoice(false);
+      if (!currentUserId || !selectedContact) return;
+
+      // Convert blob to file
+      const audioFile = new File([audioBlob], `voice-${Date.now()}.webm`, { type: audioBlob.type });
+
+      // Upload to server
+      const { url } = await uploadChatMedia(audioFile);
+
+      // Create voice message
+      const id = crypto.randomUUID();
+      const voiceMessage: ChatMessage = {
+        id,
+        text: '', // Empty text for voice messages
+        userId: currentUserId,
+        createdAt: new Date().toISOString(),
+        username: "You",
+        messageType: 'voice',
+        audioUrl: url,
+        audioDuration: duration,
+        replyToMessageId: replyTo?.id ?? null
+      };
+
+      if (currentConversationId) {
+        addMessageToConversation(currentConversationId, voiceMessage);
+      }
+
+      // Send via SignalR
+      const targetId = selectedContact.id;
+      if (targetId && typeof targetId === 'string') {
+        // Send with custom data containing voice message info
+        await chat.sendToUserWithCustomData(
+          targetId,
+          '',
+          {
+            messageType: 'voice',
+            audioUrl: url,
+            audioDuration: duration
+          },
+          replyTo?.id ?? undefined,
+          id
+        );
+      }
+
+      setReplyTo(null);
+    } catch (error) {
+      console.error('Failed to send voice message:', error);
+      setError('Failed to send voice message. Please try again.');
+    }
+  };
+
+  const handleCancelVoiceRecording = () => {
+    setIsRecordingVoice(false);
+  };
 
   function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value;
@@ -1543,7 +1618,15 @@ export default function ChatPage() {
                             : 'bg-white/90 dark:bg-gray-800/90 text-gray-900 dark:text-white border border-gray-200/50 dark:border-gray-700/50 rounded-bl-lg'
                         }`}
                       >
-                        <div className="leading-relaxed break-words">{renderMessageContent(message.text)}</div>
+                        {message.messageType === 'voice' && message.audioUrl ? (
+                          <VoiceMessagePlayer
+                            audioUrl={message.audioUrl}
+                            duration={message.audioDuration || 0}
+                            isOwn={message.userId === currentUserId}
+                          />
+                        ) : (
+                          <div className="leading-relaxed break-words">{renderMessageContent(message.text)}</div>
+                        )}
                         {message.reactions && Object.keys(message.reactions).length > 0 && (
                           <div className="mt-2 flex gap-1.5 text-[11px]">
                             {Object.entries(message.reactions).map(([emoji, users]) => (
@@ -1697,8 +1780,15 @@ export default function ChatPage() {
             )}
 
             {/* Message Input */}
-            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-700/50 p-4 shadow-xl">
-              <div className="max-w-3xl mx-auto flex items-center space-x-3 px-2">
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-700/50 shadow-xl">
+              {isRecordingVoice ? (
+                <VoiceRecorder
+                  onSend={handleSendVoiceMessage}
+                  onCancel={handleCancelVoiceRecording}
+                />
+              ) : (
+                <div className="p-4">
+                  <div className="max-w-3xl mx-auto flex items-center space-x-3 px-2">
                 <div className="relative">
                   <button
                     className="p-2 rounded-2xl hover:bg-gradient-to-r hover:from-indigo-500 hover:to-purple-600 text-gray-600 dark:text-gray-400 hover:text-white transition-all duration-200 shadow-lg"
@@ -1780,7 +1870,9 @@ export default function ChatPage() {
                           };
                           
                           // Add to local conversation immediately
-                          addMessageToConversation(currentConversationId, newMessage);
+                          if (currentConversationId) {
+                            addMessageToConversation(currentConversationId, newMessage);
+                          }
                           
                           // Send via SignalR
                           await chat.sendToUserWithMeta(selectedContact.id, gifMessage, undefined, id);
@@ -1813,13 +1905,26 @@ export default function ChatPage() {
                     </div>
                   )}
                 </div>
-                <button
-                  onClick={handleSend}
-                  disabled={!input.trim() && !pendingAttachment}
-                  className="p-3 rounded-3xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-xl"
-                >
-                  <PaperAirplaneIcon className="w-5 h-5" />
-                </button>
+                {/* Voice message button */}
+                {!input.trim() && !pendingAttachment && (
+                  <button
+                    onClick={() => setIsRecordingVoice(true)}
+                    className="p-3 rounded-3xl bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-xl"
+                    title="Record voice message"
+                  >
+                    <MicrophoneIcon className="w-5 h-5" />
+                  </button>
+                )}
+                {/* Send button */}
+                {(input.trim() || pendingAttachment) && (
+                  <button
+                    onClick={handleSend}
+                    disabled={!input.trim() && !pendingAttachment}
+                    className="p-3 rounded-3xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-xl"
+                  >
+                    <PaperAirplaneIcon className="w-5 h-5" />
+                  </button>
+                )}
               </div>
               {isTyping && (
                 <div className="max-w-3xl mx-auto px-6 pt-3 text-sm text-gray-500 dark:text-gray-400 flex items-center">
@@ -1859,6 +1964,8 @@ export default function ChatPage() {
               )}
 
               {quotePreview()}
+                </div>
+              )}
             </div>
           </>
         ) : (

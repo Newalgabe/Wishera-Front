@@ -784,7 +784,7 @@ export function chatAssetUrl(relativePath: string): string {
 }
 
 // Upload chat media (images/videos) to chat service -> Cloudinary
-export async function uploadChatMedia(file: File): Promise<{ url: string; mediaType: 'image' | 'video' }>{
+export async function uploadChatMedia(file: File): Promise<{ url: string; mediaType: 'image' | 'video' | 'audio' }>{
   const form = new FormData();
   form.append('file', file);
   const config = authConfig();
