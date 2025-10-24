@@ -1,11 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { createPortal } from "react-dom";
 import { 
   CalendarIcon,
   PlusIcon,
-  UserGroupIcon,
   MapPinIcon,
   ClockIcon,
   CheckIcon,
@@ -13,28 +13,20 @@ import {
   ExclamationTriangleIcon,
   PencilIcon,
   TrashIcon,
-  EyeIcon,
-  EyeSlashIcon,
   HomeIcon,
   UserIcon,
   HeartIcon,
   GiftIcon,
   MagnifyingGlassIcon,
-  BellIcon,
   ChatBubbleLeftRightIcon,
-  BookmarkIcon,
-  EllipsisHorizontalIcon,
   EllipsisVerticalIcon,
-  ShareIcon,
   ArrowRightOnRectangleIcon
 } from "@heroicons/react/24/outline";
-import { HeartIcon as HeartIconSolid } from "@heroicons/react/24/solid";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { useAuth } from "../../hooks/useAuth";
 import WisheraLogo from "../../components/WisheraLogo";
 import ThemeToggle from "../../components/ThemeToggle";
 import LanguageSelector from "../../components/LanguageSelector";
-import UserSearchAutocomplete from "../../components/UserSearchAutocomplete";
 import NotificationBadge from "../../components/NotificationBadge";
 import NotificationDropdown from "../../components/NotificationDropdown";
 import BirthdayCountdownBanner from "../../components/BirthdayCountdownBanner";
@@ -42,7 +34,6 @@ import {
   createEvent,
   getMyEvents,
   getInvitedEvents,
-  updateEvent,
   cancelEvent,
   deleteEvent,
   respondToInvitation,
@@ -53,10 +44,7 @@ import {
   type Event,
   type EventInvitation,
   type CreateEventRequest,
-  type UpdateEventRequest,
-  type RespondToInvitationRequest,
   type EventListResponse,
-  type EventInvitationListResponse,
   InvitationStatus
 } from "../../types";
 
@@ -280,6 +268,7 @@ interface EventCardProps {
 function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: EventCardProps) {
   const router = useRouter();
   const [showResponseMenu, setShowResponseMenu] = useState(false);
+  const [dropdownCoords, setDropdownCoords] = useState({ x: 0, y: 0 });
   
   // Close menu when clicking outside
   useEffect(() => {
@@ -303,6 +292,58 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
       };
     }
   }, [showResponseMenu]);
+
+  // Smart positioning logic
+  const handleMenuToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!showResponseMenu) {
+      // Calculate if dropdown should appear above or below
+      const buttonRect = e.currentTarget.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+      
+      // More accurate dropdown height calculation (3 buttons + padding)
+      const dropdownHeight = 140; // Reduced from 180 for more accurate calculation
+      const dropdownWidth = 208; // w-52 = 13rem = 208px
+      
+      const spaceBelow = viewportHeight - buttonRect.bottom;
+      const spaceAbove = buttonRect.top;
+      const spaceRight = viewportWidth - buttonRect.right;
+      
+      // Check if dropdown would fit below
+      const fitsBelow = spaceBelow >= dropdownHeight + 20; // 20px buffer
+      const fitsAbove = spaceAbove >= dropdownHeight + 20;
+      
+      // Check if dropdown would fit to the right (for horizontal positioning)
+      const fitsRight = spaceRight >= dropdownWidth + 10;
+      
+      // Determine vertical position
+      let position: 'above' | 'below';
+      if (fitsBelow && !fitsAbove) {
+        position = 'below';
+      } else if (fitsAbove && !fitsBelow) {
+        position = 'above';
+      } else if (fitsBelow && fitsAbove) {
+        // If both fit, prefer below unless we're in the lower third of the screen
+        const isInLowerThird = buttonRect.top > (viewportHeight * 2) / 3;
+        position = isInLowerThird ? 'above' : 'below';
+      } else {
+        // If neither fits perfectly, choose the one with more space
+        position = spaceAbove > spaceBelow ? 'above' : 'below';
+      }
+      
+      // Calculate coordinates for portal positioning
+      const x = fitsRight ? buttonRect.right - dropdownWidth : buttonRect.left;
+      const y = position === 'above' 
+        ? buttonRect.top - dropdownHeight - 8  // 8px gap
+        : buttonRect.bottom + 8; // 8px gap
+      
+      setDropdownCoords({ x, y });
+    }
+    
+    setShowResponseMenu(!showResponseMenu);
+  };
   
   // Debug logging for userResponse
   console.log(`EventCard ${event.id} - userResponse:`, event.userResponse, 'isOwner:', isOwner);
@@ -328,13 +369,13 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
   const getStatusColor = (status?: InvitationStatus) => {
     switch (status) {
       case InvitationStatus.Accepted:
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+        return "bg-gradient-to-r from-green-500 to-emerald-500 text-white";
       case InvitationStatus.Declined:
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+        return "bg-gradient-to-r from-red-500 to-pink-500 text-white";
       case InvitationStatus.Maybe:
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
+        return "bg-gradient-to-r from-yellow-500 to-orange-500 text-white";
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
+        return "bg-gradient-to-r from-gray-500 to-gray-600 text-white";
     }
   };
 
@@ -355,87 +396,108 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-lg transition-shadow"
+      className="group glass-card rounded-2xl p-6 cursor-pointer hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-[1.02] relative overflow-hidden"
       onClick={() => router.push(`/events/${event.id}`)}
     >
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{event.title}</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">by {event.creatorUsername}</p>
-        </div>
-        {event.isCancelled && (
-          <span className="px-2 py-1 bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 text-xs rounded-full">
-            Cancelled
-          </span>
-        )}
-      </div>
-
-      {event.description && (
-        <p className="text-gray-700 dark:text-gray-300 mb-4">{event.description}</p>
-      )}
-
-      <div className="space-y-2 mb-4">
-        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-          <CalendarIcon className="h-4 w-4 mr-2" />
-          {formatDate(event.eventDate)}
-        </div>
-        {event.eventTime && (
-          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-            <ClockIcon className="h-4 w-4 mr-2" />
-            {formatTime(event.eventTime)}
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      
+      {/* Content */}
+      <div className="relative z-10">
+        {/* Header */}
+        <div className="mb-4">
+          <div className="flex justify-between items-start gap-3 mb-2">
+            <h3 className="text-xl font-bold text-gradient bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent flex-1">
+              {event.title}
+            </h3>
+            {event.isCancelled && (
+              <span className="px-3 py-1.5 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-semibold rounded-full shadow-lg flex-shrink-0">
+                Cancelled
+              </span>
+            )}
           </div>
-        )}
-        {event.location && (
-          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-            <MapPinIcon className="h-4 w-4 mr-2" />
-            {event.location}
-          </div>
-        )}
-      </div>
-
-      {event.additionalNotes && (
-        <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
-          <p className="text-sm text-gray-700 dark:text-gray-300">
-            <strong>Notes:</strong> {event.additionalNotes}
-          </p>
-        </div>
-      )}
-
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
-          <div className="flex items-center">
-            <CheckIcon className="h-4 w-4 mr-1 text-green-600" />
-            {event.acceptedCount} accepted
-          </div>
-          <div className="flex items-center">
-            <XMarkIcon className="h-4 w-4 mr-1 text-red-600" />
-            {event.declinedCount} declined
-          </div>
-          <div className="flex items-center">
-            <ExclamationTriangleIcon className="h-4 w-4 mr-1 text-yellow-600" />
-            {event.pendingCount} pending
-          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">by {event.creatorUsername}</p>
         </div>
 
-        {!isOwner && (
-          <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(event.userResponse)}`}>
-            {getStatusText(event.userResponse)}
-          </span>
+        {/* Description */}
+        {event.description && (
+          <p className="text-gray-700 dark:text-gray-300 mb-5 leading-relaxed line-clamp-2">{event.description}</p>
         )}
-      </div>
 
-      <div className="flex justify-end space-x-2">
+        {/* Event Details */}
+        <div className="space-y-3 mb-5">
+          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 bg-white/50 dark:bg-gray-800/50 rounded-xl p-3 backdrop-blur-sm">
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center mr-3">
+              <CalendarIcon className="h-4 w-4 text-white" />
+            </div>
+            <span className="font-medium">{formatDate(event.eventDate)}</span>
+          </div>
+          {event.eventTime && (
+            <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 bg-white/50 dark:bg-gray-800/50 rounded-xl p-3 backdrop-blur-sm">
+              <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center mr-3">
+                <ClockIcon className="h-4 w-4 text-white" />
+              </div>
+              <span className="font-medium">{formatTime(event.eventTime)}</span>
+            </div>
+          )}
+          {event.location && (
+            <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 bg-white/50 dark:bg-gray-800/50 rounded-xl p-3 backdrop-blur-sm">
+              <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center mr-3">
+                <MapPinIcon className="h-4 w-4 text-white" />
+              </div>
+              <span className="font-medium">{event.location}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Additional Notes */}
+        {event.additionalNotes && (
+          <div className="mb-5 p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-xl border border-amber-200 dark:border-amber-800/30">
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              <span className="font-semibold text-amber-700 dark:text-amber-300">Notes:</span> {event.additionalNotes}
+            </p>
+          </div>
+        )}
+
+        {/* Response Stats */}
+        <div className="mb-6">
+          <div className="flex flex-wrap items-center gap-3 mb-3">
+            <div className="flex items-center bg-white/60 dark:bg-gray-800/60 rounded-full px-3 py-1.5 backdrop-blur-sm">
+              <CheckIcon className="h-4 w-4 mr-1.5 text-green-500" />
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{event.acceptedCount}</span>
+            </div>
+            <div className="flex items-center bg-white/60 dark:bg-gray-800/60 rounded-full px-3 py-1.5 backdrop-blur-sm">
+              <XMarkIcon className="h-4 w-4 mr-1.5 text-red-500" />
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{event.declinedCount}</span>
+            </div>
+            <div className="flex items-center bg-white/60 dark:bg-gray-800/60 rounded-full px-3 py-1.5 backdrop-blur-sm">
+              <ExclamationTriangleIcon className="h-4 w-4 mr-1.5 text-yellow-500" />
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{event.pendingCount}</span>
+            </div>
+          </div>
+
+          {!isOwner && (
+            <div className="flex justify-end">
+              <span className={`px-3 py-1.5 text-xs font-semibold rounded-full shadow-lg ${getStatusColor(event.userResponse)}`}> 
+                {getStatusText(event.userResponse)}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-end">
         {isOwner ? (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 justify-end">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit?.(event);
               }}
-              className="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-1"
+              className="px-4 py-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 text-white text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex items-center gap-2"
             >
-              <PencilIcon className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Edit</span>
+              <PencilIcon className="h-4 w-4" />
+              <span>Edit</span>
             </button>
             {!event.isCancelled && (
               <button
@@ -443,7 +505,7 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
                   e.stopPropagation();
                   onCancel?.(event.id);
                 }}
-                className="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-yellow-600 text-white rounded hover:bg-yellow-700"
+                className="px-4 py-2 bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-600 text-white text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95"
               >
                 Cancel
               </button>
@@ -453,29 +515,29 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
                 e.stopPropagation();
                 onDelete?.(event.id);
               }}
-              className="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-1"
+              className="px-4 py-2 bg-gradient-to-r from-red-500 via-pink-500 to-red-600 text-white text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex items-center gap-2"
             >
-              <TrashIcon className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Delete</span>
+              <TrashIcon className="h-4 w-4" />
+              <span>Delete</span>
             </button>
           </div>
         ) : (
           !event.isCancelled && (
-            <div className="flex flex-col space-y-2">
+            <div className="flex flex-col space-y-3">
               {/* Show current response status */}
-              <div className={`px-3 py-1 text-sm rounded text-center ${getStatusColor(event.userResponse)}`}>
+              <div className={`px-4 py-2 text-sm font-semibold rounded-xl text-center shadow-lg ${getStatusColor(event.userResponse)}`}>
                 {getStatusText(event.userResponse)}
               </div>
               
               {/* Show buttons only if no response yet, otherwise show 3-dots menu */}
               {event.userResponse === undefined ? (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 justify-end">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       onRespond?.(event.id, InvitationStatus.Accepted);
                     }}
-                    className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded hover:opacity-80 flex-1 min-w-0 bg-green-600 text-white hover:bg-green-700"
+                    className="px-4 py-2 bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 text-white text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex-1 min-w-0"
                   >
                     Accept
                   </button>
@@ -484,7 +546,7 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
                       e.stopPropagation();
                       onRespond?.(event.id, InvitationStatus.Declined);
                     }}
-                    className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded hover:opacity-80 flex-1 min-w-0 bg-red-600 text-white hover:bg-red-700"
+                    className="px-4 py-2 bg-gradient-to-r from-red-500 via-pink-500 to-red-600 text-white text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex-1 min-w-0"
                   >
                     Decline
                   </button>
@@ -493,7 +555,7 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
                       e.stopPropagation();
                       onRespond?.(event.id, InvitationStatus.Maybe);
                     }}
-                    className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded hover:opacity-80 flex-1 min-w-0 bg-yellow-600 text-white hover:bg-yellow-700"
+                    className="px-4 py-2 bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-600 text-white text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex-1 min-w-0"
                   >
                     Maybe
                   </button>
@@ -501,20 +563,21 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
               ) : (
                 <div className="relative response-menu-container">
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      console.log("3-dots menu clicked, current state:", showResponseMenu);
-                      setShowResponseMenu(!showResponseMenu);
-                      console.log("3-dots menu state set to:", !showResponseMenu);
-                    }}
-                    className="flex items-center justify-center w-full px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                    onClick={handleMenuToggle}
+                    className="flex items-center justify-center w-full px-4 py-2 bg-gradient-to-r from-gray-100 via-gray-50 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95"
                   >
                     <EllipsisVerticalIcon className="h-4 w-4" />
                   </button>
                   
-                  {showResponseMenu && (
-                    <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-10">
-                      <div className="py-1">
+                  {showResponseMenu && typeof window !== 'undefined' && createPortal(
+                    <div 
+                      className="fixed w-52 glass-card rounded-xl shadow-2xl z-[9999] border border-gray-200/50 dark:border-gray-700/50"
+                      style={{
+                        left: `${dropdownCoords.x}px`,
+                        top: `${dropdownCoords.y}px`,
+                      }}
+                    >
+                      <div className="py-2">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -522,10 +585,10 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
                             onRespond?.(event.id, InvitationStatus.Accepted);
                             setShowResponseMenu(false);
                           }}
-                          className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                          className={`w-full text-left px-4 py-3 text-sm font-medium rounded-lg mx-2 transition-all duration-200 ${
                             event.userResponse === InvitationStatus.Accepted 
-                              ? 'bg-green-50 dark:bg-green-900 text-green-800 dark:text-green-200' 
-                              : 'text-gray-700 dark:text-gray-300'
+                              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg' 
+                              : 'text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20'
                           }`}
                         >
                           ✓ Accept
@@ -537,10 +600,10 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
                             onRespond?.(event.id, InvitationStatus.Declined);
                             setShowResponseMenu(false);
                           }}
-                          className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                          className={`w-full text-left px-4 py-3 text-sm font-medium rounded-lg mx-2 transition-all duration-200 ${
                             event.userResponse === InvitationStatus.Declined 
-                              ? 'bg-red-50 dark:bg-red-900 text-red-800 dark:text-red-200' 
-                              : 'text-gray-700 dark:text-gray-300'
+                              ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg' 
+                              : 'text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20'
                           }`}
                         >
                           ✗ Decline
@@ -552,22 +615,24 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
                             onRespond?.(event.id, InvitationStatus.Maybe);
                             setShowResponseMenu(false);
                           }}
-                          className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                          className={`w-full text-left px-4 py-3 text-sm font-medium rounded-lg mx-2 transition-all duration-200 ${
                             event.userResponse === InvitationStatus.Maybe 
-                              ? 'bg-yellow-50 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' 
-                              : 'text-gray-700 dark:text-gray-300'
+                              ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg' 
+                              : 'text-gray-700 dark:text-gray-300 hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
                           }`}
                         >
                           ? Maybe
                         </button>
                       </div>
-                    </div>
+                    </div>,
+                    document.body
                   )}
                 </div>
               )}
             </div>
           )
         )}
+        </div>
       </div>
     </motion.div>
   );
@@ -586,42 +651,11 @@ export default function EventsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
   const [showBirthdayNotification, setShowBirthdayNotification] = useState(true);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    console.log("Events page useEffect - user:", user);
-    console.log("Events page useEffect - authLoading:", authLoading);
-    console.log("Events page useEffect - localStorage token:", typeof window !== 'undefined' ? localStorage.getItem('token') : 'N/A');
-    console.log("Events page useEffect - localStorage user:", typeof window !== 'undefined' ? localStorage.getItem('user') : 'N/A');
-    
-    if (user) {
-      console.log("User found, loading data...");
-      loadData();
-    } else if (!authLoading) {
-      console.log("No user and auth not loading, stopping loading");
-      // If no user and auth is not loading, stop loading
-      setIsLoading(false);
-      setError("Please log in to view events.");
-    }
-  }, [user, authLoading]);
-
-  // Add timeout to prevent infinite loading
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (isLoading) {
-        console.log("Loading timeout reached, stopping loading");
-        setIsLoading(false);
-        setError("Loading timeout. Please refresh the page.");
-      }
-    }, 10000); // 10 second timeout
-
-    return () => clearTimeout(timeout);
-  }, [isLoading]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       console.log("Loading events data...");
       console.log("User:", user);
@@ -671,7 +705,37 @@ export default function EventsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, authLoading]);
+
+  useEffect(() => {
+    console.log("Events page useEffect - user:", user);
+    console.log("Events page useEffect - authLoading:", authLoading);
+    console.log("Events page useEffect - localStorage token:", typeof window !== 'undefined' ? localStorage.getItem('token') : 'N/A');
+    console.log("Events page useEffect - localStorage user:", typeof window !== 'undefined' ? localStorage.getItem('user') : 'N/A');
+    
+    if (user) {
+      console.log("User found, loading data...");
+      loadData();
+    } else if (!authLoading) {
+      console.log("No user and auth not loading, stopping loading");
+      // If no user and auth is not loading, stop loading
+      setIsLoading(false);
+      setError("Please log in to view events.");
+    }
+  }, [user, authLoading, loadData]);
+
+  // Add timeout to prevent infinite loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (isLoading) {
+        console.log("Loading timeout reached, stopping loading");
+        setIsLoading(false);
+        setError("Loading timeout. Please refresh the page.");
+      }
+    }, 10000); // 10 second timeout
+
+    return () => clearTimeout(timeout);
+  }, [isLoading]);
 
   const handleCreateEvent = async (eventData: CreateEventRequest) => {
     try {
