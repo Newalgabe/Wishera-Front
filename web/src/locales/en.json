@@ -397,5 +397,25 @@
     "minutesAgo": "{{minutes}}m ago",
     "hoursAgo": "{{hours}}h ago",
     "daysAgo": "{{days}}d ago"
+  },
+  "reservedGifts": {
+    "title": "My Reserved Gifts",
+    "description": "View and manage all gifts you have reserved from friends' wishlists",
+    "reserved": "Reserved",
+    "viewWishlist": "View Wishlist",
+    "cancelReservation": "Cancel Reservation",
+    "empty": {
+      "title": "No Reserved Gifts",
+      "description": "You haven't reserved any gifts yet. Browse your friends' wishlists to find gifts to reserve!",
+      "browseGifts": "Browse Gifts"
+    }
+  },
+  "calendar": {
+    "title": "Birthday Calendar",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "inDays": "In {{days}} days",
+    "noBirthdays": "No birthdays on this date",
+    "upcomingBirthdays": "Upcoming Birthdays"
   }
 }

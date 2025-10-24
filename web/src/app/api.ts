@@ -218,6 +218,42 @@ export async function getWishlistDetails(id: string): Promise<WishlistResponseDT
   return response.data;
 }
 
+export async function getMyReservedGifts(): Promise<GiftDTO[]> {
+  try {
+    // Try the main API URL first (port 5155), then fallback to gift service (port 5003)
+    const mainApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5155';
+    const giftServiceUrl = process.env.NEXT_PUBLIC_GIFT_API_URL || 'http://localhost:5003';
+    
+    try {
+      // Try main app first
+      console.log('Trying main app endpoint:', `${mainApiUrl}/reserved`);
+      const response = await axios.get(`${mainApiUrl}/reserved`, authConfig());
+      console.log('Main app response successful');
+      return response.data;
+    } catch (mainError) {
+      console.log('Main app endpoint failed, trying gift service...', mainError);
+      // Fallback to gift service
+      console.log('Trying gift service endpoint:', `${giftServiceUrl}/reserved`);
+      const response = await axios.get(`${giftServiceUrl}/reserved`, authConfig());
+      console.log('Gift service response successful');
+      return response.data;
+    }
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (error.code === 'ECONNREFUSED' || error.response?.status === 0) {
+        throw new Error('Backend services are currently unavailable. Please make sure the backend services are running on ports 5155 and 5003.');
+      } else if (error.response?.status === 404) {
+        throw new Error('Reserved gifts endpoint not found. Please check if the backend service is properly configured.');
+      } else if (error.response?.status === 401) {
+        throw new Error('Unauthorized. Please login again.');
+      } else if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+    }
+    throw error;
+  }
+}
+
 export async function likeWishlist(id: string): Promise<boolean> {
   const response = await axios.post(`${GIFT_API_URL}/wishlists/${id}/like`, null, authConfig());
   return response.data;
@@ -432,13 +468,39 @@ export async function uploadGiftImage(id: string, file: File): Promise<{ ImageUr
 }
 
 export async function reserveGift(id: string): Promise<{ message: string; reservedBy: string }>{
-  const response = await axios.post(`${GIFT_API_URL}/gift/${id}/reserve`, null, authConfig());
-  return response.data;
+  try {
+    const response = await axios.post(`${GIFT_API_URL}/gift/${id}/reserve`, null, authConfig());
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (error.code === 'ECONNREFUSED' || error.response?.status === 0) {
+        throw new Error('Gift service is currently unavailable. Please try again later.');
+      } else if (error.response?.status === 404) {
+        throw new Error('Gift not found. Please refresh the page and try again.');
+      } else if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+    }
+    throw error;
+  }
 }
 
 export async function cancelGiftReservation(id: string): Promise<{ message: string }>{
-  const response = await axios.post(`${GIFT_API_URL}/gift/${id}/cancel-reserve`, null, authConfig());
-  return response.data;
+  try {
+    const response = await axios.post(`${GIFT_API_URL}/gift/${id}/cancel-reserve`, null, authConfig());
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (error.code === 'ECONNREFUSED' || error.response?.status === 0) {
+        throw new Error('Gift service is currently unavailable. Please try again later.');
+      } else if (error.response?.status === 404) {
+        throw new Error('Gift not found. Please refresh the page and try again.');
+      } else if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+    }
+    throw error;
+  }
 }
 
 export async function getReservedGifts(): Promise<GiftDTO[]> {

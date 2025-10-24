@@ -133,7 +133,11 @@ function GiftsPageInner() {
         const currentUserId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
         setGifts(prev => prev.map(g => g.id === id ? { ...g, reservedByUserId: currentUserId || g.reservedByUserId, reservedByUsername: res.reservedBy } : g));
       }
-    } catch {}
+    } catch (error) {
+      console.error('Failed to reserve/cancel gift:', error);
+      setError('Failed to reserve/cancel gift. Please try again.');
+      setTimeout(() => setError(null), 3000);
+    }
   }
 
   return (
@@ -237,8 +241,21 @@ function GiftsPageInner() {
                         )}
                         <button
                           onClick={() => handleReserve(g.id, !!g.reservedByUserId)}
-                          className="px-2 py-1 text-sm rounded bg-indigo-600 text-white"
-                        >{g.reservedByUserId ? "Cancel" : "Reserve"}</button>
+                          className={`px-2 py-1 text-sm rounded ${
+                            g.reservedByUserId && g.reservedByUserId !== (typeof window !== 'undefined' ? localStorage.getItem('userId') : null)
+                              ? 'bg-gray-400 text-white cursor-not-allowed'
+                              : g.reservedByUserId
+                                ? 'bg-orange-600 text-white'
+                                : 'bg-indigo-600 text-white'
+                          }`}
+                          disabled={g.reservedByUserId && g.reservedByUserId !== (typeof window !== 'undefined' ? localStorage.getItem('userId') : null)}
+                        >
+                          {g.reservedByUserId && g.reservedByUserId === (typeof window !== 'undefined' ? localStorage.getItem('userId') : null)
+                            ? "Cancel"
+                            : g.reservedByUserId
+                              ? "Reserved"
+                              : "Reserve"}
+                        </button>
                       </div>
                     </div>
                   </div>

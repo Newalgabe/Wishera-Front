@@ -20,6 +20,7 @@ import {
 import { HeartIcon as HeartIconSolid } from "@heroicons/react/24/solid";
 import { useLanguage } from "../../contexts/LanguageContext";
 import WisheraLogo from "../../components/WisheraLogo";
+import BirthdayCalendar from "../../components/BirthdayCalendar";
 import {
   getFeed,
   likeWishlist,
@@ -899,6 +900,15 @@ export default function Dashboard() {
                 <span className="font-medium">{t('dashboard.myGifts')}</span>
               </button>
               <button
+                onClick={() => router.push('/reserved-gifts')}
+                className="w-full flex items-center px-4 py-4 text-left rounded-xl transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md"
+              >
+                <svg className="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="font-medium">{t('reservedGifts.title')}</span>
+              </button>
+              <button
                 onClick={() => router.push('/events')}
                 className="w-full flex items-center px-4 py-4 text-left rounded-xl transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md"
               >
@@ -1238,7 +1248,12 @@ export default function Dashboard() {
                     {/* Gifts Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                       {wishlist.gifts.length > 0 && wishlist.gifts.map((gift) => (
-                        <div key={gift.id} className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1">
+                        <div 
+                          key={gift.id} 
+                          onClick={() => router.push(`/wishlist/${wishlist.id}`)}
+                          className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1 cursor-pointer group relative"
+                          title="Click to view wishlist details"
+                        >
                           {gift.image && (
                             <img
                               src={gift.image}
@@ -1262,6 +1277,12 @@ export default function Dashboard() {
                                 </div>
                               </div>
                             )}
+                            {/* View Details Indicator */}
+                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              <div className="bg-black/50 backdrop-blur-sm rounded-full p-2">
+                                <EyeIcon className="w-4 h-4 text-white" />
+                              </div>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -1601,7 +1622,11 @@ export default function Dashboard() {
                                         const currentUserId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
                                         setGifts(prev=> prev.map(x=> x.id===g.id ? { ...x, reservedByUserId: currentUserId || x.reservedByUserId, reservedByUsername: res.reservedBy } : x));
                                       }
-                                    } catch {}
+                                    } catch (error) {
+                                      console.error('Failed to reserve/cancel gift:', error);
+                                      setError('Failed to reserve/cancel gift. Please try again.');
+                                      setTimeout(() => setError(null), 3000);
+                                    }
                                   }}
                                   className="flex-1 px-3 py-2 text-sm rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 font-medium shadow-md hover:shadow-lg"
                                 >
@@ -1769,7 +1794,12 @@ export default function Dashboard() {
                     {(wishlist as any).gifts && (wishlist as any).gifts.length > 0 && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                         {(wishlist as any).gifts.map((gift: any) => (
-                          <div key={gift.id} className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1">
+                          <div 
+                            key={gift.id} 
+                            onClick={() => router.push(`/wishlist/${wishlist.id}`)}
+                            className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1 cursor-pointer group relative"
+                            title="Click to view wishlist details"
+                          >
                             {gift.image && (
                               <img
                                 src={gift.image}
@@ -1793,6 +1823,12 @@ export default function Dashboard() {
                                   </div>
                                 </div>
                               )}
+                            </div>
+                            {/* View Details Indicator */}
+                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              <div className="bg-black/50 backdrop-blur-sm rounded-full p-2">
+                                <EyeIcon className="w-4 h-4 text-white" />
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -1835,6 +1871,9 @@ export default function Dashboard() {
         {/* Right Sidebar */}
         <div className="w-80 bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-l border-gray-200 dark:border-gray-700 fixed right-0 top-16 bottom-0 overflow-y-auto">
           <div className="p-6">
+            {/* Birthday Calendar */}
+            <BirthdayCalendar className="mb-6" />
+
             {/* Suggested Users */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 mb-6">
               <div className="flex items-center gap-3 mb-6">
@@ -1878,7 +1917,9 @@ export default function Dashboard() {
                           } catch {}
                         }}
                         className="text-sm px-4 py-2 rounded-full bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/40 transition-colors duration-200 font-medium"
-                      >{t('dashboard.unfollow')}</button>
+                      >
+                        {t('dashboard.unfollow')}
+                      </button>
                     ) : (
                       <button
                         onClick={async () => {
@@ -1888,7 +1929,9 @@ export default function Dashboard() {
                           } catch {}
                         }}
                         className="text-sm px-4 py-2 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:scale-105"
-                      >{t('dashboard.follow')}</button>
+                      >
+                        {t('dashboard.follow')}
+                      </button>
                     )}
                   </div>
                 ))}

@@ -27,6 +27,8 @@ import {
   addGiftToWishlist,
   removeGiftFromWishlist,
   createGift,
+  reserveGift,
+  cancelGiftReservation,
   type GiftDTO
 } from "../../api";
 
@@ -47,6 +49,7 @@ export default function WishlistDetailsPage() {
   const [createGiftForm, setCreateGiftForm] = useState<{ name: string; price: string; category: string; imageFile: File | null }>({ name: "", price: "", category: "", imageFile: null });
   const [createGiftLoading, setCreateGiftLoading] = useState(false);
   const [createGiftError, setCreateGiftError] = useState<string | null>(null);
+  const [reservingGiftId, setReservingGiftId] = useState<string | null>(null);
 
   const currentUserId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
 
@@ -178,6 +181,122 @@ export default function WishlistDetailsPage() {
         ? (error.response as { data?: { message?: string } })?.data?.message 
         : 'Failed to remove gift from wishlist';
       setError(errorMessage || 'Failed to remove gift from wishlist');
+    }
+  };
+
+  const handleReserveGift = async (giftId: string, isReserved: boolean) => {
+    if (!wishlist) return;
+    
+    console.log('Reserving gift:', { giftId, isReserved, wishlistItems: wishlist.items?.length });
+    setReservingGiftId(giftId);
+    
+    // Optimistically update the UI immediately
+    setWishlist(prevWishlist => {
+      if (!prevWishlist || !prevWishlist.items || !Array.isArray(prevWishlist.items)) return prevWishlist;
+      
+      return {
+        ...prevWishlist,
+        items: prevWishlist.items.map(gift => {
+          if (gift.giftId === giftId) {
+            if (isReserved) {
+              // Cancel reservation - remove reservation info
+              return {
+                ...gift,
+                reservedByUserId: null,
+                reservedByUsername: null
+              };
+            } else {
+              // Reserve gift - add reservation info
+              return {
+                ...gift,
+                reservedByUserId: currentUserId,
+                reservedByUsername: 'You' // We'll update this with the actual username from the API response
+              };
+            }
+          }
+          return gift;
+        })
+      };
+    });
+    
+    try {
+      if (isReserved) {
+        await cancelGiftReservation(giftId);
+        setSuccessMessage('Gift reservation cancelled successfully!');
+      } else {
+        const response = await reserveGift(giftId);
+        setSuccessMessage('Gift reserved successfully!');
+        
+        // Update with the actual username from the API response
+        setWishlist(prevWishlist => {
+          if (!prevWishlist || !prevWishlist.items || !Array.isArray(prevWishlist.items)) return prevWishlist;
+          
+          return {
+            ...prevWishlist,
+            items: prevWishlist.items.map(gift => {
+              if (gift.giftId === giftId) {
+                return {
+                  ...gift,
+                  reservedByUsername: response.reservedBy || 'You'
+                };
+              }
+              return gift;
+            })
+          };
+        });
+      }
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (error: unknown) {
+      console.error('Failed to reserve/cancel gift:', error);
+
+      // Revert the optimistic update on error
+      setWishlist(prevWishlist => {
+        if (!prevWishlist || !prevWishlist.items || !Array.isArray(prevWishlist.items)) return prevWishlist;
+        
+        return {
+          ...prevWishlist,
+          items: prevWishlist.items.map(gift => {
+            if (gift.giftId === giftId) {
+              if (isReserved) {
+                // Revert cancellation - restore reservation info
+                return {
+                  ...gift,
+                  reservedByUserId: currentUserId,
+                  reservedByUsername: 'You'
+                };
+              } else {
+                // Revert reservation - remove reservation info
+                return {
+                  ...gift,
+                  reservedByUserId: null,
+                  reservedByUsername: null
+                };
+              }
+            }
+            return gift;
+          })
+        };
+      });
+
+      let errorMessage = 'Failed to reserve/cancel gift';
+
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as any;
+        if (axiosError.response?.status === 404) {
+          errorMessage = 'Gift not found. Please refresh the page and try again.';
+        } else if (axiosError.response?.status === 0 || axiosError.code === 'ECONNREFUSED') {
+          errorMessage = 'Gift service is currently unavailable. Please try again later.';
+        } else if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        }
+      } else if (error && typeof error === 'object' && 'message' in error) {
+        errorMessage = (error as Error).message;
+      }
+
+      setError(errorMessage);
+      setTimeout(() => setError(null), 5000);
+    } finally {
+      setReservingGiftId(null);
     }
   };
 
@@ -377,7 +496,7 @@ export default function WishlistDetailsPage() {
             >
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Gifts ({wishlist.items.length})</h3>
-                {(wishlist.isOwner || true) && (
+                {wishlist.isOwner && (
                   <button
                     onClick={() => {
                       if (showGiftSelector) {
@@ -407,7 +526,9 @@ export default function WishlistDetailsPage() {
                   {wishlist.items.map((gift, index) => (
                     <div
                       key={index}
-                      className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-md transition-shadow"
+                      className={`border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-md transition-shadow ${
+                        reservingGiftId === gift.giftId ? 'ring-2 ring-indigo-500 ring-opacity-50 bg-indigo-50 dark:bg-indigo-900/20' : ''
+                      }`}
                     >
                       <div className="flex items-start space-x-3">
                         {gift.imageUrl ? (
@@ -431,16 +552,54 @@ export default function WishlistDetailsPage() {
                               {getTranslatedCategoryLabel(gift.category)}
                             </span>
                           )}
+                          {gift.reservedByUsername && !wishlist.isOwner && (
+                            <div className="mt-2">
+                              <span className="inline-block px-2 py-1 text-xs bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-full">
+                                Reserved by {gift.reservedByUsername}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                        {wishlist.isOwner && gift.giftId && (
-                          <button
-                            onClick={() => handleRemoveGiftFromWishlist(gift.giftId!)}
-                            className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
-                            title="Remove from wishlist"
-                          >
-                            Remove
-                          </button>
-                        )}
+                        <div className="flex flex-col space-y-2">
+                          {!wishlist.isOwner && gift.giftId && (
+                            <button
+                              onClick={() => handleReserveGift(gift.giftId!, !!gift.reservedByUserId)}
+                              className={`px-3 py-1 text-sm rounded transition-colors flex items-center gap-2 ${
+                                gift.reservedByUserId && gift.reservedByUserId === currentUserId
+                                  ? 'bg-orange-600 hover:bg-orange-700 text-white'
+                                  : gift.reservedByUserId
+                                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                              }`}
+                              title={gift.reservedByUserId ? "Cancel reservation" : "Reserve gift"}
+                              disabled={gift.reservedByUserId && gift.reservedByUserId !== currentUserId || reservingGiftId === gift.giftId}
+                            >
+                              {reservingGiftId === gift.giftId ? (
+                                <>
+                                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                  <span>Processing...</span>
+                                </>
+                              ) : (
+                                <>
+                                  {gift.reservedByUserId && gift.reservedByUserId === currentUserId 
+                                    ? "Cancel Reserve" 
+                                    : gift.reservedByUserId 
+                                      ? "Reserved" 
+                                      : "Reserve"}
+                                </>
+                              )}
+                            </button>
+                          )}
+                          {wishlist.isOwner && gift.giftId && (
+                            <button
+                              onClick={() => handleRemoveGiftFromWishlist(gift.giftId!)}
+                              className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
+                              title="Remove from wishlist"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
