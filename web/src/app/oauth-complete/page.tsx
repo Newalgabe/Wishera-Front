@@ -6,18 +6,24 @@ export default function OAuthCompletePage() {
   const [message, setMessage] = useState("Completing sign-in...");
 
   useEffect(() => {
-    // This page is optional; backend currently returns JSON on callback.
-    // If backend switches to redirect here with a token, parse and store it.
+    // Parse authentication data from URL query parameters
     const url = new URL(window.location.href);
     const token = url.searchParams.get("token");
+    const userId = url.searchParams.get("userId");
+    const username = url.searchParams.get("username");
+    
     if (token) {
+      // Store authentication data
       localStorage.setItem("token", token);
+      if (userId) localStorage.setItem("userId", userId);
+      if (username) localStorage.setItem("username", username);
+      
       setMessage("Signed in successfully. Redirecting to dashboard...");
       setTimeout(() => {
         window.location.href = "/dashboard";
       }, 1000);
     } else {
-      setMessage("You can close this window and return to the app.");
+      setMessage("Authentication failed. Please try again.");
     }
   }, []);
 

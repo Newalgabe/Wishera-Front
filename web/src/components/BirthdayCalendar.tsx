@@ -19,12 +19,21 @@ export default function BirthdayCalendar({ className = '' }: BirthdayCalendarPro
 
   useEffect(() => {
     loadBirthdays();
-  }, []);
+  }, [currentDate]); // Reload when month changes
 
   const loadBirthdays = async () => {
     try {
       setLoading(true);
-      const upcomingBirthdays = await getUpcomingBirthdays(30); // Get birthdays for next 30 days
+      // Calculate days ahead to cover the displayed month and beyond
+      const today = new Date();
+      const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+      const daysFromTodayToEndOfMonth = Math.max(0, Math.ceil((lastDayOfMonth.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
+      
+      // Fetch at least 365 days to show all birthdays throughout the year
+      const daysAhead = Math.max(365, daysFromTodayToEndOfMonth + 30);
+      
+      console.log('Loading birthdays for', daysAhead, 'days ahead');
+      const upcomingBirthdays = await getUpcomingBirthdays(daysAhead);
       console.log('Loaded birthdays:', upcomingBirthdays);
       setBirthdays(upcomingBirthdays || []);
     } catch (error) {
@@ -48,34 +57,66 @@ export default function BirthdayCalendar({ className = '' }: BirthdayCalendarPro
   };
 
   const getBirthdaysForDate = (date: Date) => {
-    const day = date.getDate();
-    const month = date.getMonth() + 1;
-    const year = date.getFullYear();
+    const targetDay = date.getDate();
+    const targetMonth = date.getMonth() + 1; // JavaScript months are 0-indexed
     
     const matchingBirthdays = birthdays.filter(birthday => {
-      const birthdayDate = new Date(birthday.birthday);
-      const birthdayDay = birthdayDate.getDate();
-      const birthdayMonth = birthdayDate.getMonth() + 1;
-      const birthdayYear = birthdayDate.getFullYear();
-      
-      // Check if it's the same day and month, and the year is current or next
-      const matches = birthdayDay === day && 
-                     birthdayMonth === month && 
-                     (birthdayYear === year || birthdayYear === year + 1);
-      
-      if (matches) {
-        console.log('Found birthday match:', {
-          birthday: birthday.birthday,
-          birthdayDate: birthdayDate,
-          targetDate: date,
-          username: birthday.username
-        });
+      try {
+        // Parse the birthday from the DTO
+        // CRITICAL: Always use UTC parsing to avoid timezone shifts
+        const birthdayStr = birthday.birthday;
+        let birthdayDate: Date;
+        
+        // Parse the ISO string and extract year, month, day
+        if (birthdayStr.includes('T') || birthdayStr.includes('Z')) {
+          // Extract the date part before 'T' to avoid timezone conversion
+          const datePart = birthdayStr.split('T')[0];
+          const [year, month, day] = datePart.split('-').map(Number);
+          birthdayDate = new Date(Date.UTC(year, month - 1, day));
+        } else {
+          // For date-only strings, parse as UTC to avoid timezone shifts
+          const [year, month, day] = birthdayStr.split('-').map(Number);
+          birthdayDate = new Date(Date.UTC(year, month - 1, day));
+        }
+        
+        // Use UTC methods to avoid timezone issues
+        const birthdayDay = birthdayDate.getUTCDate();
+        const birthdayMonth = birthdayDate.getUTCMonth() + 1;
+        
+        // Match birthdays by day and month only (birthdays recur annually)
+        const matches = birthdayDay === targetDay && birthdayMonth === targetMonth;
+        
+        if (matches) {
+          console.log('Found birthday match:', {
+            birthday: birthday.birthday,
+            birthdayDate: birthdayDate.toISOString().split('T')[0],
+            targetDate: date.toISOString().split('T')[0],
+            username: birthday.username,
+            birthdayDay,
+            birthdayMonth,
+            targetDay,
+            targetMonth
+          });
+        }
+        
+        return matches;
+      } catch (error) {
+        console.error('Error parsing birthday date:', birthday.birthday, error);
+        return false;
       }
-      
-      return matches;
     });
     
     return matchingBirthdays;
+  };
+
+  const isBirthdayPast = (date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+    
+    // Birthday is past if it's before today in the current year
+    return compareDate < today && compareDate.getFullYear() === today.getFullYear();
   };
 
   const formatDate = (date: Date) => {
@@ -196,6 +237,7 @@ export default function BirthdayCalendar({ className = '' }: BirthdayCalendarPro
           const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
           const dayBirthdays = getBirthdaysForDate(date);
           const hasBirthdays = dayBirthdays.length > 0;
+          const isPast = isBirthdayPast(date);
           
           return (
             <button
@@ -206,6 +248,8 @@ export default function BirthdayCalendar({ className = '' }: BirthdayCalendarPro
                   ? 'bg-indigo-600 text-white font-bold shadow-md'
                   : isSelected(date)
                   ? 'bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-semibold'
+                  : hasBirthdays && isPast
+                  ? 'bg-gray-100 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600/50 opacity-75'
                   : hasBirthdays
                   ? 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-800/30'
                   : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
@@ -213,7 +257,9 @@ export default function BirthdayCalendar({ className = '' }: BirthdayCalendarPro
             >
               {day}
               {hasBirthdays && (
-                <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-green-500 rounded-full border border-white dark:border-gray-800"></div>
+                <div className={`absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full border border-white dark:border-gray-800 ${
+                  isPast ? 'bg-gray-400 dark:bg-gray-500' : 'bg-green-500'
+                }`}></div>
               )}
             </button>
           );
@@ -232,26 +278,46 @@ export default function BirthdayCalendar({ className = '' }: BirthdayCalendarPro
           </h5>
           {getBirthdaysForDate(selectedDate).length > 0 ? (
             <div className="space-y-2">
-              {getBirthdaysForDate(selectedDate).map((birthday, index) => (
-                <div key={index} className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                  <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                    <UserIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
+              {getBirthdaysForDate(selectedDate).map((birthday, index) => {
+                const isPast = isBirthdayPast(selectedDate);
+                return (
+                  <div 
+                    key={index} 
+                    className={`flex items-center gap-2 p-2 rounded-lg ${
+                      isPast 
+                        ? 'bg-gray-50 dark:bg-gray-700/30 opacity-75' 
+                        : 'bg-green-50 dark:bg-green-900/20'
+                    }`}
+                  >
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      isPast 
+                        ? 'bg-gray-100 dark:bg-gray-600/30' 
+                        : 'bg-green-100 dark:bg-green-900/30'
+                    }`}>
+                      <UserIcon className={`w-4 h-4 ${
+                        isPast 
+                          ? 'text-gray-500 dark:text-gray-400' 
+                          : 'text-green-600 dark:text-green-400'
+                      }`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        {birthday.username}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {isPast 
+                          ? t('calendar.alreadyPassed') || 'Already happened this year'
+                          : birthday.daysUntilBirthday === 0 
+                            ? t('calendar.today') 
+                            : birthday.daysUntilBirthday === 1 
+                            ? t('calendar.tomorrow')
+                            : t('calendar.inDays', { days: birthday.daysUntilBirthday })
+                        }
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                      {birthday.username}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {birthday.daysUntilBirthday === 0 
-                        ? t('calendar.today') 
-                        : birthday.daysUntilBirthday === 1 
-                        ? t('calendar.tomorrow')
-                        : t('calendar.inDays', { days: birthday.daysUntilBirthday })
-                      }
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">

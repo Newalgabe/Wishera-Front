@@ -9,19 +9,20 @@ import {
   UserIcon,
   HeartIcon,
   CheckIcon,
-  EllipsisHorizontalIcon
+  TrashIcon
 } from "@heroicons/react/24/outline";
 import { 
   GiftIcon as GiftIconSolid,
   CalendarIcon as CalendarIconSolid,
   HeartIcon as HeartIconSolid
 } from "@heroicons/react/24/solid";
-import { NotificationDTO } from "../types";
+import { NotificationDTO, NotificationType, NotificationListDTO } from "../types";
 import { 
   getNotifications, 
   markNotificationAsRead, 
   markAllNotificationsAsRead,
-  getUnreadNotificationCount
+  getUnreadNotificationCount,
+  deleteNotification
 } from "../app/api";
 import { useLanguage } from "../contexts/LanguageContext";
 
@@ -64,17 +65,26 @@ export default function NotificationDropdown({
   const fetchNotifications = async () => {
     setIsLoading(true);
     try {
-      const [notificationsData, unreadCountData] = await Promise.all([
-        getNotifications(1, 20),
-        getUnreadNotificationCount()
-      ]);
+      const data = await getNotifications(1, 20);
       
-      // Ensure notifications is always an array
-      const notificationsArray = Array.isArray(notificationsData) ? notificationsData : [];
-      setNotifications(notificationsArray);
-      setUnreadCount(unreadCountData);
+      // Handle NotificationListDTO response structure
+      if (data && typeof data === 'object') {
+        if ('notifications' in data) {
+          // New API structure with pagination
+          const listData = data as NotificationListDTO;
+          setNotifications(listData.notifications || []);
+          setUnreadCount(listData.unreadCount || 0);
+        } else if (Array.isArray(data)) {
+          // Fallback for array response
+          setNotifications(data);
+          const unreadCountData = await getUnreadNotificationCount();
+          setUnreadCount(unreadCountData);
+        }
+      }
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
+      setNotifications([]);
+      setUnreadCount(0);
     } finally {
       setIsLoading(false);
     }
@@ -108,28 +118,48 @@ export default function NotificationDropdown({
     }
   };
 
-  const getNotificationIcon = (type: string, isRead: boolean) => {
+  const handleDelete = async (notificationId: string, isRead: boolean) => {
+    try {
+      await deleteNotification(notificationId);
+      setNotifications(prev => prev.filter(notif => notif.id !== notificationId));
+      if (!isRead) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (error) {
+      console.error('Failed to delete notification:', error);
+    }
+  };
+
+  const getNotificationIcon = (type: NotificationType, isRead: boolean) => {
     const iconClass = `w-5 h-5 ${isRead ? 'text-gray-400' : 'text-indigo-500'}`;
     
     switch (type) {
-      case 'birthday':
+      case NotificationType.BirthdayReminder:
+      case NotificationType.EventInvitation:
+      case NotificationType.EventReminder:
         return isRead ? (
           <CalendarIcon className={iconClass} />
         ) : (
           <CalendarIconSolid className={iconClass} />
         );
-      case 'gift_reserved':
+      case NotificationType.GiftReserved:
+      case NotificationType.GiftReceived:
         return isRead ? (
           <GiftIcon className={iconClass} />
         ) : (
           <GiftIconSolid className={iconClass} />
         );
-      case 'wishlist_liked':
+      case NotificationType.LikeReceived:
+      case NotificationType.WishlistShared:
         return isRead ? (
           <HeartIcon className={iconClass} />
         ) : (
           <HeartIconSolid className={iconClass} />
         );
+      case NotificationType.FriendRequest:
+      case NotificationType.FriendAccepted:
+      case NotificationType.UserSuggestion:
+        return <UserIcon className={iconClass} />;
       default:
         return <BellIcon className={iconClass} />;
     }
@@ -150,18 +180,27 @@ export default function NotificationDropdown({
     return t('notifications.daysAgo', { days: diffInDays });
   };
 
-  const getNotificationColor = (type: string, isRead: boolean) => {
+  const getNotificationColor = (type: NotificationType, isRead: boolean) => {
     if (isRead) return 'bg-gray-50 dark:bg-gray-800/50';
     
     switch (type) {
-      case 'birthday':
+      case NotificationType.BirthdayReminder:
         return 'bg-pink-50 dark:bg-pink-900/20 border-l-pink-500';
-      case 'gift_reserved':
+      case NotificationType.GiftReserved:
+      case NotificationType.GiftReceived:
         return 'bg-green-50 dark:bg-green-900/20 border-l-green-500';
-      case 'wishlist_liked':
+      case NotificationType.LikeReceived:
+      case NotificationType.WishlistShared:
         return 'bg-purple-50 dark:bg-purple-900/20 border-l-purple-500';
-      default:
+      case NotificationType.FriendRequest:
+      case NotificationType.FriendAccepted:
+      case NotificationType.UserSuggestion:
+        return 'bg-indigo-50 dark:bg-indigo-900/20 border-l-indigo-500';
+      case NotificationType.EventInvitation:
+      case NotificationType.EventReminder:
         return 'bg-blue-50 dark:bg-blue-900/20 border-l-blue-500';
+      default:
+        return 'bg-gray-50 dark:bg-gray-900/20 border-l-gray-500';
     }
   };
 
@@ -230,6 +269,8 @@ export default function NotificationDropdown({
                     key={notification.id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20, height: 0 }}
+                    transition={{ duration: 0.2 }}
                     className={`p-4 hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors duration-200 border-l-4 ${getNotificationColor(notification.type, notification.isRead)}`}
                   >
                     <div className="flex items-start gap-3">
@@ -250,12 +291,12 @@ export default function NotificationDropdown({
                             </p>
                             
                             {/* Related user info */}
-                            {notification.relatedUsername && (
+                            {notification.relatedUserUsername && (
                               <div className="flex items-center gap-2 mt-2">
-                                {notification.relatedUserAvatar ? (
+                                {notification.relatedUserAvatarUrl ? (
                                   <img
-                                    src={notification.relatedUserAvatar}
-                                    alt={notification.relatedUsername}
+                                    src={notification.relatedUserAvatarUrl}
+                                    alt={notification.relatedUserUsername}
                                     className="w-6 h-6 rounded-full object-cover"
                                   />
                                 ) : (
@@ -264,7 +305,7 @@ export default function NotificationDropdown({
                                   </div>
                                 )}
                                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                                  {notification.relatedUsername}
+                                  {notification.relatedUserUsername}
                                 </span>
                               </div>
                             )}
@@ -281,8 +322,12 @@ export default function NotificationDropdown({
                                 <CheckIcon className="w-4 h-4 text-gray-400 hover:text-green-500" />
                               </button>
                             )}
-                            <button className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200">
-                              <EllipsisHorizontalIcon className="w-4 h-4 text-gray-400" />
+                            <button
+                              onClick={() => handleDelete(notification.id, notification.isRead)}
+                              className="p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200 group"
+                              title={t('notifications.delete')}
+                            >
+                              <TrashIcon className="w-4 h-4 text-gray-400 group-hover:text-red-500" />
                             </button>
                           </div>
                         </div>

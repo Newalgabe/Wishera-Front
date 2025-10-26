@@ -27,6 +27,7 @@ function ResetPasswordInner() {
   const [loading, setLoading] = useState(false);
   const [token, setToken] = useState("");
   const [isValidToken, setIsValidToken] = useState(true);
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useLanguage();
@@ -40,6 +41,27 @@ function ResetPasswordInner() {
     message: '',
     isVisible: false
   });
+
+  // Password validation function
+  const validatePassword = (pwd: string): string[] => {
+    const errors: string[] = [];
+    if (pwd.length < 8) {
+      errors.push("Password must be at least 8 characters long");
+    }
+    if (!/[A-Z]/.test(pwd)) {
+      errors.push("Password must contain at least one uppercase letter");
+    }
+    if (!/[a-z]/.test(pwd)) {
+      errors.push("Password must contain at least one lowercase letter");
+    }
+    if (!/[0-9]/.test(pwd)) {
+      errors.push("Password must contain at least one number");
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)) {
+      errors.push("Password must contain at least one special character");
+    }
+    return errors;
+  };
 
   useEffect(() => {
     const tokenParam = searchParams.get('token');
@@ -55,6 +77,15 @@ function ResetPasswordInner() {
     }
   }, [searchParams, t]);
 
+  // Real-time password validation
+  useEffect(() => {
+    if (newPassword) {
+      setPasswordErrors(validatePassword(newPassword));
+    } else {
+      setPasswordErrors([]);
+    }
+  }, [newPassword]);
+
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -67,10 +98,12 @@ function ResetPasswordInner() {
       return;
     }
 
-    if (newPassword.length < 6) {
+    // Check password strength
+    const errors = validatePassword(newPassword);
+    if (errors.length > 0) {
       setNotification({
         type: 'error',
-        message: t('resetPassword.passwordLengthMessage'),
+        message: 'Password does not meet security requirements: ' + errors.join(', '),
         isVisible: true
       });
       return;
@@ -147,15 +180,38 @@ function ResetPasswordInner() {
         <p className="text-gray-600 dark:text-gray-300 text-center mb-6 transition-colors duration-300">{t('resetPassword.subtitle')}</p>
         
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-          <input 
-            type="password" 
-            placeholder={t('resetPassword.newPasswordPlaceholder')}
-            className="px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-400 dark:focus:ring-emerald-400 bg-white/90 dark:bg-gray-700/90 text-gray-700 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300" 
-            autoComplete="new-password" 
-            required 
-            value={newPassword} 
-            onChange={e => setNewPassword(e.target.value)} 
-          />
+          <div>
+            <input 
+              type="password" 
+              placeholder={t('resetPassword.newPasswordPlaceholder')}
+              className="px-4 py-3 w-full rounded-lg border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-400 dark:focus:ring-emerald-400 bg-white/90 dark:bg-gray-700/90 text-gray-700 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300" 
+              autoComplete="new-password" 
+              required 
+              value={newPassword} 
+              onChange={e => setNewPassword(e.target.value)} 
+            />
+            {newPassword && passwordErrors.length > 0 && (
+              <div className="mt-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm font-semibold text-red-700 dark:text-red-300 mb-1">Password requirements:</p>
+                <ul className="text-xs text-red-600 dark:text-red-400 space-y-1">
+                  {passwordErrors.map((error, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="mr-1">•</span>
+                      <span>{error}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {newPassword && passwordErrors.length === 0 && (
+              <div className="mt-2 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <p className="text-xs text-green-700 dark:text-green-300 flex items-center">
+                  <span className="mr-1">✓</span>
+                  Password meets all requirements
+                </p>
+              </div>
+            )}
+          </div>
           <input 
             type="password" 
             placeholder={t('resetPassword.confirmNewPasswordPlaceholder')}
@@ -167,8 +223,8 @@ function ResetPasswordInner() {
           />
           <button 
             type="submit" 
-            className="mt-2 py-3 rounded-lg bg-gradient-to-r from-green-500 to-blue-500 dark:from-emerald-500 dark:to-green-500 text-white font-semibold text-lg shadow-md hover:scale-105 transition-transform" 
-            disabled={loading}
+            className="mt-2 py-3 rounded-lg bg-gradient-to-r from-green-500 to-blue-500 dark:from-emerald-500 dark:to-green-500 text-white font-semibold text-lg shadow-md hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed" 
+            disabled={loading || passwordErrors.length > 0}
           >
             {loading ? t('resetPassword.resetting') : t('resetPassword.resetButton')}
           </button>

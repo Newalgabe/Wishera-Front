@@ -155,17 +155,44 @@ export interface ButtonProps extends BaseComponentProps {
 }
 
 // Notification Types
+export enum NotificationType {
+  EventInvitation = 1,
+  EventResponse = 2,
+  EventCancellation = 3,
+  EventReminder = 4,
+  BirthdayReminder = 5,
+  FriendRequest = 6,
+  FriendAccepted = 7,
+  GiftReceived = 8,
+  WishlistShared = 9,
+  CommentAdded = 10,
+  LikeReceived = 11,
+  GiftReserved = 12,
+  UserSuggestion = 13
+}
+
 export interface NotificationDTO {
   id: string;
-  type: 'birthday' | 'friend_request' | 'gift_reserved' | 'wishlist_liked' | 'system';
+  type: NotificationType;
   title: string;
   message: string;
   isRead: boolean;
   createdAt: string;
   expiresAt?: string;
   relatedUserId?: string;
-  relatedUsername?: string;
-  relatedUserAvatar?: string;
+  relatedEntityId?: string;
+  relatedUserUsername?: string;
+  relatedUserAvatarUrl?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface NotificationListDTO {
+  notifications: NotificationDTO[];
+  totalCount: number;
+  unreadCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 export interface BirthdayReminderDTO {

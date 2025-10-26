@@ -368,6 +368,7 @@
     "empty": "Hələ bildiriş yoxdur",
     "markAllRead": "Hamısını oxunmuş kimi işarələ",
     "markAsRead": "Oxunmuş kimi işarələ",
+    "delete": "Bildirişi sil",
     "viewAll": "Bütün bildirişləri göstər",
     "unreadCount": "{{count}} oxunmamış",
     "totalBirthdays": "ad günü",
@@ -403,6 +404,7 @@
     "tomorrow": "Sabah",
     "inDays": "{{days}} gün sonra",
     "noBirthdays": "Bu gün ad günü yoxdur",
-    "upcomingBirthdays": "Yaxınlaşan Ad Günləri"
+    "upcomingBirthdays": "Yaxınlaşan Ad Günləri",
+    "alreadyPassed": "Bu il artıq keçdi"
   }
 }

@@ -80,17 +80,17 @@ export default function BirthdayCountdownBanner({ onClose }: BirthdayCountdownBa
   const getBannerColor = (birthday: BirthdayReminderDTO) => {
     const daysLeft = getDaysUntilBirthday(birthday);
     
-    // All banners now use pinky-violet gradient
+    // Clean design with border-left accent
     if (birthday.isToday) {
-      return "bg-gradient-to-r from-pink-500 via-purple-500 to-violet-500";
+      return "bg-pink-50 dark:bg-pink-900/20 border-l-4 border-pink-500";
     } else if (birthday.isTomorrow) {
-      return "bg-gradient-to-r from-pink-400 via-purple-400 to-violet-400";
+      return "bg-purple-50 dark:bg-purple-900/20 border-l-4 border-purple-500";
     } else if (daysLeft <= 7) {
-      return "bg-gradient-to-r from-pink-300 via-purple-300 to-violet-300";
+      return "bg-indigo-50 dark:bg-indigo-900/20 border-l-4 border-indigo-500";
     } else if (daysLeft <= 30) {
-      return "bg-gradient-to-r from-pink-200 via-purple-200 to-violet-200";
+      return "bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500";
     } else {
-      return "bg-gradient-to-r from-pink-100 via-purple-100 to-violet-100";
+      return "bg-gray-50 dark:bg-gray-800/50 border-l-4 border-gray-400";
     }
   };
 
@@ -103,6 +103,12 @@ export default function BirthdayCountdownBanner({ onClose }: BirthdayCountdownBa
       isToday: birthday.isToday,
       isTomorrow: birthday.isTomorrow
     });
+    
+    // Don't show past birthdays (safety check, backend should already filter these)
+    if (daysLeft < 0) {
+      console.log(`Not showing ${birthday.username} - birthday has passed`);
+      return false;
+    }
     
     // Show notifications for:
     // - Today
@@ -140,7 +146,7 @@ export default function BirthdayCountdownBanner({ onClose }: BirthdayCountdownBa
 
   if (loading) {
     return (
-      <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 mb-6">
+      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 mb-4">
         <div className="animate-pulse flex items-center space-x-3">
           <div className="w-6 h-6 bg-gray-300 dark:bg-gray-600 rounded"></div>
           <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded flex-1"></div>
@@ -151,7 +157,7 @@ export default function BirthdayCountdownBanner({ onClose }: BirthdayCountdownBa
 
   if (error) {
     return (
-      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
         <div className="flex items-center space-x-2 text-red-600 dark:text-red-400">
           <CalendarIcon className="w-5 h-5" />
           <span className="text-sm">{error}</span>
@@ -177,25 +183,25 @@ export default function BirthdayCountdownBanner({ onClose }: BirthdayCountdownBa
             delay: index * 0.1,
             ease: "easeOut"
           }}
-          className={`${getBannerColor(birthday)} rounded-lg p-4 mb-4 shadow-lg`}
+          className={`${getBannerColor(birthday)} border border-gray-200 dark:border-gray-700 rounded-lg p-3 mb-3 shadow-sm`}
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4 flex-1">
+            <div className="flex items-center space-x-3 flex-1">
               {getCountdownIcon(birthday)}
-              <div className="text-white flex-1">
+              <div className="flex-1">
                 <div className="flex items-center space-x-3 mb-2">
                   {birthday.avatarUrl && (
                     <img 
                       src={birthday.avatarUrl} 
                       alt={birthday.username}
-                      className="w-10 h-10 rounded-full border-2 border-white/30 shadow-lg"
+                      className="w-9 h-9 rounded-full border-2 border-gray-200 dark:border-gray-600"
                     />
                   )}
                   <div>
-                    <p className="font-bold text-xl">
+                    <p className="font-semibold text-gray-900 dark:text-white">
                       {formatCountdownMessage(birthday)}
                     </p>
-                    <p className="text-sm opacity-90 font-medium">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
                       {birthday.username}
                     </p>
                   </div>
@@ -204,11 +210,11 @@ export default function BirthdayCountdownBanner({ onClose }: BirthdayCountdownBa
                 {/* Browse Wishlist Button */}
                 <motion.button
                   onClick={() => handleBrowseWishlist(birthday.userId)}
-                  className="inline-flex items-center space-x-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:shadow-lg"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  className="inline-flex items-center gap-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 shadow-md hover:shadow-lg"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  <EyeIcon className="w-4 h-4" />
+                  <EyeIcon className="w-3.5 h-3.5" />
                   <span>{t('notifications.browseWishlist')}</span>
                 </motion.button>
               </div>
@@ -216,23 +222,37 @@ export default function BirthdayCountdownBanner({ onClose }: BirthdayCountdownBa
             
             <button
               onClick={onClose}
-              className="text-white/80 hover:text-white transition-colors duration-200 p-1 rounded-full hover:bg-white/10 ml-4"
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 ml-3"
               aria-label="Close notification"
             >
-              <XMarkIcon className="w-5 h-5" />
+              <XMarkIcon className="w-4 h-4" />
             </button>
           </div>
           
           {/* Progress bar for countdown */}
           {!birthday.isToday && (
-            <div className="mt-3 bg-white/20 rounded-full h-2 overflow-hidden">
+            <div className="mt-2 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden relative">
               <motion.div
-                className="bg-white/40 h-full rounded-full"
-                initial={{ width: "100%" }}
+                className="bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 dark:from-indigo-400 dark:via-purple-400 dark:to-indigo-400 h-full rounded-full"
+                initial={{ width: "0%" }}
                 animate={{ 
                   width: `${Math.max(0, (30 - getDaysUntilBirthday(birthday)) / 30 * 100)}%` 
                 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
+                transition={{ duration: 1, ease: "easeOut" }}
+              />
+              {/* Shimmer effect */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                style={{ width: `${Math.max(0, (30 - getDaysUntilBirthday(birthday)) / 30 * 100)}%` }}
+                animate={{
+                  x: ["-100%", "200%"],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "linear",
+                  repeatDelay: 1
+                }}
               />
             </div>
           )}

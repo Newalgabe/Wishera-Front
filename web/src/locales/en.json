@@ -381,6 +381,7 @@
     "empty": "No notifications yet",
     "markAllRead": "Mark all as read",
     "markAsRead": "Mark as read",
+    "delete": "Delete notification",
     "viewAll": "View all notifications",
     "unreadCount": "{{count}} unread",
     "totalBirthdays": "birthdays",
@@ -416,6 +417,7 @@
     "tomorrow": "Tomorrow",
     "inDays": "In {{days}} days",
     "noBirthdays": "No birthdays on this date",
-    "upcomingBirthdays": "Upcoming Birthdays"
+    "upcomingBirthdays": "Upcoming Birthdays",
+    "alreadyPassed": "Already happened this year"
   }
 }

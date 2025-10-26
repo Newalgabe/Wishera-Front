@@ -1,5 +1,5 @@
 import axios, { type AxiosRequestConfig } from 'axios';
-import { BirthdayReminderDTO, Event, EventInvitation, EventInvitationListResponse, EventListResponse, InvitationStatus, CreateEventRequest, UpdateEventRequest, RespondToInvitationRequest } from '../types';
+import { BirthdayReminderDTO, Event, EventInvitation, EventInvitationListResponse, EventListResponse, InvitationStatus, CreateEventRequest, UpdateEventRequest, RespondToInvitationRequest, NotificationListDTO } from '../types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? '/api' : 'http://localhost:5155/api');
 const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:5219/api';
@@ -98,6 +98,11 @@ export async function register(username: string, email: string, password: string
       if (error.code === 'ECONNREFUSED') {
         throw new Error('Authentication service is not available. Please check if the auth service is running on port 5219.');
       }
+      // Pass through the actual error message from the backend
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      // Fallback messages for specific status codes
       if (error.response?.status === 400) {
         throw new Error('Registration failed. Please check your input data.');
       }
@@ -111,6 +116,19 @@ export async function register(username: string, email: string, password: string
 
 export async function forgotPassword(email: string) {
   const response = await axios.post(`${AUTH_API_URL}/auth/forgot-password`, { email });
+  return response.data;
+}
+
+export async function verifyEmail(token: string) {
+  const response = await axios.get(`${AUTH_API_URL}/auth/verify-email`, { params: { token } });
+  return response.data;
+}
+
+export async function deleteAccount() {
+  const token = localStorage.getItem('token');
+  const response = await axios.delete(`${AUTH_API_URL}/auth/delete-account`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
   return response.data;
 }
 
@@ -818,26 +836,38 @@ export interface NotificationCountDTO {
   totalCount: number;
 }
 
-export async function getNotifications(page = 1, pageSize = 20): Promise<NotificationDTO[]> {
-  // Use user service since NotificationsController is in user_service
-  const response = await axios.get(`${USER_API_URL}/notifications?page=${page}&pageSize=${pageSize}`, authConfig());
+export async function getNotifications(page = 1, pageSize = 20) {
+  // Use user service port 5001 since NotificationsController is in user_service
+  const userServiceUrl = 'http://localhost:5001/api';
+  const response = await axios.get(`${userServiceUrl}/notifications?page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
 export async function getUnreadNotificationCount(): Promise<number> {
-  // Use user service since NotificationsController is in user_service
-  const response = await axios.get(`${USER_API_URL}/notifications/unread-count`, authConfig());
+  // Use user service port 5001
+  const userServiceUrl = 'http://localhost:5001/api';
+  const response = await axios.get(`${userServiceUrl}/notifications/unread-count`, authConfig());
   return response.data.unreadCount;
 }
 
 export async function markNotificationAsRead(notificationId: string): Promise<void> {
-  // Use user service since NotificationsController is in user_service
-  await axios.put(`${USER_API_URL}/notifications/${notificationId}/read`, null, authConfig());
+  // Use user service port 5001 - mark-read endpoint expects array of IDs
+  const userServiceUrl = 'http://localhost:5001/api';
+  await axios.put(`${userServiceUrl}/notifications/mark-read`, {
+    notificationIds: [notificationId]
+  }, authConfig());
 }
 
 export async function markAllNotificationsAsRead(): Promise<void> {
-  // Use user service since NotificationsController is in user_service
-  await axios.put(`${USER_API_URL}/notifications/read-all`, null, authConfig());
+  // Use user service port 5001
+  const userServiceUrl = 'http://localhost:5001/api';
+  await axios.put(`${userServiceUrl}/notifications/mark-all-read`, null, authConfig());
+}
+
+export async function deleteNotification(notificationId: string): Promise<void> {
+  // Use user service port 5001
+  const userServiceUrl = 'http://localhost:5001/api';
+  await axios.delete(`${userServiceUrl}/notifications/${notificationId}`, authConfig());
 }
 
 export async function getUpcomingBirthdays(daysAhead: number = 7): Promise<BirthdayReminderDTO[]> {
@@ -849,21 +879,18 @@ export async function getUpcomingBirthdays(daysAhead: number = 7): Promise<Birth
     const response = await axios.get(`${USER_API_URL}/notifications/birthdays?daysAhead=${daysAhead}`, authConfig());
     console.log('API: Birthday response:', response.data);
     
-    // Transform notification data to BirthdayReminderDTO format
-    const notifications = response.data || [];
-    const birthdayReminders: BirthdayReminderDTO[] = notifications.map((notification: any) => {
-      const metadata = notification.metadata || {};
-      const daysUntilBirthday = metadata.daysUntilBirthday || 0;
-      
+    // The backend now returns BirthdayReminderDTO[] directly
+    const birthdayDTOs = response.data || [];
+    const birthdayReminders: BirthdayReminderDTO[] = birthdayDTOs.map((dto: any) => {
       return {
-        id: notification.id,
-        userId: notification.relatedUserId,
-        username: metadata.friendUsername || notification.relatedUserUsername || 'Unknown',
-        avatarUrl: notification.relatedUserAvatarUrl || '',
-        birthday: metadata.birthday || '',
-        isToday: daysUntilBirthday === 0,
-        isTomorrow: daysUntilBirthday === 1,
-        daysUntilBirthday: daysUntilBirthday
+        id: dto.id || dto.userId,
+        userId: dto.userId,
+        username: dto.username,
+        avatarUrl: dto.avatarUrl || '',
+        birthday: dto.birthday,
+        isToday: dto.isToday,
+        isTomorrow: dto.isTomorrow,
+        daysUntilBirthday: dto.daysUntilBirthday
       };
     });
     
