@@ -57,7 +57,10 @@
     "learnMore": "Daha çox öyrən",
     "trustedBy": "Bizə güvənənlər",
     "featuresTitle": "Ehtiyacınız olan hər şey",
-    "featuresSubtitle": "Hədiyyə vermək prosesini asan və əyləncəli etmək üçün güclü xüsusiyyətlər"
+    "featuresSubtitle": "Hədiyyə vermək prosesini asan və əyləncəli etmək üçün güclü xüsusiyyətlər",
+    "activeUsers": "Aktiv İstifadəçilər",
+    "wishlists": "Arzu Siyahıları",
+    "giftsShared": "Paylaşılan Hədiyyələr"
   },
   "features": {
     "userAuth": {

@@ -124,6 +124,11 @@ export async function verifyEmail(token: string) {
   return response.data;
 }
 
+export async function resendVerificationEmail(email: string) {
+  const response = await axios.post(`${AUTH_API_URL}/auth/resend-verification`, { email });
+  return response.data;
+}
+
 export async function deleteAccount() {
   const token = localStorage.getItem('token');
   const response = await axios.delete(`${AUTH_API_URL}/auth/delete-account`, {

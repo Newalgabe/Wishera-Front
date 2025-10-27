@@ -262,20 +262,6 @@ function AppMockup() {
       transition={{ duration: 1, delay: 0.5 }}
       whileHover={{ scale: 1.02 }}
     >
-      <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg sm:text-xl shadow-lg">
-          A
-        </div>
-        <div>
-          <div className="font-semibold text-gray-800 dark:text-gray-100 text-sm sm:text-base transition-colors duration-300">
-            {t('mockup.alexWishlist')}
-          </div>
-          <div className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-300 flex items-center gap-1">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            {t('common.public')}
-          </div>
-        </div>
-      </div>
       <div className="flex flex-col gap-3">
         <motion.div 
           className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 transition-colors duration-300 border border-gray-200/50 dark:border-gray-600/50"
@@ -437,9 +423,9 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col transition-colors duration-300">
       <Navbar />
       {/* Hero Section */}
-      <section className="relative flex flex-col-reverse md:flex-row items-center justify-center py-16 sm:py-24 px-4 sm:px-8 bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-hidden w-full transition-colors duration-300">
+      <section className="relative flex flex-col items-center justify-center py-16 sm:py-24 px-4 sm:px-8 bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-hidden w-full transition-colors duration-300">
         <AnimatedBlobs />
-        <div className="relative z-10 flex-1 flex flex-col items-center md:items-start text-center md:text-left w-full max-w-xl">
+        <div className="relative z-10 flex flex-col items-center text-center w-full max-w-3xl">
           <motion.h1
             initial={{ opacity: 0, y: -40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -459,22 +445,81 @@ export default function Home() {
             {t('home.heroSubtitle')}
           </motion.p>
           <TrustedBy />
-          <TestimonialCarousel />
+          
+          {/* CTA Buttons */}
           <motion.div
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.96 }}
-            className="inline-block mt-6"
+            className="flex flex-col sm:flex-row gap-4 mt-8 mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
           >
-            <Link
-              href="/about"
-              className="inline-block px-8 py-4 rounded-2xl bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-600 dark:from-orange-500 dark:via-yellow-500 dark:to-orange-600 text-white font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:from-yellow-500 hover:via-orange-600 hover:to-yellow-700 dark:hover:from-orange-600 dark:hover:via-yellow-600 dark:hover:to-orange-700"
-            >
-              {t('home.learnMore')}
-            </Link>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 dark:from-purple-500 dark:via-indigo-500 dark:to-purple-600 text-white font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300"
+              >
+                <GiftIcon className="w-6 h-6" />
+                {t('home.getStarted')}
+              </Link>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Link
+                href="/about"
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-white dark:bg-gray-800 text-indigo-600 dark:text-purple-400 font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300 border-2 border-indigo-200 dark:border-purple-800"
+              >
+                <InformationCircleIcon className="w-6 h-6" />
+                {t('home.learnMore')}
+              </Link>
+            </motion.div>
           </motion.div>
-        </div>
-        <div className="relative z-10 flex-1 flex justify-center mb-8 md:mb-0 w-full max-w-md">
-          <AppMockup />
+
+          {/* Quick Stats */}
+          <motion.div
+            className="grid grid-cols-3 gap-6 sm:gap-8 mb-12 w-full max-w-2xl"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+          >
+            <motion.div 
+              className="flex flex-col items-center glass-card rounded-2xl p-4 sm:p-6"
+              whileHover={{ scale: 1.05, y: -4 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                10K+
+              </div>
+              <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium text-center">
+                {t('home.activeUsers')}
+              </div>
+            </motion.div>
+            <motion.div 
+              className="flex flex-col items-center glass-card rounded-2xl p-4 sm:p-6"
+              whileHover={{ scale: 1.05, y: -4 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent mb-2">
+                50K+
+              </div>
+              <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium text-center">
+                {t('home.wishlists')}
+              </div>
+            </motion.div>
+            <motion.div 
+              className="flex flex-col items-center glass-card rounded-2xl p-4 sm:p-6"
+              whileHover={{ scale: 1.05, y: -4 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-orange-600 to-yellow-600 bg-clip-text text-transparent mb-2">
+                100K+
+              </div>
+              <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium text-center">
+                {t('home.giftsShared')}
+              </div>
+            </motion.div>
+          </motion.div>
+
+          <TestimonialCarousel />
         </div>
         <ScrollIndicator />
       </section>

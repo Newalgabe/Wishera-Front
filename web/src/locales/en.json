@@ -27,7 +27,14 @@
     "ok": "OK",
     "done": "Done",
     "warning": "Warning",
-    "info": "Information"
+    "info": "Information",
+    "scroll": "Scroll",
+    "share": "Share",
+    "reserve": "Reserve",
+    "available": "Available",
+    "reserved": "Reserved",
+    "public": "Public",
+    "private": "Private"
   },
   "navigation": {
     "home": "Home",
@@ -68,7 +75,10 @@
     "learnMore": "Learn More",
     "trustedBy": "Trusted by",
     "featuresTitle": "Everything You Need",
-    "featuresSubtitle": "Powerful features to make gift-giving effortless and fun"
+    "featuresSubtitle": "Powerful features to make gift-giving effortless and fun",
+    "activeUsers": "Active Users",
+    "wishlists": "Wishlists",
+    "giftsShared": "Gifts Shared"
   },
   "features": {
     "userAuth": {
