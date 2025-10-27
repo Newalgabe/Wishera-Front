@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -16,7 +16,7 @@ function AnimatedBlobs() {
   );
 }
 
-export default function VerifyEmailPage() {
+function VerifyEmailPageInner() {
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [message, setMessage] = useState('Verifying your email...');
   const searchParams = useSearchParams();
@@ -127,3 +127,14 @@ export default function VerifyEmailPage() {
   );
 }
 
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white dark:from-gray-900 dark:to-gray-800">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-green-500"></div>
+      </div>
+    }>
+      <VerifyEmailPageInner />
+    </Suspense>
+  );
+}
