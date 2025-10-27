@@ -29,7 +29,8 @@ import {
   createGift,
   reserveGift,
   cancelGiftReservation,
-  type GiftDTO
+  type GiftDTO,
+  WISHLIST_CATEGORIES
 } from "../../api";
 
 export default function WishlistDetailsPage() {
@@ -140,13 +141,19 @@ export default function WishlistDetailsPage() {
     try {
       setCreateGiftLoading(true);
       setCreateGiftError(null);
-      await createGift({
+      // First create the gift
+      const giftResponse = await createGift({
         name,
         price: priceNum,
         category: createGiftForm.category.trim() || 'Other',
-        wishlistId: wishlist.id,
         imageFile: createGiftForm.imageFile
       });
+      
+      // Then explicitly add it to the wishlist
+      if (giftResponse.id) {
+        await addGiftToWishlist(giftResponse.id, wishlist.id);
+      }
+      
       setSuccessMessage('Gift created and added to wishlist!');
       setTimeout(() => setSuccessMessage(null), 3000);
       const details = await getWishlistDetails(wishlistId);
@@ -643,13 +650,16 @@ export default function WishlistDetailsPage() {
                         onChange={(e) => setCreateGiftForm(f => ({ ...f, price: e.target.value }))}
                         className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200"
                       />
-                      <input
-                        type="text"
-                        placeholder="Category"
+                      <select
                         value={createGiftForm.category}
                         onChange={(e) => setCreateGiftForm(f => ({ ...f, category: e.target.value }))}
                         className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200"
-                      />
+                      >
+                        <option value="">Select Category</option>
+                        {WISHLIST_CATEGORIES.map((cat) => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                      </select>
                       <input
                         type="file"
                         accept="image/*"

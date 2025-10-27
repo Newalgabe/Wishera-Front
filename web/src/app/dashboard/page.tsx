@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { motion } from "framer-motion";
 import { 
   HomeIcon, 
@@ -54,7 +54,7 @@ import {
     type GiftDTO,
     getSuggestedUsers,
 } from "../api";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ThemeToggle from "../../components/ThemeToggle";
 import LanguageSelector from "../../components/LanguageSelector";
 import UserSearchAutocomplete from "../../components/UserSearchAutocomplete";
@@ -79,9 +79,10 @@ type UIWishlist = {
 };
 
 
-export default function Dashboard() {
+function Dashboard() {
   const { t } = useLanguage();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { logout } = useAuth();
   const [wishlists, setWishlists] = useState<UIWishlist[]>([]);
   const [likedWishlists, setLikedWishlists] = useState<WishlistFeedDTO[]>([]);
@@ -158,6 +159,18 @@ export default function Dashboard() {
   useEffect(() => {
     console.log('Dashboard: showBirthdayNotification state:', showBirthdayNotification);
   }, [showBirthdayNotification]);
+
+  // Check for create query parameter and open modal
+  useEffect(() => {
+    const createParam = searchParams?.get('create');
+    if (createParam === 'true') {
+      setIsCreateOpen(true);
+      loadAvailableGifts();
+      // Clean up URL
+      router.replace('/dashboard');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
 
   // Get current user ID (kept in state so it updates if we derive it from JWT)
@@ -2753,4 +2766,21 @@ export default function Dashboard() {
       )}
     </div>
   );
-} 
+}
+
+function DashboardWrapper() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    }>
+      <Dashboard />
+    </Suspense>
+  );
+}
+
+export default DashboardWrapper; 
