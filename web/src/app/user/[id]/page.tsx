@@ -147,7 +147,7 @@ export default function UserProfilePage() {
 
   const handleShare = async () => {
     try {
-      const shareUrl = `${window.location.origin}/user/${userId}`;
+      const shareUrl = `https://wishera.vercel.app/user/${userId}`;
       await navigator.clipboard.writeText(shareUrl);
               setSuccessMessage(t('userProfile.profileLinkCopied'));
       setTimeout(() => setSuccessMessage(null), 3000);

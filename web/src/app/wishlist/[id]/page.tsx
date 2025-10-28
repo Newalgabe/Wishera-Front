@@ -349,7 +349,7 @@ export default function WishlistDetailsPage() {
 
   const handleShare = async () => {
     try {
-      const shareUrl = `${window.location.origin}/wishlist/${wishlistId}`;
+      const shareUrl = `https://wishera.vercel.app/wishlist/${wishlistId}`;
       await navigator.clipboard.writeText(shareUrl);
       setSuccessMessage(t('dashboard.wishlistShared'));
       setTimeout(() => setSuccessMessage(null), 3000);
@@ -357,7 +357,7 @@ export default function WishlistDetailsPage() {
       console.error('Failed to copy to clipboard:', error);
       // Fallback for older browsers
       const textArea = document.createElement('textarea');
-      textArea.value = `${window.location.origin}/wishlist/${wishlistId}`;
+      textArea.value = `https://wishera.vercel.app/wishlist/${wishlistId}`;
       document.body.appendChild(textArea);
       textArea.select();
       document.execCommand('copy');

@@ -1258,7 +1258,7 @@ function Dashboard() {
                                 onClick={async () => {
                                   setActiveDropdown(null);
                                   try {
-                                    const shareUrl = `${window.location.origin}/wishlist/${wishlist.id}`;
+                                    const shareUrl = `https://wishera.vercel.app/wishlist/${wishlist.id}`;
                                     await navigator.clipboard.writeText(shareUrl);
                                     setSuccessMessage(t('dashboard.wishlistShared'));
                                     setTimeout(() => setSuccessMessage(null), 3000);
@@ -1266,7 +1266,7 @@ function Dashboard() {
                                     console.error('Failed to copy to clipboard:', error);
                                     // Fallback for older browsers
                                     const textArea = document.createElement('textarea');
-                                    textArea.value = `${window.location.origin}/wishlist/${wishlist.id}`;
+                                    textArea.value = `https://wishera.vercel.app/wishlist/${wishlist.id}`;
                                     document.body.appendChild(textArea);
                                     textArea.select();
                                     document.execCommand('copy');
@@ -1834,14 +1834,14 @@ function Dashboard() {
                                 onClick={async () => {
                                   setActiveDropdown(null);
                                   try {
-                                    const shareUrl = `${window.location.origin}/wishlist/${wishlist.id}`;
+                                    const shareUrl = `https://wishera.vercel.app/wishlist/${wishlist.id}`;
                                     await navigator.clipboard.writeText(shareUrl);
                                     setSuccessMessage(t('dashboard.wishlistShared'));
                                     setTimeout(() => setSuccessMessage(null), 3000);
                                   } catch (error) {
                                     console.error('Failed to copy to clipboard:', error);
                                     const textArea = document.createElement('textarea');
-                                    textArea.value = `${window.location.origin}/wishlist/${wishlist.id}`;
+                                    textArea.value = `https://wishera.vercel.app/wishlist/${wishlist.id}`;
                                     document.body.appendChild(textArea);
                                     textArea.select();
                                     document.execCommand('copy');

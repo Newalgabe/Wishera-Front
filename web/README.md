@@ -28,7 +28,7 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [https://wishera.vercel.app/](https://wishera.vercel.app/) with your browser to see the result.
 
 **Live Demo**: Visit [https://wishera.vercel.app](https://wishera.vercel.app)
 
