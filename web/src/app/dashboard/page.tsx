@@ -51,6 +51,7 @@ import {
     deleteGift,
     reserveGift,
     cancelGiftReservation,
+    addGiftToWishlist,
     type GiftDTO,
     getSuggestedUsers,
 } from "../api";
@@ -2153,19 +2154,41 @@ function Dashboard() {
                           ))}
                         </select>
                       </div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const newGifts = [...createForm.gifts];
-                            newGifts[index] = { ...newGifts[index], imageFile: file };
-                            setCreateForm({ ...createForm, gifts: newGifts });
-                          }
-                        }}
-                        className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
-                      />
+                      <div className="space-y-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const newGifts = [...createForm.gifts];
+                              newGifts[index] = { ...newGifts[index], imageFile: file };
+                              setCreateForm({ ...createForm, gifts: newGifts });
+                            }
+                          }}
+                          className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
+                        />
+                        {gift.imageFile && (
+                          <div className="relative">
+                            <img
+                              src={URL.createObjectURL(gift.imageFile)}
+                              alt="Preview"
+                              className="w-full h-32 object-cover rounded border border-gray-300 dark:border-gray-600"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newGifts = [...createForm.gifts];
+                                newGifts[index] = { ...newGifts[index], imageFile: undefined };
+                                setCreateForm({ ...createForm, gifts: newGifts });
+                              }}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                   
@@ -2235,30 +2258,15 @@ function Dashboard() {
                         const existingGift = availableGifts.find(g => g.id === giftId);
                         if (existingGift) {
                           try {
-                            // Update the existing gift to link it to this wishlist
-                            const giftResponse = await fetch(`${process.env.NEXT_PUBLIC_GIFT_API_URL || 'http://localhost:5003/api'}/gifts/${giftId}`, {
-                              method: 'PUT',
-                              headers: {
-                                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                                'Content-Type': 'application/json'
-                              },
-                              body: JSON.stringify({
-                                name: existingGift.name,
-                                price: existingGift.price,
-                                category: existingGift.category,
-                                wishlistId: created.id
-                              })
+                            // Use the proper API function to add gift to wishlist
+                            await addGiftToWishlist(giftId, created.id);
+                            addedGifts.push({
+                              id: existingGift.id,
+                              name: existingGift.name,
+                              price: existingGift.price,
+                              category: existingGift.category,
+                              imageUrl: existingGift.imageUrl
                             });
-                            
-                            if (giftResponse.ok) {
-                              addedGifts.push({
-                                id: existingGift.id,
-                                name: existingGift.name,
-                                price: existingGift.price,
-                                category: existingGift.category,
-                                imageUrl: existingGift.imageUrl
-                              });
-                            }
                           } catch (giftError) {
                             console.error('Failed to add existing gift:', giftError);
                             // Continue with other gifts even if one fails
@@ -2270,33 +2278,23 @@ function Dashboard() {
                       for (const gift of createForm.gifts) {
                         if (gift.name.trim()) {
                           try {
-                            const giftData = new FormData();
-                            giftData.append('name', gift.name);
-                            giftData.append('price', gift.price || '0');
-                            giftData.append('category', gift.category || '');
-                            giftData.append('wishlistId', created.id);
-                            if (gift.imageFile) {
-                              giftData.append('imageFile', gift.imageFile);
-                            }
-                            
-                            const giftResponse = await fetch(`${process.env.NEXT_PUBLIC_GIFT_API_URL || 'http://localhost:5003/api'}/gifts`, {
-                              method: 'POST',
-                              headers: {
-                                'Authorization': `Bearer ${localStorage.getItem('token')}`
-                              },
-                              body: giftData
+                            // Use the proper API function to create gift
+                            const giftResult = await createGift({
+                              name: gift.name,
+                              price: parseFloat(gift.price) || 0,
+                              category: gift.category || 'Other',
+                              wishlistId: created.id,
+                              imageFile: gift.imageFile || undefined
                             });
                             
-                            if (giftResponse.ok) {
-                              const giftResult = await giftResponse.json();
-                              addedGifts.push({
-                                id: giftResult.id,
-                                name: gift.name,
-                                price: parseFloat(gift.price) || 0,
-                                category: gift.category,
-                                imageUrl: gift.imageFile ? 'uploaded' : null
-                              });
-                            }
+                            // Gift is automatically added to wishlist when wishlistId is provided
+                            addedGifts.push({
+                              id: giftResult.id,
+                              name: gift.name,
+                              price: parseFloat(gift.price) || 0,
+                              category: gift.category,
+                              imageUrl: gift.imageFile ? 'uploaded' : null
+                            });
                           } catch (giftError) {
                             console.error('Failed to create gift:', giftError);
                             // Continue with other gifts even if one fails

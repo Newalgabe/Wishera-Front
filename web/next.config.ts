@@ -10,8 +10,8 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   async rewrites() {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5155/api";
-    const chatBase = process.env.NEXT_PUBLIC_CHAT_API_URL || "http://localhost:5000/api";
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://wishera-app.onrender.com/api";
+    const chatBase = process.env.NEXT_PUBLIC_CHAT_API_URL || "https://wishera-chat-service.onrender.com/api";
     return [
       {
         source: "/api/:path*",

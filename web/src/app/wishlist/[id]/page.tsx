@@ -660,12 +660,30 @@ export default function WishlistDetailsPage() {
                           <option key={cat} value={cat}>{cat}</option>
                         ))}
                       </select>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => setCreateGiftForm(f => ({ ...f, imageFile: e.target.files?.[0] || null }))}
-                        className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200"
-                      />
+                      <div className="space-y-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => setCreateGiftForm(f => ({ ...f, imageFile: e.target.files?.[0] || null }))}
+                          className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200"
+                        />
+                        {createGiftForm.imageFile && (
+                          <div className="relative">
+                            <img
+                              src={URL.createObjectURL(createGiftForm.imageFile)}
+                              alt="Preview"
+                              className="w-full h-32 object-cover rounded border border-gray-300 dark:border-gray-600"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setCreateGiftForm(f => ({ ...f, imageFile: null }))}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="mt-3 flex justify-end">
                       <button
