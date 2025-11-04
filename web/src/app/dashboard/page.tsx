@@ -1503,37 +1503,11 @@ function Dashboard() {
                                 hasImage: !!giftForm.imageFile
                               });
                               
-                              // Get user's wishlists to associate the gift with one
-                              let wishlistId: string | undefined;
-                              try {
-                                const userWishlists = await getUserWishlists(currentUserId || '');
-                                if (userWishlists.length > 0) {
-                                  // Use the first wishlist
-                                  wishlistId = userWishlists[0].id;
-                                  console.log('Associating gift with wishlist:', wishlistId);
-                                } else {
-                                  // Create a default wishlist for the user
-                                  console.log('No wishlists found, creating default wishlist');
-                                  const defaultWishlist = await createWishlist({
-                                    title: 'My Wishlist',
-                                    description: 'Default wishlist for my gifts',
-                                    category: 'General',
-                                    isPublic: false,
-                                    allowedViewerIds: []
-                                  });
-                                  wishlistId = defaultWishlist.id;
-                                  console.log('Created default wishlist:', wishlistId);
-                                }
-                              } catch (error) {
-                                console.error('Failed to get/create wishlist:', error);
-                                // Continue without wishlistId - gift will be orphaned but created
-                              }
-                              
+                              // Create gift without wishlist assignment - user must manually assign it later
                               await createGift({
                                 name: giftForm.name.trim(),
                                 price: priceNumber,
                                 category: giftForm.category.trim() || 'General',
-                                wishlistId: wishlistId,
                                 imageFile: giftForm.imageFile || undefined,
                               });
                               setGiftForm({ name: '', price: '', category: '', imageFile: null });

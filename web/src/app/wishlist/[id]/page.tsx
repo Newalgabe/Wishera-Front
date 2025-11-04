@@ -64,12 +64,15 @@ export default function WishlistDetailsPage() {
     async function loadWishlistDetails() {
       try {
         setLoading(true);
+        setError(null); // Clear any previous errors
+        setWishlist(null); // Clear previous wishlist data
         const details = await getWishlistDetails(wishlistId);
         console.log('Wishlist details:', details);
         console.log('Current user ID:', currentUserId);
         console.log('Wishlist owner ID:', details.userId);
         console.log('Is owner:', details.isOwner);
         setWishlist(details);
+        setError(null); // Clear error on success
         // For now, we'll assume the user is not following since we don't have this info in the wishlist response
         // In a real app, you might want to make a separate API call to check follow status
         setIsFollowing(false);
@@ -79,6 +82,7 @@ export default function WishlistDetailsPage() {
           ? (error.response as { data?: { message?: string } })?.data?.message 
           : 'Failed to load wishlist details';
         setError(errorMessage || 'Failed to load wishlist details');
+        setWishlist(null); // Clear wishlist on error to prevent showing stale data
       } finally {
         setLoading(false);
       }
