@@ -170,12 +170,23 @@ function GiftsPageInner() {
               onChange={(e) => setForm({ ...form, category: e.target.value })}
               className="px-3 py-2 rounded border border-gray-300 w-40"
             />
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setForm({ ...form, imageFile: e.target.files?.[0] || null })}
-              className="text-sm"
-            />
+            <div className="relative">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setForm({ ...form, imageFile: e.target.files?.[0] || null })}
+                className="text-sm"
+              />
+              {form.imageFile && (
+                <div className="absolute -bottom-12 left-0 right-0 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded p-2 z-10">
+                  <img
+                    src={URL.createObjectURL(form.imageFile)}
+                    alt="Preview"
+                    className="w-20 h-20 object-cover rounded"
+                  />
+                </div>
+              )}
+            </div>
             <button
               type="submit"
               disabled={submitting}

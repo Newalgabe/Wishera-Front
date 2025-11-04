@@ -22,8 +22,9 @@ export function useChatWs(currentUserId: string | null | undefined, handlers: Ch
   const wsRef = useRef<WebSocket | null>(null);
 
   const wsUrl = useMemo(() => {
-    const base = process.env.NEXT_PUBLIC_CHAT_SERVICE_URL || "http://localhost:5002";
-    return base.replace("http", "ws") + "/chat";
+    const base = process.env.NEXT_PUBLIC_CHAT_SERVICE_URL || "https://wishera-chat-service.onrender.com";
+    // Convert https to wss for secure WebSocket connections
+    return base.replace(/^https?:\/\//, "wss://") + "/chat";
   }, []);
 
   const safeSend = useCallback((msg: WsMessage) => {

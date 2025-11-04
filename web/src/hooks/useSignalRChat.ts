@@ -12,7 +12,7 @@ export function useSignalRChat(currentUserId?: string | null, token?: string) {
   const maxReconnectAttempts = 5;
 
   const hubUrl = useMemo(() => {
-    const base = process.env.NEXT_PUBLIC_CHAT_HUB_URL || "http://localhost:5002/chat";
+    const base = process.env.NEXT_PUBLIC_CHAT_HUB_URL || "https://wishera-chat-service.onrender.com/chat";
     const uid = currentUserId && currentUserId !== "" ? `userId=${encodeURIComponent(currentUserId)}` : "";
     return uid ? `${base}${base.includes("?") ? "&" : "?"}${uid}` : base;
   }, [currentUserId]);

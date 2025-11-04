@@ -1,11 +1,11 @@
 import axios, { type AxiosRequestConfig } from 'axios';
 import { BirthdayReminderDTO, Event, EventInvitation, EventInvitationListResponse, EventListResponse, InvitationStatus, CreateEventRequest, UpdateEventRequest, RespondToInvitationRequest, NotificationListDTO } from '../types';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? '/api' : 'http://localhost:5155/api');
-const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:5219/api';
-const CHAT_API_URL = process.env.NEXT_PUBLIC_CHAT_API_URL || 'http://localhost:5002/api';
-const GIFT_API_URL = process.env.NEXT_PUBLIC_GIFT_API_URL || 'http://localhost:5003/api';
-const USER_API_URL = process.env.NEXT_PUBLIC_USER_API_URL || 'http://localhost:5001/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? '/api' : 'https://wishera-app.onrender.com/api');
+const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'https://wishera-auth-service.onrender.com/api';
+const CHAT_API_URL = process.env.NEXT_PUBLIC_CHAT_API_URL || 'https://wishera-chat-service.onrender.com/api';
+const GIFT_API_URL = process.env.NEXT_PUBLIC_GIFT_API_URL || 'https://wishera-gift-service.onrender.com/api';
+const USER_API_URL = process.env.NEXT_PUBLIC_USER_API_URL || 'https://wishera-user-service.onrender.com/api';
 
 // Ensure Authorization header is attached to all requests when token exists
 axios.defaults.timeout = 10000;
@@ -243,9 +243,9 @@ export async function getWishlistDetails(id: string): Promise<WishlistResponseDT
 
 export async function getMyReservedGifts(): Promise<GiftDTO[]> {
   try {
-    // Try the main API URL first (port 5155), then fallback to gift service (port 5003)
-    const mainApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5155';
-    const giftServiceUrl = process.env.NEXT_PUBLIC_GIFT_API_URL || 'http://localhost:5003';
+    // Try the main API URL first, then fallback to gift service
+    const mainApiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://wishera-app.onrender.com';
+    const giftServiceUrl = process.env.NEXT_PUBLIC_GIFT_API_URL || 'https://wishera-gift-service.onrender.com';
     
     try {
       // Try main app first
@@ -842,36 +842,36 @@ export interface NotificationCountDTO {
 }
 
 export async function getNotifications(page = 1, pageSize = 20) {
-  // Use user service port 5001 since NotificationsController is in user_service
-  const userServiceUrl = 'http://localhost:5001/api';
+  // Use user service since NotificationsController is in user_service
+  const userServiceUrl = USER_API_URL;
   const response = await axios.get(`${userServiceUrl}/notifications?page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
 export async function getUnreadNotificationCount(): Promise<number> {
-  // Use user service port 5001
-  const userServiceUrl = 'http://localhost:5001/api';
+  // Use user service
+  const userServiceUrl = USER_API_URL;
   const response = await axios.get(`${userServiceUrl}/notifications/unread-count`, authConfig());
   return response.data.unreadCount;
 }
 
 export async function markNotificationAsRead(notificationId: string): Promise<void> {
-  // Use user service port 5001 - mark-read endpoint expects array of IDs
-  const userServiceUrl = 'http://localhost:5001/api';
+  // Use user service - mark-read endpoint expects array of IDs
+  const userServiceUrl = USER_API_URL;
   await axios.put(`${userServiceUrl}/notifications/mark-read`, {
     notificationIds: [notificationId]
   }, authConfig());
 }
 
 export async function markAllNotificationsAsRead(): Promise<void> {
-  // Use user service port 5001
-  const userServiceUrl = 'http://localhost:5001/api';
+  // Use user service
+  const userServiceUrl = USER_API_URL;
   await axios.put(`${userServiceUrl}/notifications/mark-all-read`, null, authConfig());
 }
 
 export async function deleteNotification(notificationId: string): Promise<void> {
-  // Use user service port 5001
-  const userServiceUrl = 'http://localhost:5001/api';
+  // Use user service
+  const userServiceUrl = USER_API_URL;
   await axios.delete(`${userServiceUrl}/notifications/${notificationId}`, authConfig());
 }
 
