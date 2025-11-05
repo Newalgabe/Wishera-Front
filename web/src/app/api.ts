@@ -1,11 +1,34 @@
 import axios, { type AxiosRequestConfig } from 'axios';
 import { BirthdayReminderDTO, Event, EventInvitation, EventInvitationListResponse, EventListResponse, InvitationStatus, CreateEventRequest, UpdateEventRequest, RespondToInvitationRequest, NotificationListDTO } from '../types';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? '/api' : 'https://wishera-app.onrender.com/api');
-const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'https://wishera-auth-service.onrender.com/api';
-const CHAT_API_URL = process.env.NEXT_PUBLIC_CHAT_API_URL || 'https://wishera-chat-service.onrender.com/api';
-const GIFT_API_URL = process.env.NEXT_PUBLIC_GIFT_API_URL || 'https://wishera-gift-service.onrender.com/api';
-const USER_API_URL = process.env.NEXT_PUBLIC_USER_API_URL || 'https://wishera-user-service.onrender.com/api';
+// Helper function to ensure HTTPS URLs (prevent mixed content) and block localhost in production
+function ensureHttps(url: string): string {
+  // Never use localhost in production (Vercel deployment)
+  if (typeof window !== 'undefined') {
+    const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+    if (isProduction && (url.includes('localhost') || url.includes('127.0.0.1'))) {
+      console.warn('Blocked localhost URL in production:', url);
+      // Return default Render URL instead
+      if (url.includes('auth')) return 'https://wishera-auth-service.onrender.com/api';
+      if (url.includes('user')) return 'https://wishera-user-service.onrender.com/api';
+      if (url.includes('gift')) return 'https://wishera-gift-service.onrender.com/api';
+      if (url.includes('chat')) return 'https://wishera-chat-service.onrender.com/api';
+      return 'https://wishera-app.onrender.com/api';
+    }
+    
+    // If page is served over HTTPS, ensure API URL is also HTTPS
+    if (window.location.protocol === 'https:') {
+      return url.replace(/^http:\/\//, 'https://');
+    }
+  }
+  return url;
+}
+
+const API_URL = ensureHttps(process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? '/api' : 'https://wishera-app.onrender.com/api'));
+const AUTH_API_URL = ensureHttps(process.env.NEXT_PUBLIC_AUTH_API_URL || 'https://wishera-auth-service.onrender.com/api');
+const CHAT_API_URL = ensureHttps(process.env.NEXT_PUBLIC_CHAT_API_URL || 'https://wishera-chat-service.onrender.com/api');
+const GIFT_API_URL = ensureHttps(process.env.NEXT_PUBLIC_GIFT_API_URL || 'https://wishera-gift-service.onrender.com/api');
+const USER_API_URL = ensureHttps(process.env.NEXT_PUBLIC_USER_API_URL || 'https://wishera-user-service.onrender.com/api');
 
 // Ensure Authorization header is attached to all requests when token exists
 // Increased timeout for Render free tier (can be slow to wake up)
@@ -257,8 +280,8 @@ export async function getWishlistDetails(id: string): Promise<WishlistResponseDT
 export async function getMyReservedGifts(): Promise<GiftDTO[]> {
   try {
     // Try the main API URL first, then fallback to gift service
-    const mainApiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://wishera-app.onrender.com';
-    const giftServiceUrl = process.env.NEXT_PUBLIC_GIFT_API_URL || 'https://wishera-gift-service.onrender.com';
+    const mainApiUrl = ensureHttps(process.env.NEXT_PUBLIC_API_URL || 'https://wishera-app.onrender.com/api');
+    const giftServiceUrl = ensureHttps(process.env.NEXT_PUBLIC_GIFT_API_URL || 'https://wishera-gift-service.onrender.com/api');
     
     try {
       // Try main app first
