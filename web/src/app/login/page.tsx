@@ -144,19 +144,23 @@ export default function LoginPage() {
   <a
     href={`${
       (() => {
+        // Import ensureHttps from api.ts
+        const ensureHttps = (url: string): string => {
+          if (!url) return url;
+          if (typeof window !== 'undefined') {
+            const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+            if (isProduction && (url.includes('localhost') || url.includes('127.0.0.1'))) {
+              return 'https://wishera-auth-service.onrender.com/api';
+            }
+            if (window.location.protocol === 'https:') {
+              return url.replace(/^http:\/\//, 'https://');
+            }
+          }
+          return url;
+        };
+        
         const url = process.env.NEXT_PUBLIC_AUTH_API_URL || 'https://wishera-auth-service.onrender.com/api';
-        // Never use localhost in production (Vercel deployment)
-        if (typeof window !== 'undefined') {
-          const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-          if (isProduction && (url.includes('localhost') || url.includes('127.0.0.1'))) {
-            return 'https://wishera-auth-service.onrender.com/api';
-          }
-          // Ensure HTTPS when page is served over HTTPS (prevent mixed content)
-          if (window.location.protocol === 'https:') {
-            return url.replace(/^http:\/\//, 'https://');
-          }
-        }
-        return url;
+        return ensureHttps(url);
       })()
     }/ExternalAuth/login/Google?prompt=select_account`}
     className="flex items-center justify-center gap-2 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 font-semibold hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors text-center"
