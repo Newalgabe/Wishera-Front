@@ -22,7 +22,21 @@ export function useChatWs(currentUserId: string | null | undefined, handlers: Ch
   const wsRef = useRef<WebSocket | null>(null);
 
   const wsUrl = useMemo(() => {
-    const base = process.env.NEXT_PUBLIC_CHAT_SERVICE_URL || "https://wishera-chat-service.onrender.com";
+    // Ensure HTTPS and block localhost in production
+    const getSecureUrl = (url: string): string => {
+      if (typeof window !== 'undefined') {
+        const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+        if (isProduction && (url.includes('localhost') || url.includes('127.0.0.1'))) {
+          return 'https://wishera-chat-service.onrender.com';
+        }
+        if (window.location.protocol === 'https:') {
+          return url.replace(/^http:\/\//, 'https://');
+        }
+      }
+      return url;
+    };
+    
+    const base = getSecureUrl(process.env.NEXT_PUBLIC_CHAT_SERVICE_URL || "https://wishera-chat-service.onrender.com");
     // Convert https to wss for secure WebSocket connections
     return base.replace(/^https?:\/\//, "wss://") + "/chat";
   }, []);

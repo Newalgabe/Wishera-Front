@@ -2,7 +2,7 @@ import axios, { type AxiosRequestConfig } from 'axios';
 import { BirthdayReminderDTO, Event, EventInvitation, EventInvitationListResponse, EventListResponse, InvitationStatus, CreateEventRequest, UpdateEventRequest, RespondToInvitationRequest, NotificationListDTO } from '../types';
 
 // Helper function to ensure HTTPS URLs (prevent mixed content) and block localhost in production
-function ensureHttps(url: string): string {
+export function ensureHttps(url: string): string {
   // Never use localhost in production (Vercel deployment)
   if (typeof window !== 'undefined') {
     const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
