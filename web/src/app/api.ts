@@ -8,7 +8,8 @@ const GIFT_API_URL = process.env.NEXT_PUBLIC_GIFT_API_URL || 'https://wishera-gi
 const USER_API_URL = process.env.NEXT_PUBLIC_USER_API_URL || 'https://wishera-user-service.onrender.com/api';
 
 // Ensure Authorization header is attached to all requests when token exists
-axios.defaults.timeout = 10000;
+// Increased timeout for Render free tier (can be slow to wake up)
+axios.defaults.timeout = 60000; // 60 seconds for Render services
 axios.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('token');
@@ -66,20 +67,26 @@ export type WishlistCategory = typeof WISHLIST_CATEGORIES[number];
 export async function login(email: string, password: string) {
   try {
     console.log('API: Attempting login to:', `${AUTH_API_URL}/auth/login`);
-    const response = await axios.post(`${AUTH_API_URL}/auth/login`, { email, password });
+    const response = await axios.post(`${AUTH_API_URL}/auth/login`, { email, password }, { timeout: 60000 });
     console.log('API: Login successful');
     return response.data;
   } catch (error) {
     console.error('API: Login failed:', error);
     if (axios.isAxiosError(error)) {
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        throw new Error('Request timed out. The service may be starting up. Please try again in a moment.');
+      }
       if (error.code === 'ECONNREFUSED') {
-        throw new Error('Authentication service is not available. Please check if the auth service is running on port 5219.');
+        throw new Error('Authentication service is not available. Please check if the auth service is running.');
       }
       if (error.response?.status === 401) {
         throw new Error('Invalid email or password.');
       }
       if (error.response?.status === 404) {
         throw new Error('Login endpoint not found. Please check the auth service configuration.');
+      }
+      if (error.response?.status === 0 || !error.response) {
+        throw new Error('Unable to connect to the authentication service. The service may be starting up or unavailable.');
       }
     }
     throw error;
@@ -89,14 +96,20 @@ export async function login(email: string, password: string) {
 export async function register(username: string, email: string, password: string) {
   try {
     console.log('API: Attempting registration to:', `${AUTH_API_URL}/auth/register`);
-    const response = await axios.post(`${AUTH_API_URL}/auth/register`, { username, email, password });
+    const response = await axios.post(`${AUTH_API_URL}/auth/register`, { username, email, password }, { timeout: 60000 });
     console.log('API: Registration successful');
     return response.data;
   } catch (error) {
     console.error('API: Registration failed:', error);
     if (axios.isAxiosError(error)) {
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        throw new Error('Request timed out. The service may be starting up. Please try again in a moment.');
+      }
       if (error.code === 'ECONNREFUSED') {
-        throw new Error('Authentication service is not available. Please check if the auth service is running on port 5219.');
+        throw new Error('Authentication service is not available. Please check if the auth service is running.');
+      }
+      if (error.response?.status === 0 || !error.response) {
+        throw new Error('Unable to connect to the authentication service. The service may be starting up or unavailable.');
       }
       // Pass through the actual error message from the backend
       if (error.response?.data?.message) {
@@ -159,9 +172,9 @@ function authConfig(): AxiosRequestConfig {
   return token
     ? { 
         headers: { Authorization: `Bearer ${token}` },
-        timeout: 10000 // 10 second timeout
+        timeout: 60000 // 60 second timeout for Render services
       }
-    : { timeout: 10000 };
+    : { timeout: 60000 };
 }
 
 // DTOs
