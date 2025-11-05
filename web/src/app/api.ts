@@ -3,32 +3,56 @@ import { BirthdayReminderDTO, Event, EventInvitation, EventInvitationListRespons
 
 // Helper function to ensure HTTPS URLs (prevent mixed content) and block localhost in production
 export function ensureHttps(url: string): string {
-  if (!url) return url;
+  if (!url || typeof url !== 'string') return url || '';
   
-  // Never use localhost in production (Vercel deployment)
-  if (typeof window !== 'undefined') {
-    const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+  // CRITICAL: Check if we're in production (Vercel deployment)
+  const isProduction = typeof window !== 'undefined' && 
+    window.location.hostname !== 'localhost' && 
+    window.location.hostname !== '127.0.0.1' &&
+    !window.location.hostname.startsWith('192.168.') &&
+    !window.location.hostname.startsWith('10.') &&
+    window.location.hostname !== '';
+  
+  // ALWAYS block localhost/127.0.0.1 in production, regardless of protocol
+  if (isProduction) {
+    const hasLocalhost = url.includes('localhost') || 
+                         url.includes('127.0.0.1') || 
+                         url.includes(':5219') || 
+                         url.includes(':5001') || 
+                         url.includes(':5002') || 
+                         url.includes(':5003') ||
+                         url.includes(':3000') ||
+                         url.match(/http:\/\/\d+\.\d+\.\d+\.\d+/); // Block any IP address with http
     
-    // ALWAYS block localhost in production, regardless of protocol
-    if (isProduction && (url.includes('localhost') || url.includes('127.0.0.1'))) {
-      console.warn('🚫 BLOCKED localhost URL in production:', url);
-      // Return default Render URL instead
-      if (url.includes('auth') || url.includes('5219')) return 'https://wishera-auth-service.onrender.com/api';
-      if (url.includes('user') || url.includes('5001')) return 'https://wishera-user-service.onrender.com/api';
-      if (url.includes('gift') || url.includes('5003')) return 'https://wishera-gift-service.onrender.com/api';
-      if (url.includes('chat') || url.includes('5002')) return 'https://wishera-chat-service.onrender.com/api';
+    if (hasLocalhost) {
+      console.error('🚫 BLOCKED localhost/IP URL in production:', url);
+      // Return default Render URL based on service type
+      if (url.includes('auth') || url.includes('5219') || url.includes('/auth/')) {
+        return 'https://wishera-auth-service.onrender.com/api';
+      }
+      if (url.includes('user') || url.includes('5001') || url.includes('/users/') || url.includes('/notifications/')) {
+        return 'https://wishera-user-service.onrender.com/api';
+      }
+      if (url.includes('gift') || url.includes('5003') || url.includes('/wishlists/') || url.includes('/gift')) {
+        return 'https://wishera-gift-service.onrender.com/api';
+      }
+      if (url.includes('chat') || url.includes('5002') || url.includes('/chat/')) {
+        return 'https://wishera-chat-service.onrender.com/api';
+      }
       return 'https://wishera-app.onrender.com/api';
     }
-    
-    // If page is served over HTTPS, ensure API URL is also HTTPS
-    if (window.location.protocol === 'https:') {
+  }
+  
+  // If page is served over HTTPS, ensure API URL is also HTTPS
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+    // Block any HTTP URLs when page is HTTPS
+    if (url.startsWith('http://') && !url.startsWith('https://')) {
       const httpsUrl = url.replace(/^http:\/\//, 'https://');
-      if (httpsUrl !== url) {
-        console.warn('🔒 Upgraded HTTP to HTTPS:', url, '->', httpsUrl);
-      }
+      console.warn('🔒 Upgraded HTTP to HTTPS:', url, '->', httpsUrl);
       return httpsUrl;
     }
   }
+  
   return url;
 }
 
@@ -87,20 +111,42 @@ axios.defaults.timeout = 60000; // 60 seconds for Render services
 axios.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     // CRITICAL: Fix URLs at request time to prevent localhost in production
+    // This is the LAST LINE OF DEFENSE - catches everything!
     if (config.url) {
-      const fixedUrl = ensureHttps(config.url);
-      if (fixedUrl !== config.url) {
-        console.warn('🔧 Fixed URL at request time:', config.url, '->', fixedUrl);
+      const originalUrl = String(config.url);
+      const fixedUrl = ensureHttps(originalUrl);
+      if (fixedUrl !== originalUrl) {
+        console.error('🔧 INTERCEPTOR FIXED URL:', originalUrl, '->', fixedUrl);
         config.url = fixedUrl;
       }
     }
     
     // Also fix baseURL if present
     if (config.baseURL) {
-      const fixedBaseUrl = ensureHttps(config.baseURL);
-      if (fixedBaseUrl !== config.baseURL) {
-        console.warn('🔧 Fixed baseURL at request time:', config.baseURL, '->', fixedBaseUrl);
+      const originalBaseUrl = String(config.baseURL);
+      const fixedBaseUrl = ensureHttps(originalBaseUrl);
+      if (fixedBaseUrl !== originalBaseUrl) {
+        console.error('🔧 INTERCEPTOR FIXED baseURL:', originalBaseUrl, '->', fixedBaseUrl);
         config.baseURL = fixedBaseUrl;
+      }
+    }
+    
+    // Fix full URL if it's constructed from baseURL + url
+    if (config.baseURL && config.url && !config.url.startsWith('http')) {
+      const fullUrl = config.baseURL + (config.url.startsWith('/') ? config.url : '/' + config.url);
+      const fixedFullUrl = ensureHttps(fullUrl);
+      if (fixedFullUrl !== fullUrl) {
+        console.error('🔧 INTERCEPTOR FIXED full URL:', fullUrl, '->', fixedFullUrl);
+        // Extract the base URL from the fixed URL
+        try {
+          const urlObj = new URL(fixedFullUrl);
+          config.baseURL = urlObj.origin + urlObj.pathname.split('/').slice(0, -1).join('/');
+          config.url = urlObj.pathname.split('/').pop() || config.url;
+        } catch (e) {
+          // If URL parsing fails, just use the fixed full URL as the url
+          config.url = fixedFullUrl;
+          config.baseURL = '';
+        }
       }
     }
     
@@ -158,9 +204,33 @@ export type WishlistCategory = typeof WISHLIST_CATEGORIES[number];
 // Auth endpoints (no auth header required)
 export async function login(email: string, password: string) {
   try {
-    const authUrl = AUTH_API_URL();
-    console.log('API: Attempting login to:', `${authUrl}/auth/login`);
-    const response = await axios.post(`${authUrl}/auth/login`, { email, password }, { timeout: 60000 });
+    // Get the URL and ensure it's secure
+    let authUrl = AUTH_API_URL();
+    
+    // Double-check with ensureHttps (in case env var slipped through)
+    authUrl = ensureHttps(authUrl);
+    
+    // Log for debugging
+    console.log('🔍 LOGIN DEBUG:', {
+      envVar: process.env.NEXT_PUBLIC_AUTH_API_URL,
+      computedUrl: authUrl,
+      isProduction: typeof window !== 'undefined' && window.location.hostname !== 'localhost',
+      hostname: typeof window !== 'undefined' ? window.location.hostname : 'N/A',
+      protocol: typeof window !== 'undefined' ? window.location.protocol : 'N/A'
+    });
+    
+    const loginUrl = `${authUrl}/auth/login`;
+    console.log('API: Attempting login to:', loginUrl);
+    
+    // Final safety check - if URL still contains localhost, throw error
+    if (typeof window !== 'undefined' && 
+        window.location.hostname !== 'localhost' && 
+        loginUrl.includes('localhost')) {
+      console.error('❌ CRITICAL: Localhost detected in login URL after all checks!', loginUrl);
+      throw new Error('Invalid API URL configuration. Please contact support.');
+    }
+    
+    const response = await axios.post(loginUrl, { email, password }, { timeout: 60000 });
     console.log('API: Login successful');
     return response.data;
   } catch (error) {
