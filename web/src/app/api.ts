@@ -258,13 +258,43 @@ export async function login(email: string, password: string) {
 
 export async function register(username: string, email: string, password: string) {
   try {
-    console.log('API: Attempting registration to:', `${AUTH_API_URL()}/auth/register`);
-    const response = await axios.post(`${AUTH_API_URL()}/auth/register`, { username, email, password }, { timeout: 60000 });
+    // Get the URL and ensure it's secure
+    let authUrl = AUTH_API_URL();
+    
+    // Double-check with ensureHttps (in case env var slipped through)
+    authUrl = ensureHttps(authUrl);
+    
+    const registerUrl = `${authUrl}/auth/register`;
+    
+    // Log for debugging
+    console.log('🔍 REGISTER DEBUG:', {
+      envVar: process.env.NEXT_PUBLIC_AUTH_API_URL,
+      computedUrl: authUrl,
+      fullUrl: registerUrl,
+      isProduction: typeof window !== 'undefined' && window.location.hostname !== 'localhost',
+      hostname: typeof window !== 'undefined' ? window.location.hostname : 'N/A',
+      protocol: typeof window !== 'undefined' ? window.location.protocol : 'N/A'
+    });
+    
+    // Final safety check - if URL still contains localhost, throw error
+    if (typeof window !== 'undefined' && 
+        window.location.hostname !== 'localhost' && 
+        registerUrl.includes('localhost')) {
+      console.error('❌ CRITICAL: Localhost detected in register URL after all checks!', registerUrl);
+      throw new Error('Invalid API URL configuration. Please contact support.');
+    }
+    
+    console.log('API: Attempting registration to:', registerUrl);
+    const response = await axios.post(registerUrl, { username, email, password }, { timeout: 60000 });
     console.log('API: Registration successful');
     return response.data;
   } catch (error) {
     console.error('API: Registration failed:', error);
     if (axios.isAxiosError(error)) {
+      if (error.response?.status === 404) {
+        console.error('❌ 404 Error - Endpoint not found. URL was:', error.config?.url);
+        throw new Error('Registration endpoint not found. The service may be misconfigured. Please contact support.');
+      }
       if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
         throw new Error('Request timed out. The service may be starting up. Please try again in a moment.');
       }
