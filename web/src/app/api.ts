@@ -153,12 +153,14 @@ axios.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     // Do not attach Authorization for public auth endpoints
     const url = String(config.url || '').toLowerCase();
-    const isAuthPublic = url.includes('/auth/login')
-      || url.includes('/auth/register')
-      || url.includes('/auth/forgot-password')
-      || url.includes('/auth/reset-password')
-      || url.includes('/auth/check-email')
-      || url.includes('/auth/check-username');
+    // Check for both /auth/ and /Auth/ (case-insensitive matching)
+    const urlLower = url.toLowerCase();
+    const isAuthPublic = urlLower.includes('/auth/login')
+      || urlLower.includes('/auth/register')
+      || urlLower.includes('/auth/forgot-password')
+      || urlLower.includes('/auth/reset-password')
+      || urlLower.includes('/auth/check-email')
+      || urlLower.includes('/auth/check-username');
 
     if (token && !isAuthPublic) {
       // Support both AxiosHeaders instance and plain object headers
@@ -264,7 +266,10 @@ export async function register(username: string, email: string, password: string
     // Double-check with ensureHttps (in case env var slipped through)
     authUrl = ensureHttps(authUrl);
     
-    const registerUrl = `${authUrl}/auth/register`;
+    // Backend route is [Route("api/[controller]")] with [HttpPost("register")]
+    // So the endpoint is /api/Auth/register (case-insensitive, but use correct path)
+    // AUTH_API_URL already includes /api, so we need /Auth/register
+    const registerUrl = `${authUrl}/Auth/register`;
     
     // Log for debugging
     console.log('🔍 REGISTER DEBUG:', {
@@ -321,40 +326,40 @@ export async function register(username: string, email: string, password: string
 }
 
 export async function forgotPassword(email: string) {
-  const response = await axios.post(`${AUTH_API_URL()}/auth/forgot-password`, { email });
+  const response = await axios.post(`${AUTH_API_URL()}/Auth/forgot-password`, { email });
   return response.data;
 }
 
 export async function verifyEmail(token: string) {
-  const response = await axios.get(`${AUTH_API_URL()}/auth/verify-email`, { params: { token } });
+  const response = await axios.get(`${AUTH_API_URL()}/Auth/verify-email`, { params: { token } });
   return response.data;
 }
 
 export async function resendVerificationEmail(email: string) {
-  const response = await axios.post(`${AUTH_API_URL()}/auth/resend-verification`, { email });
+  const response = await axios.post(`${AUTH_API_URL()}/Auth/resend-verification`, { email });
   return response.data;
 }
 
 export async function deleteAccount() {
   const token = localStorage.getItem('token');
-  const response = await axios.delete(`${AUTH_API_URL()}/auth/delete-account`, {
+  const response = await axios.delete(`${AUTH_API_URL()}/Auth/delete-account`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   return response.data;
 }
 
 export async function resetPassword(token: string, newPassword: string) {
-  const response = await axios.post(`${AUTH_API_URL()}/auth/reset-password`, { token, newPassword });
+  const response = await axios.post(`${AUTH_API_URL()}/Auth/reset-password`, { token, newPassword });
   return response.data;
 }
 
 export async function checkEmailAvailability(email: string) {
-  const response = await axios.get(`${AUTH_API_URL()}/auth/check-email?email=${encodeURIComponent(email)}`);
+  const response = await axios.get(`${AUTH_API_URL()}/Auth/check-email?email=${encodeURIComponent(email)}`);
   return response.data;
 }
 
 export async function checkUsernameAvailability(username: string) {
-  const response = await axios.get(`${AUTH_API_URL()}/auth/check-username?username=${encodeURIComponent(username)}`);
+  const response = await axios.get(`${AUTH_API_URL()}/Auth/check-username?username=${encodeURIComponent(username)}`);
   return response.data;
 }
 
