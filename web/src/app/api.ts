@@ -152,15 +152,14 @@ axios.interceptors.request.use((config) => {
     
     const token = localStorage.getItem('token');
     // Do not attach Authorization for public auth endpoints
-    const url = String(config.url || '').toLowerCase();
     // Check for both /auth/ and /Auth/ (case-insensitive matching)
-    const urlLower = url.toLowerCase();
-    const isAuthPublic = urlLower.includes('/auth/login')
-      || urlLower.includes('/auth/register')
-      || urlLower.includes('/auth/forgot-password')
-      || urlLower.includes('/auth/reset-password')
-      || urlLower.includes('/auth/check-email')
-      || urlLower.includes('/auth/check-username');
+    const url = String(config.url || '').toLowerCase();
+    const isAuthPublic = url.includes('/auth/login')
+      || url.includes('/auth/register')
+      || url.includes('/auth/forgot-password')
+      || url.includes('/auth/reset-password')
+      || url.includes('/auth/check-email')
+      || url.includes('/auth/check-username');
 
     if (token && !isAuthPublic) {
       // Support both AxiosHeaders instance and plain object headers
@@ -221,7 +220,10 @@ export async function login(email: string, password: string) {
       protocol: typeof window !== 'undefined' ? window.location.protocol : 'N/A'
     });
     
-    const loginUrl = `${authUrl}/auth/login`;
+    // Backend route is [Route("api/[controller]")] with [HttpPost("login")]
+    // So the endpoint is /api/Auth/login
+    // AUTH_API_URL already includes /api, so we need /Auth/login
+    const loginUrl = `${authUrl}/Auth/login`;
     console.log('API: Attempting login to:', loginUrl);
     
     // Final safety check - if URL still contains localhost, throw error
