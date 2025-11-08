@@ -31,10 +31,10 @@ export function ensureHttps(url: string): string {
         return 'https://wishera-auth-service.onrender.com/api';
       }
       if (url.includes('user') || url.includes('5001') || url.includes('/users/') || url.includes('/notifications/')) {
-        return 'https://wishera-user-service.onrender.com/api';
+        return 'https://wishera-app.onrender.com/api';
       }
       if (url.includes('gift') || url.includes('5003') || url.includes('/wishlists/') || url.includes('/gift')) {
-        return 'https://wishera-gift-service.onrender.com/api';
+        return 'https://wishera-app.onrender.com/api';
       }
       if (url.includes('chat') || url.includes('5002') || url.includes('/chat/')) {
         return 'https://wishera-chat-service.onrender.com/api';
@@ -71,27 +71,10 @@ function getApiUrl(): string {
 }
 
 function getAuthApiUrl(): string {
-  const url = getSecureApiUrl(
+  return getSecureApiUrl(
     process.env.NEXT_PUBLIC_AUTH_API_URL,
     'https://wishera-auth-service.onrender.com/api'
   );
-  
-  // Ensure the URL always ends with /api
-  // Remove trailing slashes first
-  let normalizedUrl = url.trim().replace(/\/+$/, '');
-  
-  // If it doesn't end with /api, add it
-  if (!normalizedUrl.endsWith('/api')) {
-    // If it ends with /auth, replace it with /api
-    if (normalizedUrl.endsWith('/auth')) {
-      normalizedUrl = normalizedUrl.replace(/\/auth$/, '/api');
-    } else {
-      // Otherwise, append /api
-      normalizedUrl = normalizedUrl + '/api';
-    }
-  }
-  
-  return normalizedUrl;
 }
 
 function getChatApiUrl(): string {
@@ -102,34 +85,15 @@ function getChatApiUrl(): string {
 }
 
 function getGiftApiUrl(): string {
-  return getSecureApiUrl(
-    process.env.NEXT_PUBLIC_GIFT_API_URL,
-    'https://wishera-gift-service.onrender.com/api'
-  );
+  // All gift/wishlist requests should go through the API Gateway
+  // The API Gateway proxies to gift-wishlist-service internally
+  return getApiUrl();
 }
 
 function getuserApiUrl(): string {
-  const url = getSecureApiUrl(
-    process.env.NEXT_PUBLIC_USER_API_URL,
-    'https://wishera-user-service.onrender.com/api'
-  );
-  
-  // Ensure the URL always ends with /api
-  // Remove trailing slashes first
-  let normalizedUrl = url.trim().replace(/\/+$/, '');
-  
-  // If it doesn't end with /api, add it
-  if (!normalizedUrl.endsWith('/api')) {
-    // If it ends with /users, replace it with /api
-    if (normalizedUrl.endsWith('/users')) {
-      normalizedUrl = normalizedUrl.replace(/\/users$/, '/api');
-    } else {
-      // Otherwise, append /api
-      normalizedUrl = normalizedUrl + '/api';
-    }
-  }
-  
-  return normalizedUrl;
+  // All user requests should go through the API Gateway
+  // The API Gateway proxies to user-service internally with HTTP fallback
+  return getApiUrl();
 }
 
 // Export getters that are called at runtime
@@ -240,93 +204,45 @@ export type WishlistCategory = typeof WISHLIST_CATEGORIES[number];
 export async function login(email: string, password: string) {
   try {
     // Get the URL and ensure it's secure
-    // getAuthApiUrl() already ensures the URL ends with /api
     let authUrl = AUTH_API_URL();
     
     // Double-check with ensureHttps (in case env var slipped through)
     authUrl = ensureHttps(authUrl);
     
-    // Normalize the URL to remove any double slashes and ensure proper formatting
-    authUrl = authUrl.trim().replace(/\/+$/, ''); // Remove trailing slashes
-    if (!authUrl.endsWith('/api')) {
-      // Ensure it ends with /api
-      if (authUrl.endsWith('/auth')) {
-        authUrl = authUrl.replace(/\/auth$/, '/api');
-      } else {
-        authUrl = authUrl + '/api';
-      }
-    }
-    
-    // Backend route is [Route("api/[controller]")] with [HttpPost("login")]
-    // ASP.NET Core default is /api/Auth/login (capital A), but some configs use lowercase
-    // Try uppercase first (ASP.NET Core default), then lowercase if that fails
-    const loginUrlUpper = `${authUrl}/Auth/login`;
-    const loginUrlLower = `${authUrl}/auth/login`;
-    
     // Log for debugging
     console.log('🔍 LOGIN DEBUG:', {
       envVar: process.env.NEXT_PUBLIC_AUTH_API_URL,
       computedUrl: authUrl,
-      tryingUrl: loginUrlUpper,
-      fallbackUrl: loginUrlLower,
       isProduction: typeof window !== 'undefined' && window.location.hostname !== 'localhost',
       hostname: typeof window !== 'undefined' ? window.location.hostname : 'N/A',
       protocol: typeof window !== 'undefined' ? window.location.protocol : 'N/A'
     });
     
+    // Backend route is [Route("api/[controller]")] with [HttpPost("login")]
+    // So the endpoint is /api/Auth/login
+    // AUTH_API_URL already includes /api, so we need /Auth/login
+    const loginUrl = `${authUrl}/Auth/login`;
+    console.log('API: Attempting login to:', loginUrl);
+    
     // Final safety check - if URL still contains localhost, throw error
     if (typeof window !== 'undefined' && 
         window.location.hostname !== 'localhost' && 
-        (loginUrlUpper.includes('localhost') || loginUrlLower.includes('localhost'))) {
-      console.error('❌ CRITICAL: Localhost detected in login URL after all checks!');
+        loginUrl.includes('localhost')) {
+      console.error('❌ CRITICAL: Localhost detected in login URL after all checks!', loginUrl);
       throw new Error('Invalid API URL configuration. Please contact support.');
     }
     
-    // Try uppercase first (ASP.NET Core default)
-    try {
-      console.log('API: Attempting login to:', loginUrlUpper);
-      const response = await axios.post(loginUrlUpper, { email, password }, { timeout: 60000 });
-      console.log('API: Login successful');
-      return response.data;
-    } catch (upperError: any) {
-      // If 404, try lowercase path
-      if (axios.isAxiosError(upperError) && upperError.response?.status === 404) {
-        console.log('API: Uppercase path failed with 404, trying lowercase:', loginUrlLower);
-        try {
-          const response = await axios.post(loginUrlLower, { email, password }, { timeout: 60000 });
-          console.log('API: Login successful with lowercase path');
-          return response.data;
-        } catch (lowerError) {
-          // If lowercase also fails, throw the original error
-          throw upperError;
-        }
-      }
-      // For other errors (400, 401, etc.), throw the original error
-      throw upperError;
-    }
+    const response = await axios.post(loginUrl, { email, password }, { timeout: 60000 });
+    console.log('API: Login successful');
+    return response.data;
   } catch (error) {
     console.error('API: Login failed:', error);
     if (axios.isAxiosError(error)) {
-      // Log detailed error information
-      if (error.response) {
-        console.error('API: Login error response:', {
-          status: error.response.status,
-          statusText: error.response.statusText,
-          data: error.response.data,
-          url: error.config?.url
-        });
-      }
-      
       if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
         throw new Error('Request timed out. The service may be starting up. Please try again in a moment.');
       }
       if (error.code === 'ECONNREFUSED') {
         throw new Error('Authentication service is not available. Please check if the auth service is running.');
-      }
-      if (error.response?.status === 400) {
-        // 400 Bad Request - provide more details
-        const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Invalid request. Please check your email and password.';
-        throw new Error(errorMessage);
       }
       if (error.response?.status === 401) {
         throw new Error('Invalid email or password.');
@@ -337,10 +253,6 @@ export async function login(email: string, password: string) {
       if (error.response?.status === 0 || !error.response) {
         throw new Error('Unable to connect to the authentication service. The service may be starting up or unavailable.');
       }
-      // Pass through the error message from the backend if available
-      if (error.response?.data?.message) {
-        throw new Error(error.response.data.message);
-      }
     }
     throw error;
   }
@@ -349,35 +261,21 @@ export async function login(email: string, password: string) {
 export async function register(username: string, email: string, password: string) {
   try {
     // Get the URL and ensure it's secure
-    // getAuthApiUrl() already ensures the URL ends with /api
     let authUrl = AUTH_API_URL();
     
     // Double-check with ensureHttps (in case env var slipped through)
     authUrl = ensureHttps(authUrl);
     
-    // Normalize the URL to remove any double slashes and ensure proper formatting
-    authUrl = authUrl.trim().replace(/\/+$/, ''); // Remove trailing slashes
-    if (!authUrl.endsWith('/api')) {
-      // Ensure it ends with /api
-      if (authUrl.endsWith('/auth')) {
-        authUrl = authUrl.replace(/\/auth$/, '/api');
-      } else {
-        authUrl = authUrl + '/api';
-      }
-    }
-    
     // Backend route is [Route("api/[controller]")] with [HttpPost("register")]
-    // ASP.NET Core default is /api/Auth/register (capital A), but some configs use lowercase
-    // Try uppercase first (ASP.NET Core default), then lowercase if that fails
-    const registerUrlUpper = `${authUrl}/Auth/register`;
-    const registerUrlLower = `${authUrl}/auth/register`;
+    // So the endpoint is /api/Auth/register (case-insensitive, but use correct path)
+    // AUTH_API_URL already includes /api, so we need /Auth/register
+    const registerUrl = `${authUrl}/Auth/register`;
     
     // Log for debugging
     console.log('🔍 REGISTER DEBUG:', {
       envVar: process.env.NEXT_PUBLIC_AUTH_API_URL,
       computedUrl: authUrl,
-      tryingUrl: registerUrlUpper,
-      fallbackUrl: registerUrlLower,
+      fullUrl: registerUrl,
       isProduction: typeof window !== 'undefined' && window.location.hostname !== 'localhost',
       hostname: typeof window !== 'undefined' ? window.location.hostname : 'N/A',
       protocol: typeof window !== 'undefined' ? window.location.protocol : 'N/A'
@@ -386,33 +284,15 @@ export async function register(username: string, email: string, password: string
     // Final safety check - if URL still contains localhost, throw error
     if (typeof window !== 'undefined' && 
         window.location.hostname !== 'localhost' && 
-        (registerUrlUpper.includes('localhost') || registerUrlLower.includes('localhost'))) {
-      console.error('❌ CRITICAL: Localhost detected in register URL after all checks!');
+        registerUrl.includes('localhost')) {
+      console.error('❌ CRITICAL: Localhost detected in register URL after all checks!', registerUrl);
       throw new Error('Invalid API URL configuration. Please contact support.');
     }
     
-    // Try uppercase first (ASP.NET Core default)
-    try {
-      console.log('API: Attempting registration to:', registerUrlUpper);
-      const response = await axios.post(registerUrlUpper, { username, email, password }, { timeout: 60000 });
-      console.log('API: Registration successful');
-      return response.data;
-    } catch (upperError: any) {
-      // If 404, try lowercase path
-      if (axios.isAxiosError(upperError) && upperError.response?.status === 404) {
-        console.log('API: Uppercase path failed with 404, trying lowercase:', registerUrlLower);
-        try {
-          const response = await axios.post(registerUrlLower, { username, email, password }, { timeout: 60000 });
-          console.log('API: Registration successful with lowercase path');
-          return response.data;
-        } catch (lowerError) {
-          // If lowercase also fails, throw the original error
-          throw upperError;
-        }
-      }
-      // For other errors (400, 401, etc.), throw the original error
-      throw upperError;
-    }
+    console.log('API: Attempting registration to:', registerUrl);
+    const response = await axios.post(registerUrl, { username, email, password }, { timeout: 60000 });
+    console.log('API: Registration successful');
+    return response.data;
   } catch (error) {
     console.error('API: Registration failed:', error);
     if (axios.isAxiosError(error)) {
@@ -446,47 +326,40 @@ export async function register(username: string, email: string, password: string
 }
 
 export async function forgotPassword(email: string) {
-  const authUrl = AUTH_API_URL().trim().replace(/\/+$/, '');
-  const response = await axios.post(`${authUrl}/auth/forgot-password`, { email });
+  const response = await axios.post(`${AUTH_API_URL()}/Auth/forgot-password`, { email });
   return response.data;
 }
 
 export async function verifyEmail(token: string) {
-  const authUrl = AUTH_API_URL().trim().replace(/\/+$/, '');
-  const response = await axios.get(`${authUrl}/auth/verify-email`, { params: { token } });
+  const response = await axios.get(`${AUTH_API_URL()}/Auth/verify-email`, { params: { token } });
   return response.data;
 }
 
 export async function resendVerificationEmail(email: string) {
-  const authUrl = AUTH_API_URL().trim().replace(/\/+$/, '');
-  const response = await axios.post(`${authUrl}/auth/resend-verification`, { email });
+  const response = await axios.post(`${AUTH_API_URL()}/Auth/resend-verification`, { email });
   return response.data;
 }
 
 export async function deleteAccount() {
   const token = localStorage.getItem('token');
-  const authUrl = AUTH_API_URL().trim().replace(/\/+$/, '');
-  const response = await axios.delete(`${authUrl}/auth/delete-account`, {
+  const response = await axios.delete(`${AUTH_API_URL()}/Auth/delete-account`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   return response.data;
 }
 
 export async function resetPassword(token: string, newPassword: string) {
-  const authUrl = AUTH_API_URL().trim().replace(/\/+$/, '');
-  const response = await axios.post(`${authUrl}/auth/reset-password`, { token, newPassword });
+  const response = await axios.post(`${AUTH_API_URL()}/Auth/reset-password`, { token, newPassword });
   return response.data;
 }
 
 export async function checkEmailAvailability(email: string) {
-  const authUrl = AUTH_API_URL().trim().replace(/\/+$/, '');
-  const response = await axios.get(`${authUrl}/auth/check-email?email=${encodeURIComponent(email)}`);
+  const response = await axios.get(`${AUTH_API_URL()}/Auth/check-email?email=${encodeURIComponent(email)}`);
   return response.data;
 }
 
 export async function checkUsernameAvailability(username: string) {
-  const authUrl = AUTH_API_URL().trim().replace(/\/+$/, '');
-  const response = await axios.get(`${authUrl}/auth/check-username?username=${encodeURIComponent(username)}`);
+  const response = await axios.get(`${AUTH_API_URL()}/Auth/check-username?username=${encodeURIComponent(username)}`);
   return response.data;
 }
 
@@ -671,26 +544,8 @@ export interface UserSearchDTO {
 }
 
 export async function getUserProfile(id: string): Promise<UserProfileDTO> {
-  try {
-    const userApiUrl = USER_API_URL().trim().replace(/\/+$/, '');
-    const profileUrl = `${userApiUrl}/users/${id}`;
-    
-    console.log('🔍 getUserProfile URL:', profileUrl);
-    
-    const response = await axios.get(profileUrl, authConfig());
-    return response.data;
-  } catch (error: any) {
-    console.error('API: getUserProfile error:', {
-      id,
-      url: `${USER_API_URL()}/users/${id}`,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data
-    });
-    
-    // Re-throw the error so the caller can handle it
-    throw error;
-  }
+  const response = await axios.get(`${USER_API_URL()}/users/${id}`, authConfig());
+  return response.data;
 }
 
 export async function searchUsers(query: string, page = 1, pageSize = 10): Promise<UserSearchDTO[]> {
@@ -699,77 +554,13 @@ export async function searchUsers(query: string, page = 1, pageSize = 10): Promi
 }
 
 export async function getFollowers(id: string, page = 1, pageSize = 10): Promise<UserSearchDTO[]> {
-  try {
-    const userApiUrl = USER_API_URL().trim().replace(/\/+$/, '');
-    
-    // Construct the endpoint URL
-    // USER_API_URL already includes /api, so we need /users/{id}/followers
-    const followersUrl = `${userApiUrl}/users/${id}/followers?page=${page}&pageSize=${pageSize}`;
-    
-    console.log('🔍 getFollowers URL:', followersUrl);
-    
-    try {
-      const response = await axios.get(followersUrl, authConfig());
-      return response.data || [];
-    } catch (error: any) {
-      console.error('API: getFollowers error:', {
-        url: followersUrl,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data
-      });
-      
-      // Return empty array on 404 to prevent UI breakage
-      if (error.response?.status === 404) {
-        console.warn('API: Followers endpoint not found (404). Returning empty array.');
-        return [];
-      }
-      
-      // For other errors, also return empty array to prevent UI breakage
-      return [];
-    }
-  } catch (error) {
-    console.error('API: getFollowers failed:', error);
-    // Return empty array on error to prevent UI breakage
-    return [];
-  }
+  const response = await axios.get(`${USER_API_URL()}/users/${id}/followers?page=${page}&pageSize=${pageSize}`, authConfig());
+  return response.data;
 }
 
 export async function getFollowing(id: string, page = 1, pageSize = 10): Promise<UserSearchDTO[]> {
-  try {
-    const userApiUrl = USER_API_URL().trim().replace(/\/+$/, '');
-    
-    // Construct the endpoint URL
-    // USER_API_URL already includes /api, so we need /users/{id}/following
-    const followingUrl = `${userApiUrl}/users/${id}/following?page=${page}&pageSize=${pageSize}`;
-    
-    console.log('🔍 getFollowing URL:', followingUrl);
-    
-    try {
-      const response = await axios.get(followingUrl, authConfig());
-      return response.data || [];
-    } catch (error: any) {
-      console.error('API: getFollowing error:', {
-        url: followingUrl,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data
-      });
-      
-      // Return empty array on 404 to prevent UI breakage
-      if (error.response?.status === 404) {
-        console.warn('API: Following endpoint not found (404). Returning empty array.');
-        return [];
-      }
-      
-      // For other errors, also return empty array to prevent UI breakage
-      return [];
-    }
-  } catch (error) {
-    console.error('API: getFollowing failed:', error);
-    // Return empty array on error to prevent UI breakage
-    return [];
-  }
+  const response = await axios.get(`${USER_API_URL()}/users/${id}/following?page=${page}&pageSize=${pageSize}`, authConfig());
+  return response.data;
 }
 
 export async function getMyFriends(page = 1, pageSize = 10): Promise<UserSearchDTO[]> {
