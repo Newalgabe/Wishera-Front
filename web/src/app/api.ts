@@ -223,45 +223,93 @@ export type WishlistCategory = typeof WISHLIST_CATEGORIES[number];
 export async function login(email: string, password: string) {
   try {
     // Get the URL and ensure it's secure
+    // getAuthApiUrl() already ensures the URL ends with /api
     let authUrl = AUTH_API_URL();
     
     // Double-check with ensureHttps (in case env var slipped through)
     authUrl = ensureHttps(authUrl);
     
+    // Normalize the URL to remove any double slashes and ensure proper formatting
+    authUrl = authUrl.trim().replace(/\/+$/, ''); // Remove trailing slashes
+    if (!authUrl.endsWith('/api')) {
+      // Ensure it ends with /api
+      if (authUrl.endsWith('/auth')) {
+        authUrl = authUrl.replace(/\/auth$/, '/api');
+      } else {
+        authUrl = authUrl + '/api';
+      }
+    }
+    
+    // Backend route is [Route("api/[controller]")] with [HttpPost("login")]
+    // ASP.NET Core default is /api/Auth/login (capital A), but some configs use lowercase
+    // Try uppercase first (ASP.NET Core default), then lowercase if that fails
+    const loginUrlUpper = `${authUrl}/Auth/login`;
+    const loginUrlLower = `${authUrl}/auth/login`;
+    
     // Log for debugging
     console.log('🔍 LOGIN DEBUG:', {
       envVar: process.env.NEXT_PUBLIC_AUTH_API_URL,
       computedUrl: authUrl,
+      tryingUrl: loginUrlUpper,
+      fallbackUrl: loginUrlLower,
       isProduction: typeof window !== 'undefined' && window.location.hostname !== 'localhost',
       hostname: typeof window !== 'undefined' ? window.location.hostname : 'N/A',
       protocol: typeof window !== 'undefined' ? window.location.protocol : 'N/A'
     });
     
-    // Backend route is [Route("api/[controller]")] with [HttpPost("login")]
-    // So the endpoint is /api/Auth/login
-    // AUTH_API_URL already includes /api, so we need /Auth/login
-    const loginUrl = `${authUrl}/Auth/login`;
-    console.log('API: Attempting login to:', loginUrl);
-    
     // Final safety check - if URL still contains localhost, throw error
     if (typeof window !== 'undefined' && 
         window.location.hostname !== 'localhost' && 
-        loginUrl.includes('localhost')) {
-      console.error('❌ CRITICAL: Localhost detected in login URL after all checks!', loginUrl);
+        (loginUrlUpper.includes('localhost') || loginUrlLower.includes('localhost'))) {
+      console.error('❌ CRITICAL: Localhost detected in login URL after all checks!');
       throw new Error('Invalid API URL configuration. Please contact support.');
     }
     
-    const response = await axios.post(loginUrl, { email, password }, { timeout: 60000 });
-    console.log('API: Login successful');
-    return response.data;
+    // Try uppercase first (ASP.NET Core default)
+    try {
+      console.log('API: Attempting login to:', loginUrlUpper);
+      const response = await axios.post(loginUrlUpper, { email, password }, { timeout: 60000 });
+      console.log('API: Login successful');
+      return response.data;
+    } catch (upperError: any) {
+      // If 404, try lowercase path
+      if (axios.isAxiosError(upperError) && upperError.response?.status === 404) {
+        console.log('API: Uppercase path failed with 404, trying lowercase:', loginUrlLower);
+        try {
+          const response = await axios.post(loginUrlLower, { email, password }, { timeout: 60000 });
+          console.log('API: Login successful with lowercase path');
+          return response.data;
+        } catch (lowerError) {
+          // If lowercase also fails, throw the original error
+          throw upperError;
+        }
+      }
+      // For other errors (400, 401, etc.), throw the original error
+      throw upperError;
+    }
   } catch (error) {
     console.error('API: Login failed:', error);
     if (axios.isAxiosError(error)) {
+      // Log detailed error information
+      if (error.response) {
+        console.error('API: Login error response:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          url: error.config?.url
+        });
+      }
+      
       if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
         throw new Error('Request timed out. The service may be starting up. Please try again in a moment.');
       }
       if (error.code === 'ECONNREFUSED') {
         throw new Error('Authentication service is not available. Please check if the auth service is running.');
+      }
+      if (error.response?.status === 400) {
+        // 400 Bad Request - provide more details
+        const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Invalid request. Please check your email and password.';
+        throw new Error(errorMessage);
       }
       if (error.response?.status === 401) {
         throw new Error('Invalid email or password.');
@@ -271,6 +319,10 @@ export async function login(email: string, password: string) {
       }
       if (error.response?.status === 0 || !error.response) {
         throw new Error('Unable to connect to the authentication service. The service may be starting up or unavailable.');
+      }
+      // Pass through the error message from the backend if available
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
       }
     }
     throw error;
@@ -286,16 +338,29 @@ export async function register(username: string, email: string, password: string
     // Double-check with ensureHttps (in case env var slipped through)
     authUrl = ensureHttps(authUrl);
     
+    // Normalize the URL to remove any double slashes and ensure proper formatting
+    authUrl = authUrl.trim().replace(/\/+$/, ''); // Remove trailing slashes
+    if (!authUrl.endsWith('/api')) {
+      // Ensure it ends with /api
+      if (authUrl.endsWith('/auth')) {
+        authUrl = authUrl.replace(/\/auth$/, '/api');
+      } else {
+        authUrl = authUrl + '/api';
+      }
+    }
+    
     // Backend route is [Route("api/[controller]")] with [HttpPost("register")]
-    // So the endpoint is /api/Auth/register (case-insensitive, but use correct path)
-    // AUTH_API_URL already includes /api, so we need /Auth/register
-    const registerUrl = `${authUrl}/Auth/register`;
+    // ASP.NET Core default is /api/Auth/register (capital A), but some configs use lowercase
+    // Try uppercase first (ASP.NET Core default), then lowercase if that fails
+    const registerUrlUpper = `${authUrl}/Auth/register`;
+    const registerUrlLower = `${authUrl}/auth/register`;
     
     // Log for debugging
     console.log('🔍 REGISTER DEBUG:', {
       envVar: process.env.NEXT_PUBLIC_AUTH_API_URL,
       computedUrl: authUrl,
-      fullUrl: registerUrl,
+      tryingUrl: registerUrlUpper,
+      fallbackUrl: registerUrlLower,
       isProduction: typeof window !== 'undefined' && window.location.hostname !== 'localhost',
       hostname: typeof window !== 'undefined' ? window.location.hostname : 'N/A',
       protocol: typeof window !== 'undefined' ? window.location.protocol : 'N/A'
@@ -304,15 +369,33 @@ export async function register(username: string, email: string, password: string
     // Final safety check - if URL still contains localhost, throw error
     if (typeof window !== 'undefined' && 
         window.location.hostname !== 'localhost' && 
-        registerUrl.includes('localhost')) {
-      console.error('❌ CRITICAL: Localhost detected in register URL after all checks!', registerUrl);
+        (registerUrlUpper.includes('localhost') || registerUrlLower.includes('localhost'))) {
+      console.error('❌ CRITICAL: Localhost detected in register URL after all checks!');
       throw new Error('Invalid API URL configuration. Please contact support.');
     }
     
-    console.log('API: Attempting registration to:', registerUrl);
-    const response = await axios.post(registerUrl, { username, email, password }, { timeout: 60000 });
-    console.log('API: Registration successful');
-    return response.data;
+    // Try uppercase first (ASP.NET Core default)
+    try {
+      console.log('API: Attempting registration to:', registerUrlUpper);
+      const response = await axios.post(registerUrlUpper, { username, email, password }, { timeout: 60000 });
+      console.log('API: Registration successful');
+      return response.data;
+    } catch (upperError: any) {
+      // If 404, try lowercase path
+      if (axios.isAxiosError(upperError) && upperError.response?.status === 404) {
+        console.log('API: Uppercase path failed with 404, trying lowercase:', registerUrlLower);
+        try {
+          const response = await axios.post(registerUrlLower, { username, email, password }, { timeout: 60000 });
+          console.log('API: Registration successful with lowercase path');
+          return response.data;
+        } catch (lowerError) {
+          // If lowercase also fails, throw the original error
+          throw upperError;
+        }
+      }
+      // For other errors (400, 401, etc.), throw the original error
+      throw upperError;
+    }
   } catch (error) {
     console.error('API: Registration failed:', error);
     if (axios.isAxiosError(error)) {
@@ -346,40 +429,47 @@ export async function register(username: string, email: string, password: string
 }
 
 export async function forgotPassword(email: string) {
-  const response = await axios.post(`${AUTH_API_URL()}/Auth/forgot-password`, { email });
+  const authUrl = AUTH_API_URL().trim().replace(/\/+$/, '');
+  const response = await axios.post(`${authUrl}/auth/forgot-password`, { email });
   return response.data;
 }
 
 export async function verifyEmail(token: string) {
-  const response = await axios.get(`${AUTH_API_URL()}/Auth/verify-email`, { params: { token } });
+  const authUrl = AUTH_API_URL().trim().replace(/\/+$/, '');
+  const response = await axios.get(`${authUrl}/auth/verify-email`, { params: { token } });
   return response.data;
 }
 
 export async function resendVerificationEmail(email: string) {
-  const response = await axios.post(`${AUTH_API_URL()}/Auth/resend-verification`, { email });
+  const authUrl = AUTH_API_URL().trim().replace(/\/+$/, '');
+  const response = await axios.post(`${authUrl}/auth/resend-verification`, { email });
   return response.data;
 }
 
 export async function deleteAccount() {
   const token = localStorage.getItem('token');
-  const response = await axios.delete(`${AUTH_API_URL()}/Auth/delete-account`, {
+  const authUrl = AUTH_API_URL().trim().replace(/\/+$/, '');
+  const response = await axios.delete(`${authUrl}/auth/delete-account`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   return response.data;
 }
 
 export async function resetPassword(token: string, newPassword: string) {
-  const response = await axios.post(`${AUTH_API_URL()}/Auth/reset-password`, { token, newPassword });
+  const authUrl = AUTH_API_URL().trim().replace(/\/+$/, '');
+  const response = await axios.post(`${authUrl}/auth/reset-password`, { token, newPassword });
   return response.data;
 }
 
 export async function checkEmailAvailability(email: string) {
-  const response = await axios.get(`${AUTH_API_URL()}/Auth/check-email?email=${encodeURIComponent(email)}`);
+  const authUrl = AUTH_API_URL().trim().replace(/\/+$/, '');
+  const response = await axios.get(`${authUrl}/auth/check-email?email=${encodeURIComponent(email)}`);
   return response.data;
 }
 
 export async function checkUsernameAvailability(username: string) {
-  const response = await axios.get(`${AUTH_API_URL()}/Auth/check-username?username=${encodeURIComponent(username)}`);
+  const authUrl = AUTH_API_URL().trim().replace(/\/+$/, '');
+  const response = await axios.get(`${authUrl}/auth/check-username?username=${encodeURIComponent(username)}`);
   return response.data;
 }
 
