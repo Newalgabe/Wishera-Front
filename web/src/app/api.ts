@@ -71,10 +71,27 @@ function getApiUrl(): string {
 }
 
 function getAuthApiUrl(): string {
-  return getSecureApiUrl(
+  const url = getSecureApiUrl(
     process.env.NEXT_PUBLIC_AUTH_API_URL,
     'https://wishera-auth-service.onrender.com/api'
   );
+  
+  // Ensure the URL always ends with /api
+  // Remove trailing slashes first
+  let normalizedUrl = url.trim().replace(/\/+$/, '');
+  
+  // If it doesn't end with /api, add it
+  if (!normalizedUrl.endsWith('/api')) {
+    // If it ends with /auth, replace it with /api
+    if (normalizedUrl.endsWith('/auth')) {
+      normalizedUrl = normalizedUrl.replace(/\/auth$/, '/api');
+    } else {
+      // Otherwise, append /api
+      normalizedUrl = normalizedUrl + '/api';
+    }
+  }
+  
+  return normalizedUrl;
 }
 
 function getChatApiUrl(): string {
@@ -263,6 +280,7 @@ export async function login(email: string, password: string) {
 export async function register(username: string, email: string, password: string) {
   try {
     // Get the URL and ensure it's secure
+    // getAuthApiUrl() already ensures the URL ends with /api
     let authUrl = AUTH_API_URL();
     
     // Double-check with ensureHttps (in case env var slipped through)
