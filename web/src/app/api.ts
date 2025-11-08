@@ -109,10 +109,27 @@ function getGiftApiUrl(): string {
 }
 
 function getuserApiUrl(): string {
-  return getSecureApiUrl(
+  const url = getSecureApiUrl(
     process.env.NEXT_PUBLIC_USER_API_URL,
     'https://wishera-user-service.onrender.com/api'
   );
+  
+  // Ensure the URL always ends with /api
+  // Remove trailing slashes first
+  let normalizedUrl = url.trim().replace(/\/+$/, '');
+  
+  // If it doesn't end with /api, add it
+  if (!normalizedUrl.endsWith('/api')) {
+    // If it ends with /users, replace it with /api
+    if (normalizedUrl.endsWith('/users')) {
+      normalizedUrl = normalizedUrl.replace(/\/users$/, '/api');
+    } else {
+      // Otherwise, append /api
+      normalizedUrl = normalizedUrl + '/api';
+    }
+  }
+  
+  return normalizedUrl;
 }
 
 // Export getters that are called at runtime
@@ -654,8 +671,26 @@ export interface UserSearchDTO {
 }
 
 export async function getUserProfile(id: string): Promise<UserProfileDTO> {
-  const response = await axios.get(`${USER_API_URL()}/users/${id}`, authConfig());
-  return response.data;
+  try {
+    const userApiUrl = USER_API_URL().trim().replace(/\/+$/, '');
+    const profileUrl = `${userApiUrl}/users/${id}`;
+    
+    console.log('🔍 getUserProfile URL:', profileUrl);
+    
+    const response = await axios.get(profileUrl, authConfig());
+    return response.data;
+  } catch (error: any) {
+    console.error('API: getUserProfile error:', {
+      id,
+      url: `${USER_API_URL()}/users/${id}`,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data
+    });
+    
+    // Re-throw the error so the caller can handle it
+    throw error;
+  }
 }
 
 export async function searchUsers(query: string, page = 1, pageSize = 10): Promise<UserSearchDTO[]> {
@@ -664,13 +699,77 @@ export async function searchUsers(query: string, page = 1, pageSize = 10): Promi
 }
 
 export async function getFollowers(id: string, page = 1, pageSize = 10): Promise<UserSearchDTO[]> {
-  const response = await axios.get(`${USER_API_URL()}/users/${id}/followers?page=${page}&pageSize=${pageSize}`, authConfig());
-  return response.data;
+  try {
+    const userApiUrl = USER_API_URL().trim().replace(/\/+$/, '');
+    
+    // Construct the endpoint URL
+    // USER_API_URL already includes /api, so we need /users/{id}/followers
+    const followersUrl = `${userApiUrl}/users/${id}/followers?page=${page}&pageSize=${pageSize}`;
+    
+    console.log('🔍 getFollowers URL:', followersUrl);
+    
+    try {
+      const response = await axios.get(followersUrl, authConfig());
+      return response.data || [];
+    } catch (error: any) {
+      console.error('API: getFollowers error:', {
+        url: followersUrl,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data
+      });
+      
+      // Return empty array on 404 to prevent UI breakage
+      if (error.response?.status === 404) {
+        console.warn('API: Followers endpoint not found (404). Returning empty array.');
+        return [];
+      }
+      
+      // For other errors, also return empty array to prevent UI breakage
+      return [];
+    }
+  } catch (error) {
+    console.error('API: getFollowers failed:', error);
+    // Return empty array on error to prevent UI breakage
+    return [];
+  }
 }
 
 export async function getFollowing(id: string, page = 1, pageSize = 10): Promise<UserSearchDTO[]> {
-  const response = await axios.get(`${USER_API_URL()}/users/${id}/following?page=${page}&pageSize=${pageSize}`, authConfig());
-  return response.data;
+  try {
+    const userApiUrl = USER_API_URL().trim().replace(/\/+$/, '');
+    
+    // Construct the endpoint URL
+    // USER_API_URL already includes /api, so we need /users/{id}/following
+    const followingUrl = `${userApiUrl}/users/${id}/following?page=${page}&pageSize=${pageSize}`;
+    
+    console.log('🔍 getFollowing URL:', followingUrl);
+    
+    try {
+      const response = await axios.get(followingUrl, authConfig());
+      return response.data || [];
+    } catch (error: any) {
+      console.error('API: getFollowing error:', {
+        url: followingUrl,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data
+      });
+      
+      // Return empty array on 404 to prevent UI breakage
+      if (error.response?.status === 404) {
+        console.warn('API: Following endpoint not found (404). Returning empty array.');
+        return [];
+      }
+      
+      // For other errors, also return empty array to prevent UI breakage
+      return [];
+    }
+  } catch (error) {
+    console.error('API: getFollowing failed:', error);
+    // Return empty array on error to prevent UI breakage
+    return [];
+  }
 }
 
 export async function getMyFriends(page = 1, pageSize = 10): Promise<UserSearchDTO[]> {
