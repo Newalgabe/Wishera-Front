@@ -106,6 +106,7 @@ export const USER_API_URL = () => getuserApiUrl();
 // Ensure Authorization header is attached to all requests when token exists
 // Increased timeout for Render free tier (can be slow to wake up)
 axios.defaults.timeout = 60000; // 60 seconds for Render services
+axios.defaults.withCredentials = true; // CRITICAL: Enable credentials for CORS requests
 axios.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     // CRITICAL: Fix URLs at request time to prevent localhost in production
