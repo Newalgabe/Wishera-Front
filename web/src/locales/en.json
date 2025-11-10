@@ -1,0 +1,607 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success!",
+    "save": "Save",
+    "saving": "Saving...",
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "cancel": "Cancel",
+    "add": "Add",
+    "edit": "Edit",
+    "close": "Close",
+    "submit": "Submit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "clear": "Clear",
+    "apply": "Apply",
+    "reset": "Reset",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "done": "Done",
+    "warning": "Warning",
+    "info": "Information",
+    "scroll": "Scroll",
+    "share": "Share",
+    "reserve": "Reserve",
+    "available": "Available",
+    "reserved": "Reserved",
+    "public": "Public",
+    "private": "Private"
+  },
+  "navigation": {
+    "home": "Home",
+    "about": "About",
+    "contact": "Contact",
+    "features": "Features",
+    "login": "Login",
+    "signup": "Sign Up",
+    "logout": "Logout",
+    "wishlistApp": "Wishera"
+  },
+  "auth": {
+    "loginTitle": "Login to Wishera",
+    "registerTitle": "Create Your Account",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot your password?",
+    "dontHaveAccount": "Don't have an account?",
+    "alreadyHaveAccount": "Already have an account?",
+    "loggingIn": "Logging in...",
+    "signingUp": "Signing up...",
+    "loginSuccess": "Login successful! Redirecting...",
+    "loginFailed": "Login failed",
+    "registerSuccess": "Registration successful! Redirecting...",
+    "registerFailed": "Registration failed",
+    "resetPassword": "Reset Password",
+    "forgotPasswordTitle": "Forgot Password",
+    "resetPasswordTitle": "Reset Password",
+    "sendResetLink": "Send Reset Link",
+    "newPassword": "New Password",
+    "resetPasswordSuccess": "Password reset successful!"
+  },
+  "home": {
+    "heroTitle": "Your Ultimate Wishlist Experience",
+    "heroSubtitle": "Create, share, and manage your wishlists with friends and family. Never get duplicate gifts again!",
+    "getStarted": "Get Started",
+    "learnMore": "Learn More",
+    "trustedBy": "Trusted by",
+    "featuresTitle": "Everything You Need",
+    "featuresSubtitle": "Powerful features to make gift-giving effortless and fun"
+  },
+  "features": {
+    "userAuth": {
+      "title": "User Authentication",
+      "description": "Register, login, and manage your wishlist securely.",
+      "benefit": "Your data is always protected and private."
+    },
+    "wishlistManagement": {
+      "title": "Wishlist Management",
+      "description": "Add, edit, and delete gifts from your wishlist.",
+      "benefit": "Keep your wishes organized and up to date."
+    },
+    "giftReservations": {
+      "title": "Gift Reservations",
+      "description": "Friends can reserve gifts (without the owner seeing who reserved them).",
+      "benefit": "No more duplicate gifts or spoiled surprises!"
+    },
+    "wishlistSharing": {
+      "title": "Wishlist Sharing",
+      "description": "Share your wishlist with friends via a unique link.",
+      "benefit": "Easily let others know what you really want."
+    },
+    "cloudImages": {
+      "title": "Cloud Image Uploads",
+      "description": "Upload and display gift images using Cloudinary.",
+      "benefit": "Show off your wishes with beautiful images."
+    },
+    "glassmorphismUI": {
+      "title": "Glassmorphism UI",
+      "description": "A stunning, modern gradient-based design with smooth transparency effects.",
+      "benefit": "Enjoy a visually immersive and elegant experience."
+    }
+  },
+  "testimonials": {
+    "emily": "Wishera made gift-giving so much easier for my friends and family. I love how simple and fun it is!",
+    "james": "I never get duplicate gifts anymore. The reservation feature is genius!",
+    "sophia": "The design is beautiful and sharing my wishlist is a breeze.",
+    "michael": "Cloud image uploads make my wishlist look amazing. Highly recommend!"
+  },
+  "mockup": {
+    "alexWishlist": "Alex's Wishlist",
+    "nikeAirMax": "Nike Air Max 270",
+    "appleWatch": "Apple Watch SE",
+    "cloudPillow": "Cloud Pillow",
+    "wirelessHeadphones": "Wireless Headphones"
+  },
+  "footer": {
+    "allRightsReserved": "All rights reserved.",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service"
+  },
+  "about": {
+    "title": "About Wishera",
+    "subtitle": "Making gift-giving easier, more meaningful, and more enjoyable for everyone.",
+    "ourMission": "Our Mission",
+    "missionText1": "We believe that gift-giving should be a joyful, stress-free experience. Our mission is to create a platform that makes it easy for people to share their wishes and for loved ones to give meaningful gifts that truly matter.",
+    "missionText2": "By combining modern technology with thoughtful design, we're building a community where the act of giving becomes more personal, more meaningful, and more enjoyable for everyone involved.",
+    "joinCommunity": "Join Our Community",
+    "ourValues": "Our Values",
+    "valuesSubtitle": "These core principles guide everything we do and every decision we make.",
+    "faqTitle": "Frequently Asked Questions",
+    "faqSubtitle": "Everything you need to know about using Wishera to make gift-giving easier and more enjoyable.",
+    "values": {
+      "userCentric": {
+        "title": "User-Centric Design",
+        "description": "Every feature is designed with the user in mind, ensuring an intuitive and enjoyable experience."
+      },
+      "privacyFirst": {
+        "title": "Privacy First",
+        "description": "Your data is protected with industry-standard security measures and privacy controls."
+      },
+      "innovation": {
+        "title": "Innovation",
+        "description": "Constantly exploring new technologies to deliver cutting-edge features and experiences."
+      },
+      "community": {
+        "title": "Community",
+        "description": "Building a platform that brings people together through the joy of gift-giving."
+      }
+    },
+    "stats": {
+      "happyUsers": "Happy Users",
+      "wishlistsCreated": "Wishlists Created",
+      "giftsReserved": "Gifts Reserved",
+      "uptime": "Uptime"
+    },
+    "faqs": {
+      "q1": {
+        "question": "How does the gift reservation system work?",
+        "answer": "When someone views your wishlist, they can reserve a gift without you seeing who reserved it. This prevents duplicate gifts while keeping the surprise intact. You'll only see that an item has been reserved, not who reserved it."
+      },
+      "q2": {
+        "question": "Is my wishlist private?",
+        "answer": "You have full control over your wishlist privacy. You can make it public with a shareable link, private for invited friends only, or completely private for your eyes only. Your privacy settings can be changed at any time."
+      },
+      "q3": {
+        "question": "Can I add images to my wishlist items?",
+        "answer": "Yes! You can upload images for each wishlist item using our Cloudinary integration. This helps others see exactly what you want and makes your wishlist more visually appealing."
+      },
+      "q4": {
+        "question": "How do I share my wishlist with friends?",
+        "answer": "Simply click the 'Share' button on your wishlist to generate a unique link. You can then send this link to friends and family via email, text, or social media. They can view your wishlist without needing to create an account."
+      },
+      "q5": {
+        "question": "What happens when someone reserves a gift?",
+        "answer": "When someone reserves a gift, it's marked as 'Reserved' on your wishlist. This prevents others from buying the same item. The person who reserved it can see their reserved items in their account, but you won't know who reserved what."
+      },
+      "q6": {
+        "question": "Can I edit or remove items from my wishlist?",
+        "answer": "Absolutely! You can edit any item on your wishlist at any time. You can change the name, description, price, image, or remove items completely. Changes are reflected immediately for anyone viewing your wishlist."
+      },
+      "q7": {
+        "question": "Is there a limit to how many items I can add?",
+        "answer": "Currently, there's no limit to the number of items you can add to your wishlist. Add as many items as you'd like, from small stocking stuffers to big-ticket items."
+      },
+      "q8": {
+        "question": "How secure is my account and data?",
+        "answer": "We take security seriously. All data is encrypted, passwords are securely hashed, and we use industry-standard security measures. We never share your personal information with third parties without your consent."
+      }
+    }
+  },
+  "contact": {
+    "title": "Contact Us",
+    "subtitle": "We'd love to hear from you. Get in touch with our team.",
+    "getInTouch": "Get in touch",
+    "getInTouchDescription": "Have a question or need help? We'd love to hear from you. Send us a message and we'll respond as soon as possible.",
+    "sendMessage": "Send us a message",
+    "form": {
+      "name": "Name",
+      "namePlaceholder": "Your name",
+      "email": "Email",
+      "emailPlaceholder": "your@email.com",
+      "subject": "Subject",
+      "subjectPlaceholder": "Select a subject",
+      "message": "Message",
+      "messagePlaceholder": "Tell us how we can help you...",
+      "sendButton": "Send Message",
+      "sending": "Opening Email...",
+      "successMessage": "✓ Email client opened! Please send the email to complete your message.",
+      "errorMessage": "✗ There was an error. Please try again or email us directly at wisheraapp@gmail.com",
+      "subjects": {
+        "general": "General Inquiry",
+        "support": "Technical Support",
+        "feature": "Feature Request",
+        "bug": "Bug Report",
+        "partnership": "Partnership"
+      }
+    },
+    "methods": {
+      "email": {
+        "title": "Email",
+        "value": "wisheraapp@gmail.com",
+        "description": "We'll respond within 24 hours"
+      },
+      "chat": {
+        "title": "Live Chat",
+        "value": "Available 9AM-6PM EST",
+        "description": "Get instant help from our team"
+      },
+      "office": {
+        "title": "Office",
+        "value": "San Francisco, CA",
+        "description": "Come visit us anytime"
+      }
+    },
+    "needHelp": {
+      "title": "Need immediate help?",
+      "description": "Check out our FAQ section for quick answers to common questions.",
+      "viewFaq": "View FAQ"
+    }
+  },
+  "forgotPassword": {
+    "title": "Forgot Password?",
+    "subtitle": "Enter your email address and we'll send you a link to reset your password.",
+    "emailPlaceholder": "Enter your email",
+    "sendButton": "Send Reset Link",
+    "sending": "Sending...",
+    "successMessage": "Password reset link sent to your email! Check your inbox (and spam folder).",
+    "errorMessage": "Failed to send reset email. Please check your email address and try again.",
+    "rememberPassword": "Remember your password?",
+    "backToLogin": "Back to Login"
+  },
+  "resetPassword": {
+    "invalidLinkTitle": "Invalid Reset Link",
+    "invalidLinkDescription": "The password reset link is invalid or has expired.",
+    "requestNewLink": "Request a new reset link",
+    "title": "Reset Your Password",
+    "subtitle": "Enter your new password below.",
+    "newPasswordPlaceholder": "New password",
+    "confirmNewPasswordPlaceholder": "Confirm new password",
+    "resetButton": "Reset Password",
+    "resetting": "Resetting...",
+    "rememberPassword": "Remember your password?",
+    "backToLogin": "Back to Login",
+    "errorMessage": "Failed to reset password"
+  },
+  "dashboard": {
+    "followers": "followers",
+    "following": "following",
+    "friends": "Friends",
+    "unfollow": "Unfollow",
+    "apply": "Apply",
+    "clear": "Clear",
+    "uploadImage": "Upload Image",
+    "item": "item",
+    "items": "items",
+    "addYourFirstGift": "Add your first gift to get started!",
+    "title": "Dashboard",
+    "subtitle": "Manage your wishlists and discover gifts",
+    "editProfile": "Edit Profile",
+    "avatar": "Avatar",
+    "uploadAvatar": "Upload Avatar",
+    "username": "Username",
+    "bio": "Bio",
+    "bioPlaceholder": "Tell us about yourself...",
+    "birthday": "Birthday",
+    "birthdayPlaceholder": "Select your birthday",
+    "birthdayHelp": "Your birthday helps friends remember to celebrate with you!",
+    "interests": "Interests",
+    "interestsPlaceholder": "e.g., technology, cooking, travel",
+    "privateProfile": "Private Profile",
+    "searchPlaceholder": "Search wishlists, people...",
+    "home": "Home",
+    "profile": "Profile",
+    "myWishlists": "My Wishlists",
+    "myGifts": "My Gifts",
+    "liked": "Liked",
+    "createWishlist": "Create Wishlist",
+    "suggestedForYou": "Suggested for You",
+    "mutualFriends": "mutual friends",
+    "follow": "Follow",
+    "quickActions": "Quick Actions",
+    "browseCategories": "Browse Categories",
+    "findFriends": "Find Friends",
+    "share": "Share",
+    "view": "View",
+    "addGift": "Add Gift",
+    "name": "Name",
+    "price": "Price",
+    "category": "Category",
+    "selectCategory": "Select Category (optional)",
+    "public": "Public",
+    "private": "Private",
+    "filtersSorting": "Filters & Sorting",
+    "filterByCategory": "Filter by category",
+    "sortBy": "Sort by",
+    "sort": {
+      "priceAsc": "Price ↑",
+      "priceDesc": "Price ↓",
+      "nameAsc": "Name A-Z",
+      "nameDesc": "Name Z-A"
+    },
+    "noGiftsYet": "No gifts yet. Use the Add Gift panel above to create your first one.",
+    "noLikedWishlists": "No liked wishlists yet",
+    "noLikedWishlistsDescription": "Start liking wishlists to see them here!",
+    "noImage": "No image",
+    "by": "by",
+    "hoursAgo": "hours ago",
+    "daysAgo": "days ago",
+    "ago": "ago",
+    "editWishlist": "Edit Wishlist",
+    "deleteWishlist": "Delete Wishlist",
+    "deleteWishlistConfirm": "Are you sure you want to delete",
+    "deleteWishlistWarning": "This action cannot be undone.",
+    "title": "Title",
+    "description": "Description",
+    "publicWishlist": "Public Wishlist",
+    "viewDetails": "View Details",
+    "edit": "Edit",
+    "delete": "Delete",
+    "wishlistShared": "Wishlist link copied to clipboard!",
+    "categories": {
+      "electronics": "Electronics",
+      "books": "Books",
+      "clothing": "Clothing",
+      "homegarden": "Home & Garden",
+      "sportsoutdoors": "Sports & Outdoors",
+      "beautypersonalcare": "Beauty & Personal Care",
+      "toysgames": "Toys & Games",
+      "foodbeverages": "Food & Beverages",
+      "healthwellness": "Health & Wellness",
+      "automotive": "Automotive",
+      "travel": "Travel",
+      "music": "Music",
+      "moviestv": "Movies & TV",
+      "artcrafts": "Art & Crafts",
+      "jewelryaccessories": "Jewelry & Accessories",
+      "petsupplies": "Pet Supplies",
+      "officeschool": "Office & School",
+      "babykids": "Baby & Kids",
+      "other": "Other"
+    }
+  },
+  "userProfile": {
+    "loading": "Loading profile...",
+    "userNotFound": "User not found",
+    "goBack": "Go Back",
+    "wishlists": "Wishlists",
+    "noWishlists": "No wishlists yet",
+    "noFollowers": "No followers yet",
+    "notFollowingAnyone": "Not following anyone yet",
+    "profileLinkCopied": "Profile link copied to clipboard",
+    "followedSuccessfully": "Followed successfully",
+    "unfollowedSuccessfully": "Unfollowed successfully",
+    "failedToFollow": "Failed to follow/unfollow user",
+    "failedToCopyLink": "Failed to copy link"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "loading": "Loading notifications...",
+    "empty": "No notifications yet",
+    "markAllRead": "Mark all as read",
+    "markAsRead": "Mark as read",
+    "delete": "Delete notification",
+    "viewAll": "View all notifications",
+    "unreadCount": "{{count}} unread",
+    "totalBirthdays": "birthdays",
+    "birthdayReminder": "Birthday Reminder",
+    "birthdayToday": "🎉 {{username}}'s birthday is today!",
+    "birthdayTomorrow": "🎂 {{username}}'s birthday is tomorrow!",
+    "birthdayThisWeek": "📅 {{username}}'s birthday is in {{days}} days!",
+    "birthdayThisMonth": "📅 {{username}}'s birthday is in {{days}} days!",
+    "birthdayNextMonth": "📅 {{username}}'s birthday is in {{days}} days!",
+    "birthdayCountdown": "📅 {{username}}'s birthday is in {{days}} days!",
+    "daysLeft": "days left",
+    "browseWishlist": "Browse Wishlist!",
+    "justNow": "Just now",
+    "minutesAgo": "{{minutes}}m ago",
+    "hoursAgo": "{{hours}}h ago",
+    "daysAgo": "{{days}}d ago"
+  },
+  "reservedGifts": {
+    "title": "My Reserved Gifts",
+    "description": "View and manage all gifts you have reserved from friends' wishlists",
+    "reserved": "Reserved",
+    "viewWishlist": "View Wishlist",
+    "cancelReservation": "Cancel Reservation",
+    "empty": {
+      "title": "No Reserved Gifts",
+      "description": "You haven't reserved any gifts yet. Browse your friends' wishlists to find gifts to reserve!",
+      "browseGifts": "Browse Gifts"
+    }
+  },
+  "calendar": {
+    "title": "Birthday Calendar",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "inDays": "In {{days}} days",
+    "noBirthdays": "No birthdays on this date",
+    "upcomingBirthdays": "Upcoming Birthdays",
+    "alreadyPassed": "Already happened this year"
+  },
+  "settings": {
+    "title": "Account Settings",
+    "policiesAndLegal": "Policies & Legal",
+    "policiesDescription": "Review our policies and legal documents to understand how we protect your rights and data.",
+    "privacyPolicy": "Privacy Policy",
+    "privacyPolicyDescription": "Learn how we collect, use, and protect your personal information",
+    "termsOfService": "Terms of Service",
+    "termsOfServiceDescription": "Read our terms and conditions for using Wishera",
+    "cookiePolicy": "Cookie Policy",
+    "cookiePolicyDescription": "Understand how we use cookies and tracking technologies",
+    "communityGuidelines": "Community Guidelines",
+    "communityGuidelinesDescription": "Guidelines for being a respectful member of our community",
+    "viewPolicy": "View Policy",
+    "dangerZone": "Danger Zone",
+    "deleteAccount": "Delete Account",
+    "deleteAccountDescription": "Once you delete your account, there is no going back. Please be certain.",
+    "backToDashboard": "Back to Dashboard",
+    "lastUpdated": "Last updated",
+    "deleteWarning": "⚠️ WARNING: This action is PERMANENT and IRREVERSIBLE",
+    "youWillLose": "You will lose ALL of the following:",
+    "loseWishlists": "All your wishlists and gift items",
+    "loseFollowers": "All your followers and following connections",
+    "loseProfile": "Your profile information and settings",
+    "loseMessages": "All your messages and conversations",
+    "loseHistory": "Your account history and activity",
+    "loseSharedAccess": "Access to any shared wishlists",
+    "dataCannotBeRecovered": "This data CANNOT be recovered once deleted!",
+    "beforeYouGo": "Before you go, consider these alternatives:",
+    "alternativePrivate": "Making your account private to limit who sees your profile",
+    "alternativeUnfollow": "Unfollowing users you don't want to see",
+    "alternativePrivateWishlists": "Setting your wishlists to private instead of deleting them",
+    "alternativeNotifications": "Turning off notifications to reduce distractions",
+    "alternativeBreak": "Just logging out and taking a break",
+    "alternativeDeleteWishlists": "Deleting specific wishlists instead of your entire account",
+    "alternativesReversible": "All of these options are reversible. Account deletion is not.",
+    "typeToConfirm": "Type {phrase} to confirm:",
+    "deleteMyAccountPhrase": "DELETE MY ACCOUNT",
+    "typeHere": "Type here...",
+    "pleaseTypeExactPhrase": "Please type the exact phrase to continue",
+    "cancelKeepAccount": "Cancel (Keep My Account)",
+    "iUnderstandDelete": "I Understand, Delete Forever",
+    "lastChance": "Last Chance!",
+    "areYouSure": "Are you absolutely sure you want to delete your account?",
+    "yourAccount": "Your account",
+    "permanentlyDeleteWarning": "This action will PERMANENTLY delete ALL your data. You will NOT be able to sign in again or recover anything.",
+    "keepMyAccount": "Keep My Account",
+    "deleteForever": "Delete Forever",
+    "deleting": "Deleting...",
+    "failedToDelete": "Failed to delete account"
+  },
+  "cookies": {
+    "title": "Cookie Policy",
+    "lastUpdated": "Last updated",
+    "section1": {
+      "title": "1. What Are Cookies?",
+      "description": "Cookies are small text files that are placed on your device when you visit a website. They are widely used to make websites work more efficiently and provide information to website owners."
+    },
+    "section2": {
+      "title": "2. How We Use Cookies",
+      "description": "Wishera uses cookies to enhance your experience on our platform. We use cookies for the following purposes:",
+      "essential": "Essential Cookies: These are necessary for the website to function properly and cannot be disabled.",
+      "authentication": "Authentication: To keep you logged in and maintain your session security.",
+      "preferences": "Preferences: To remember your language, theme, and other settings.",
+      "analytics": "Analytics: To understand how visitors interact with our website and improve our services.",
+      "functionality": "Functionality: To enable features like wishlist sharing and notifications."
+    },
+    "section3": {
+      "title": "3. Types of Cookies We Use",
+      "sessionTitle": "3.1 Session Cookies",
+      "sessionDescription": "These temporary cookies are deleted when you close your browser. They help maintain your session while you're using our service.",
+      "persistentTitle": "3.2 Persistent Cookies",
+      "persistentDescription": "These cookies remain on your device for a set period or until you delete them. They help us remember your preferences and improve your experience on future visits.",
+      "thirdPartyTitle": "3.3 Third-Party Cookies",
+      "thirdPartyDescription": "We may use services from third-party providers that set cookies on your device. These help us analyze website traffic and provide enhanced features."
+    },
+    "section4": {
+      "title": "4. Managing Cookies",
+      "description": "You have control over cookies. Most web browsers allow you to control cookies through their settings. You can:",
+      "view": "View and delete cookies stored on your device",
+      "block": "Block cookies from specific websites",
+      "blockAll": "Block all cookies",
+      "delete": "Delete all cookies when you close your browser",
+      "note": "Please note that blocking or deleting cookies may affect your ability to use certain features of our website."
+    },
+    "section5": {
+      "title": "5. Tracking Technologies",
+      "description": "In addition to cookies, we may use other tracking technologies such as web beacons, pixel tags, and local storage. These technologies help us understand how you interact with our service and improve your experience."
+    },
+    "section6": {
+      "title": "6. Changes to This Policy",
+      "description": "We may update this Cookie Policy from time to time to reflect changes in our practices or for other operational, legal, or regulatory reasons. We will notify you of any material changes by posting the new policy on this page."
+    },
+    "section7": {
+      "title": "7. Contact Us",
+      "description": "If you have any questions about our use of cookies, please contact us at:",
+      "email": "Email: wisheraapp@gmail.com"
+    }
+  },
+  "community": {
+    "title": "Community Guidelines",
+    "lastUpdated": "Last updated",
+    "section1": {
+      "title": "1. Welcome to Our Community",
+      "description": "Wishera is built on the principles of respect, kindness, and thoughtful gift-giving. These guidelines help ensure that our community remains a positive and welcoming space for everyone."
+    },
+    "section2": {
+      "title": "2. Be Respectful",
+      "description": "Treat all members of the community with respect and kindness. We celebrate diversity and welcome people from all backgrounds, cultures, and perspectives.",
+      "inclusive": "Use inclusive language and avoid offensive or discriminatory content",
+      "respect": "Respect different opinions and perspectives",
+      "considerate": "Be considerate of others' feelings and experiences",
+      "avoid": "Avoid personal attacks, harassment, or bullying"
+    },
+    "section3": {
+      "title": "3. Content Guidelines",
+      "appropriateTitle": "3.1 Appropriate Content",
+      "appropriateDescription": "When creating wishlists and sharing content, ensure that:",
+      "appropriate1": "All content is appropriate for all audiences",
+      "appropriate2": "Images and descriptions are accurate and not misleading",
+      "appropriate3": "Content does not violate any laws or regulations",
+      "appropriate4": "Content does not infringe on intellectual property rights",
+      "prohibitedTitle": "3.2 Prohibited Content",
+      "prohibitedDescription": "The following types of content are not allowed:",
+      "prohibited1": "Hate speech, discrimination, or harassment",
+      "prohibited2": "Spam, scams, or fraudulent content",
+      "prohibited3": "Violence, threats, or illegal activities",
+      "prohibited4": "Adult or explicit content",
+      "prohibited5": "Personal information of others without consent"
+    },
+    "section4": {
+      "title": "4. Gift Reservations",
+      "description": "When reserving gifts from someone's wishlist:",
+      "reserve1": "Only reserve gifts you genuinely intend to purchase",
+      "reserve2": "Respect the reservation system and don't abuse it",
+      "reserve3": "Cancel reservations if you change your mind in a timely manner",
+      "reserve4": "Be considerate of others who may also want to reserve the same gift"
+    },
+    "section5": {
+      "title": "5. Privacy and Safety",
+      "description": "Protect your privacy and the privacy of others:",
+      "privacy1": "Don't share personal information publicly",
+      "privacy2": "Respect others' privacy settings",
+      "privacy3": "Report any suspicious or harmful behavior",
+      "privacy4": "Keep your account credentials secure"
+    },
+    "section6": {
+      "title": "6. Reporting Violations",
+      "description": "If you encounter content or behavior that violates these guidelines:",
+      "report1": "Report it to us immediately",
+      "report2": "Provide as much detail as possible",
+      "report3": "Don't engage with or escalate the situation",
+      "report4": "We will review all reports and take appropriate action"
+    },
+    "section7": {
+      "title": "7. Consequences of Violations",
+      "description": "Violations of these guidelines may result in:",
+      "consequence1": "Content removal",
+      "consequence2": "Warning or suspension of your account",
+      "consequence3": "Permanent ban from the platform",
+      "consequence4": "Legal action if applicable"
+    },
+    "section8": {
+      "title": "8. Building a Positive Community",
+      "description": "We encourage you to:",
+      "positive1": "Share thoughtful and meaningful wishlists",
+      "positive2": "Help others discover great gifts",
+      "positive3": "Celebrate special occasions together",
+      "positive4": "Spread kindness and positivity",
+      "positive5": "Respect different gift-giving traditions and cultures"
+    },
+    "section9": {
+      "title": "9. Contact Us",
+      "description": "If you have questions about these guidelines or need to report a violation, please contact us at:",
+      "email": "Email: wisheraapp@gmail.com"
+    }
+  }
+}

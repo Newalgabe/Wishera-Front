@@ -1,0 +1,587 @@
+{
+  "common": {
+    "loading": "Yüklənir...",
+    "error": "Xəta",
+    "success": "Uğurlu",
+    "cancel": "Ləğv et",
+    "save": "Yadda saxla",
+    "saving": "Yadda saxlanılır...",
+    "delete": "Sil",
+    "deleting": "Silinir...",
+    "edit": "Redaktə et",
+    "add": "Əlavə et",
+    "share": "Paylaş",
+    "reserve": "Rezerv et",
+    "available": "Mövcud",
+    "reserved": "Rezerv edilib",
+    "public": "İctimai",
+    "private": "Şəxsi",
+    "scroll": "Sürüşdür"
+  },
+  "navigation": {
+    "home": "Ana səhifə",
+    "about": "Haqqımızda",
+    "contact": "Əlaqə",
+    "features": "Xüsusiyyətlər",
+    "login": "Daxil ol",
+    "signup": "Qeydiyyat",
+    "logout": "Çıxış",
+    "wishlistApp": "Wishera"
+  },
+  "auth": {
+    "loginTitle": "Wishera-ya daxil ol",
+    "registerTitle": "Hesab yarat",
+    "email": "E-poçt",
+    "password": "Şifrə",
+    "confirmPassword": "Şifrəni təsdiq et",
+    "forgotPassword": "Şifrəni unutmusunuz?",
+    "dontHaveAccount": "Hesabınız yoxdur?",
+    "alreadyHaveAccount": "Artıq hesabınız var?",
+    "loggingIn": "Daxil olunur...",
+    "signingUp": "Qeydiyyat...",
+    "loginSuccess": "Uğurlu giriş! Yönləndirilir...",
+    "loginFailed": "Giriş uğursuz",
+    "registerSuccess": "Uğurlu qeydiyyat! Yönləndirilir...",
+    "registerFailed": "Qeydiyyat uğursuz",
+    "resetPassword": "Şifrəni sıfırla",
+    "forgotPasswordTitle": "Şifrəni unutdum",
+    "resetPasswordTitle": "Şifrə sıfırlama",
+    "sendResetLink": "Sıfırlama linkini göndər",
+    "newPassword": "Yeni şifrə",
+    "resetPasswordSuccess": "Şifrə uğurla sıfırlandı!"
+  },
+  "home": {
+    "heroTitle": "Mükəmməl Arzu Siyahısı Təcrübəsi",
+    "heroSubtitle": "Dostlar və ailə ilə arzu siyahılarınızı yaradın, paylaşın və idarə edin. Bir daha eyni hədiyyələr almayın!",
+    "getStarted": "Başla",
+    "learnMore": "Daha çox öyrən",
+    "trustedBy": "Bizə güvənənlər",
+    "featuresTitle": "Ehtiyacınız olan hər şey",
+    "featuresSubtitle": "Hədiyyə vermək prosesini asan və əyləncəli etmək üçün güclü xüsusiyyətlər"
+  },
+  "features": {
+    "userAuth": {
+      "title": "İstifadəçi Doğrulaması",
+      "description": "Qeydiyyatdan keçin, daxil olun və arzu siyahınızı təhlükəsiz idarə edin.",
+      "benefit": "Məlumatlarınız həmişə qorunur və məxfidir."
+    },
+    "wishlistManagement": {
+      "title": "Arzu Siyahısı İdarəsi",
+      "description": "Arzu siyahınıza hədiyyələr əlavə edin, redaktə edin və silin.",
+      "benefit": "Arzularınızı mütəşəkkil və aktual saxlayın."
+    },
+    "giftReservations": {
+      "title": "Hədiyyə Rezervasiyaları",
+      "description": "Dostlar hədiyyələri rezerv edə bilər (sahibi kimin rezerv etdiyini görməz).",
+      "benefit": "Artıq eyni hədiyyələr və ya pozulmuş sürprizlər yoxdur!"
+    },
+    "wishlistSharing": {
+      "title": "Arzu Siyahısı Paylaşımı",
+      "description": "Unikal link vasitəsilə dostlarınızla arzu siyahınızı paylaşın.",
+      "benefit": "Başqalarına həqiqətən nə istədiyinizi asanlıqla bildirin."
+    },
+    "cloudImages": {
+      "title": "Bulud Şəkil Yükləmələri",
+      "description": "Cloudinary istifadə edərək hədiyyə şəkillərini yükləyin və göstərin.",
+      "benefit": "Gözəl şəkillərlə arzularınızı nümayiş etdirin."
+    },
+    "glassmorphismUI": {
+      "title": "Glassmorphism UI",
+      "description": "Hamar şəffaflıq effektləri ilə heyrətamiz, müasir gradient əsaslı dizayn.",
+      "benefit": "Vizual olaraq sürükləyici və zərif təcrübədən həzz alın."
+    }
+  },
+  "testimonials": {
+    "emily": "Wishera dostlarım və ailəm üçün hədiyyə verməyi çox asanlaşdırdı. Necə sadə və əyləncəli olduğunu sevirəm!",
+    "james": "Artıq eyni hədiyyələr almıram. Rezervasiya funksiyası dahiyanədir!",
+    "sophia": "Dizayn gözəldir və arzu siyahımı paylaşmaq çox asandır.",
+    "michael": "Bulud şəkil yükləmələri arzu siyahımı heyrətamiz edir. Çox tövsiyə edirəm!"
+  },
+  "mockup": {
+    "alexWishlist": "Aleksin Arzu Siyahısı",
+    "nikeAirMax": "Nike Air Max 270",
+    "appleWatch": "Apple Watch SE",
+    "cloudPillow": "Bulud Yastığı",
+    "wirelessHeadphones": "Simsiz Qulaqlıqlar"
+  },
+  "footer": {
+    "allRightsReserved": "Bütün hüquqlar qorunur.",
+    "privacyPolicy": "Məxfilik Siyasəti",
+    "termsOfService": "İstifadə Şərtləri"
+  },
+  "about": {
+    "title": "Wishera Haqqında",
+    "subtitle": "Hədiyyə verməyi hər kəs üçün daha asan, mənalı və xoş edir.",
+    "ourMission": "Bizim Missiyamız",
+    "missionText1": "Biz inanırıq ki, hədiyyə vermək sevinc dolu və stress-siz təcrübə olmalıdır. Bizim missiyamız insanların arzularını paylaşmasını asanlaşdıran və yaxınlarının həqiqətən əhəmiyyətli olan mənalı hədiyyələr verməsini təmin edən platforma yaratmaqdır.",
+    "missionText2": "Müasir texnologiyaları düşünülmüş dizaynla birləşdirərək, hədiyyə vermə aktının daha şəxsi, mənalı və bütün iştirakçılar üçün xoş olduğu icma qururuq.",
+    "joinCommunity": "İcmamıza Qoşul",
+    "ourValues": "Bizim Dəyərlərimiz",
+    "valuesSubtitle": "Bu əsas prinsiplər etdiyimiz hər şeyi və verdiyimiz hər qərarı istiqamətləndirir.",
+    "faqTitle": "Tez-tez Verilən Suallar",
+    "faqSubtitle": "Hədiyyə verməni asanlaşdırmaq və yaxşılaşdırmaq üçün Wishera istifadəsi haqqında bilməli olduğunuz hər şey.",
+    "values": {
+      "userCentric": {
+        "title": "İstifadəçi Mərkəzli Dizayn",
+        "description": "Hər xüsusiyyət istifadəçini nəzərə alaraq dizayn edilib, intuitiv və xoş təcrübə təmin edir."
+      },
+      "privacyFirst": {
+        "title": "Məxfilik Birinci",
+        "description": "Məlumatlarınız sənaye standartı təhlükəsizlik tədbirləri və məxfilik nəzarəti ilə qorunur."
+      },
+      "innovation": {
+        "title": "İnnovasiya",
+        "description": "Ən müasir xüsusiyyətlər və təcrübələr təqdim etmək üçün daim yeni texnologiyaları araşdırırıq."
+      },
+      "community": {
+        "title": "İcma",
+        "description": "Hədiyyə verməyin sevinci vasitəsilə insanları bir araya gətirən platforma qururuq."
+      }
+    },
+    "stats": {
+      "happyUsers": "Məmnun İstifadəçi",
+      "wishlistsCreated": "Yaradılmış Arzu Siyahısı",
+      "giftsReserved": "Rezerv Edilmiş Hədiyyə",
+      "uptime": "İş Vaxtı"
+    },
+    "faqs": {
+      "q1": {
+        "question": "Hədiyyə rezervasiya sistemi necə işləyir?",
+        "answer": "Kimsə arzu siyahınıza baxdıqda, kimin rezerv etdiyini görmədən hədiyyəni rezerv edə bilər. Bu, sürprizi saxlayaraq təkrarlanan hədiyyələrin qarşısını alır. Siz yalnız əşyanın rezerv edildiyini görəcəksiniz, kimin etdiyini yox."
+      },
+      "q2": {
+        "question": "Arzu siyahım şəxsidir?",
+        "answer": "Arzu siyahınızın məxfiliyinə tam nəzarətiniz var. Onu paylaşılan keçidlə ictimai, yalnız dəvət edilmiş dostlar üçün şəxsi və ya tamamilə yalnız sizin gözləriniz üçün şəxsi edə bilərsiniz. Məxfilik parametrləriniz istənilən vaxt dəyişdirilə bilər."
+      },
+      "q3": {
+        "question": "Arzu siyahısı elementlərinə şəkil əlavə edə bilərəmmi?",
+        "answer": "Bəli! Cloudinary inteqrasiyamızdan istifadə edərək hər arzu siyahısı elementi üçün şəkillər yükləyə bilərsiniz. Bu, başqalarının tam olaraq nə istədiyinizi görməsinə kömək edir və arzu siyahınızı vizual olaraq daha cəlbedici edir."
+      },
+      "q4": {
+        "question": "Arzu siyahımı dostlarımla necə paylaşım?",
+        "answer": "Unikal keçid yaratmaq üçün arzu siyahınızdakı 'Paylaş' düyməsini basın. Sonra bu keçidi e-poçt, mesaj və ya sosial media vasitəsilə dostlar və ailə ilə göndərə bilərsiniz. Onlar hesab yaratmağa ehtiyac olmadan arzu siyahınıza baxa bilərlər."
+      },
+      "q5": {
+        "question": "Kimsə hədiyyəni rezerv etdikdə nə olur?",
+        "answer": "Kimsə hədiyyəni rezerv etdikdə, o, arzu siyahınızda 'Rezerv edilib' kimi işarələnir. Bu, başqalarının eyni əşyanı almasının qarşısını alır. Onu rezerv edən şəxs öz hesabında rezerv etdiyi əşyaları görə bilər, lakin siz kimin nəyi rezerv etdiyini bilməyəcəksiniz."
+      },
+      "q6": {
+        "question": "Arzu siyahımdakı elementləri redaktə edə və ya silə bilərəmmi?",
+        "answer": "Mütləq! İstənilən vaxt arzu siyahınızdakı istənilən elementi redaktə edə bilərsiniz. Adı, təsviri, qiyməti, şəkli dəyişə və ya elementləri tamamilə silə bilərsiniz. Dəyişikliklər arzu siyahınıza baxan hər kəs üçün dərhal əks olunur."
+      },
+      "q7": {
+        "question": "Əlavə edə biləcəyim elementlərin sayında məhdudiyyət varmı?",
+        "answer": "Hazırda arzu siyahınıza əlavə edə biləcəyiniz elementlərin sayında məhdudiyyət yoxdur. Kiçik hədiyyələrdən böyük alışlara qədər istədiyiniz qədər element əlavə edin."
+      },
+      "q8": {
+        "question": "Hesabım və məlumatlarım nə qədər təhlükəsizdir?",
+        "answer": "Biz təhlükəsizliyi ciddi qəbul edirik. Bütün məlumatlar şifrələnir, parollar təhlükəsiz şəkildə hash edilir və sənaye standartı təhlükəsizlik tədbirlərindən istifadə edirik. Razılığınız olmadan şəxsi məlumatlarınızı heç vaxt üçüncü tərəflərlə paylaşmırıq."
+      }
+    }
+  },
+  "contact": {
+    "title": "Bizimlə Əlaqə",
+    "subtitle": "Sizdən eşitmək istərdik. Komandamızla əlaqə saxlayın.",
+    "getInTouch": "Əlaqə saxlayın",
+    "getInTouchDescription": "Sualınız var və ya köməyə ehtiyacınız var? Sizdən eşitmək istərdik. Bizə mesaj göndərin və mümkün qədər tez cavab verəcəyik.",
+    "sendMessage": "Bizə mesaj göndərin",
+    "form": {
+      "name": "Ad",
+      "namePlaceholder": "Adınız",
+      "email": "Email",
+      "emailPlaceholder": "sizin@email.com",
+      "subject": "Mövzu",
+      "subjectPlaceholder": "Mövzu seçin",
+      "message": "Mesaj",
+      "messagePlaceholder": "Sizə necə kömək edə biləcəyimizi bizə deyin...",
+      "sendButton": "Mesaj Göndər",
+      "sending": "Email açılır...",
+      "successMessage": "✓ Email müştərisi açıldı! Mesajınızı tamamlamaq üçün emaili göndərin.",
+      "errorMessage": "✗ Xəta baş verdi. Yenidən cəhd edin və ya birbaşa wisheraapp@gmail.com ünvanına yazın",
+      "subjects": {
+        "general": "Ümumi Sorğu",
+        "support": "Texniki Dəstək",
+        "feature": "Xüsusiyyət Sorğusu",
+        "bug": "Xəta Hesabatı",
+        "partnership": "Tərəfdaşlıq"
+      }
+    },
+    "methods": {
+      "email": {
+        "title": "Email",
+        "value": "wisheraapp@gmail.com",
+        "description": "24 saat ərzində cavab verəcəyik"
+      },
+      "chat": {
+        "title": "Canlı Söhbət",
+        "value": "9:00-18:00 EST mövcuddur",
+        "description": "Komandamızdan dərhal kömək alın"
+      },
+      "office": {
+        "title": "Ofis",
+        "value": "San Fransisko, Kaliforniya",
+        "description": "İstənilən vaxt bizə gəlin"
+      }
+    },
+    "needHelp": {
+      "title": "Dərhal köməyə ehtiyacınız var?",
+      "description": "Tez-tez verilən suallar bölməsinə baxın və suallarınıza tez cavab tapın.",
+      "viewFaq": "FAQ-ya bax"
+    }
+  },
+  "forgotPassword": {
+    "title": "Şifrəni unutmusunuz?",
+    "subtitle": "Email ünvanınızı daxil edin və sizə şifrə sıfırlama keçidi göndərəcəyik.",
+    "emailPlaceholder": "Email ünvanınızı daxil edin",
+    "sendButton": "Sıfırlama Keçidi Göndər",
+    "sending": "Göndərilir...",
+    "successMessage": "Şifrə sıfırlama keçidi emailinizə göndərildi! Gələn qutuya (və spam qovluğuna) baxın.",
+    "errorMessage": "Sıfırlama emaili göndərilmədi. Email ünvanınızı yoxlayın və yenidən cəhd edin.",
+    "rememberPassword": "Şifrənizi xatırladınız?",
+    "backToLogin": "Girişə qayıt"
+  },
+  "resetPassword": {
+    "invalidLinkTitle": "Sıfırlama Keçidi Etibarsızdır",
+    "invalidLinkDescription": "Şifrə sıfırlama keçidi etibarsızdır və ya vaxtı bitib.",
+    "requestNewLink": "Yeni sıfırlama keçidi istə",
+    "title": "Şifrənizi Sıfırlayın",
+    "subtitle": "Aşağıya yeni şifrənizi daxil edin.",
+    "newPasswordPlaceholder": "Yeni şifrə",
+    "confirmNewPasswordPlaceholder": "Yeni şifrəni təsdiq edin",
+    "resetButton": "Şifrəni Sıfırla",
+    "resetting": "Sıfırlanır...",
+    "rememberPassword": "Şifrənizi xatırladınız?",
+    "backToLogin": "Girişə qayıt",
+    "errorMessage": "Şifrəni sıfırlamaq mümkün olmadı"
+  },
+  "dashboard": {
+    "followers": "izləyici",
+    "following": "izlədiyi",
+    "friends": "Dostlar",
+    "unfollow": "İzləməyi dayandır",
+    "apply": "Tətbiq et",
+    "clear": "Təmizlə",
+    "uploadImage": "Şəkil yüklə",
+    "item": "element",
+    "items": "element",
+    "addYourFirstGift": "İlk hədiyyənizi əlavə edin!",
+    "title": "İdarəetmə paneli",
+    "subtitle": "Arzu siyahılarınızı idarə edin və hədiyyələr tapın",
+    "editProfile": "Profil redaktə et",
+    "avatar": "Avatar",
+    "uploadAvatar": "Avatar yüklə",
+    "username": "İstifadəçi adı",
+    "bio": "Haqqında",
+    "bioPlaceholder": "Özünüz haqqında danışın...",
+    "birthday": "Ad günü",
+    "birthdayPlaceholder": "Ad gününüzü seçin",
+    "birthdayHelp": "Ad gününüz dostlarınızın sizi təbrik etməyini unutmamasına kömək edəcək!",
+    "interests": "Maraqlar",
+    "interestsPlaceholder": "məsələn, texnologiya, yemək bişirmə, səyahət",
+    "privateProfile": "Şəxsi profil",
+    "searchPlaceholder": "Arzu siyahıları, insanlar axtar...",
+    "home": "Ana səhifə",
+    "profile": "Profil",
+    "myWishlists": "Arzu siyahılarım",
+    "myGifts": "Hədiyyələrim",
+    "liked": "Bəyəndim",
+    "createWishlist": "Arzu siyahısı yarat",
+    "suggestedForYou": "Sizin üçün tövsiyə edilir",
+    "mutualFriends": "ortaq dost",
+    "follow": "İzlə",
+    "quickActions": "Sürətli hərəkətlər",
+    "browseCategories": "Kateqoriyalara bax",
+    "findFriends": "Dost tap",
+    "share": "Paylaş",
+    "view": "Bax",
+    "addGift": "Hədiyyə əlavə et",
+    "name": "Ad",
+    "price": "Qiymət",
+    "category": "Kateqoriya",
+    "selectCategory": "Kateqoriya seçin (istəyə bağlı)",
+    "public": "İctimai",
+    "private": "Şəxsi",
+    "filtersSorting": "Filtrlər və sıralama",
+    "filterByCategory": "Kateqoriyaya görə filtr",
+    "sortBy": "Sırala",
+    "sort": {
+      "priceAsc": "Qiymət ↑",
+      "priceDesc": "Qiymət ↓",
+      "nameAsc": "Ad A-Z",
+      "nameDesc": "Ad Z-A"
+    },
+    "noGiftsYet": "Hələ hədiyyə yoxdur. İlk hədiyyənizi yaratmaq üçün yuxarıdakı 'Hədiyyə əlavə et' panelindən istifadə edin.",
+    "noImage": "Şəkil yoxdur",
+    "by": "tərəfindən",
+    "hoursAgo": "saat əvvəl",
+    "daysAgo": "gün əvvəl",
+    "ago": "əvvəl",
+    "editWishlist": "Arzu siyahısını redaktə et",
+    "deleteWishlist": "Arzu siyahısını sil",
+    "deleteWishlistConfirm": "Silmək istədiyinizə əminsiniz",
+    "deleteWishlistWarning": "Bu hərəkəti geri ala bilməzsiniz.",
+    "title": "Başlıq",
+    "description": "Təsvir",
+    "publicWishlist": "İctimai arzu siyahısı",
+    "viewDetails": "Ətraflı",
+    "edit": "Redaktə et",
+    "delete": "Sil",
+    "wishlistShared": "Arzu siyahısı linki kopyalandı!",
+    "categories": {
+      "electronics": "Elektronika",
+      "books": "Kitablar",
+      "clothing": "Geyim",
+      "homegarden": "Ev və bağça",
+      "sportsoutdoors": "İdman və açıq hava",
+      "beautypersonalcare": "Gözəllik və şəxsi qayğı",
+      "toysgames": "Oyuncaqlar və oyunlar",
+      "foodbeverages": "Yemək və içkilər",
+      "healthwellness": "Sağlamlıq və rifah",
+      "automotive": "Avtomobil",
+      "travel": "Səyahət",
+      "music": "Musiqi",
+      "moviestv": "Filmlər və TV",
+      "artcrafts": "İncəsənət və sənətkarlıq",
+      "jewelryaccessories": "Zərgərlik və aksesuarlar",
+      "petsupplies": "Ev heyvanları üçün mallar",
+      "officeschool": "Ofis və məktəb",
+      "babykids": "Uşaq və körpə",
+      "other": "Digər"
+    }
+  },
+  "userProfile": {
+    "loading": "Profil yüklənir...",
+    "userNotFound": "İstifadəçi tapılmadı",
+    "goBack": "Geri qayıt",
+    "wishlists": "Arzu siyahıları",
+    "noWishlists": "Hələ arzu siyahısı yoxdur",
+    "noFollowers": "Hələ izləyici yoxdur",
+    "notFollowingAnyone": "Hələ heç kəsi izləmir",
+    "profileLinkCopied": "Profil linki kopyalandı",
+    "followedSuccessfully": "Uğurla izləməyə başladınız",
+    "unfollowedSuccessfully": "Uğurla izləməyi dayandırdınız",
+    "failedToFollow": "İzləməyə/izləməyi dayandırmağa mümkün olmadı",
+    "failedToCopyLink": "Linki kopyalamaq mümkün olmadı"
+  },
+  "notifications": {
+    "title": "Bildirişlər",
+    "loading": "Bildirişlər yüklənir...",
+    "empty": "Hələ bildiriş yoxdur",
+    "markAllRead": "Hamısını oxunmuş kimi işarələ",
+    "markAsRead": "Oxunmuş kimi işarələ",
+    "delete": "Bildirişi sil",
+    "viewAll": "Bütün bildirişləri göstər",
+    "unreadCount": "{{count}} oxunmamış",
+    "totalBirthdays": "ad günü",
+    "birthdayReminder": "Ad günü xatırlatması",
+    "birthdayToday": "🎉 {{username}}-in ad günü bu gündür!",
+    "birthdayTomorrow": "🎂 {{username}}-in ad günü sabahdır!",
+    "birthdayThisWeek": "📅 {{username}}-in ad günü {{days}} gün sonradır!",
+    "birthdayThisMonth": "📅 {{username}}-in ad günü {{days}} gün sonradır!",
+    "birthdayNextMonth": "📅 {{username}}-in ad günü {{days}} gün sonradır!",
+    "birthdayCountdown": "📅 {{username}}-in ad günü {{days}} gün sonradır!",
+    "daysLeft": "gün qalıb",
+    "browseWishlist": "Arzu siyahısına bax!",
+    "justNow": "İndi",
+    "minutesAgo": "{{minutes}}dəq əvvəl",
+    "hoursAgo": "{{hours}}saat əvvəl",
+    "daysAgo": "{{days}}gün əvvəl"
+  },
+  "reservedGifts": {
+    "title": "Mənim Rezerv Edilmiş Hədiyyələrim",
+    "description": "Dostlarınızın arzu siyahılarından rezerv etdiyiniz bütün hədiyyələri görün və idarə edin",
+    "reserved": "Rezerv edilib",
+    "viewWishlist": "Arzu Siyahısına Bax",
+    "cancelReservation": "Rezervasiyanı Ləğv Et",
+    "empty": {
+      "title": "Rezerv Edilmiş Hədiyyə Yoxdur",
+      "description": "Hələ heç bir hədiyyə rezerv etməmisiniz. Rezerv etmək üçün hədiyyə tapmaq üçün dostlarınızın arzu siyahılarına baxın!",
+      "browseGifts": "Hədiyyələrə Bax"
+    }
+  },
+  "calendar": {
+    "title": "Ad Günü Təqvimi",
+    "today": "Bu Gün",
+    "tomorrow": "Sabah",
+    "inDays": "{{days}} gün sonra",
+    "noBirthdays": "Bu gün ad günü yoxdur",
+    "upcomingBirthdays": "Yaxınlaşan Ad Günləri",
+    "alreadyPassed": "Bu il artıq keçdi"
+  },
+  "settings": {
+    "title": "Hesab Parametrləri",
+    "policiesAndLegal": "Siyasətlər və Hüquqi Sənədlər",
+    "policiesDescription": "Hüquqlarınızı və məlumatlarınızı necə qoruduğumuzu anlamaq üçün siyasətlərimizə və hüquqi sənədlərimizə baxın.",
+    "privacyPolicy": "Məxfilik Siyasəti",
+    "privacyPolicyDescription": "Şəxsi məlumatlarınızı necə topladığımızı, istifadə etdiyimizi və qoruduğumuzu öyrənin",
+    "termsOfService": "İstifadə Şərtləri",
+    "termsOfServiceDescription": "Wishera istifadə üçün şərtlərimizi və qaydalarımızı oxuyun",
+    "cookiePolicy": "Cookie Siyasəti",
+    "cookiePolicyDescription": "Cookieləri və izləmə texnologiyalarını necə istifadə etdiyimizi anlayın",
+    "communityGuidelines": "İcma Qaydaları",
+    "communityGuidelinesDescription": "İcmamızın hörmətli üzvü olmaq üçün təlimatlar",
+    "viewPolicy": "Siyasətə Bax",
+    "dangerZone": "Təhlükəli Zona",
+    "deleteAccount": "Hesabı Sil",
+    "deleteAccountDescription": "Hesabınızı sildikdən sonra geri qaytarmaq mümkün olmayacaq. Zəhmət olmasa, əmin olun.",
+    "backToDashboard": "İdarəetmə Panelinə Qayıt",
+    "lastUpdated": "Son yenilənmə",
+    "deleteWarning": "⚠️ XƏBƏRDARLIQ: Bu əməliyyat DАİMİ və GERİ QAYTARILMAZDIR",
+    "youWillLose": "Aşağıdakıların HAMISINI itirəcəksiniz:",
+    "loseWishlists": "Bütün arzu siyahılarınız və hədiyyələr",
+    "loseFollowers": "Bütün izləyiciləriniz və izlədikləriniz",
+    "loseProfile": "Profil məlumatlarınız və parametrlər",
+    "loseMessages": "Bütün mesajlarınız və söhbətlər",
+    "loseHistory": "Hesab tarixçəniz və fəaliyyət",
+    "loseSharedAccess": "Paylaşılan arzu siyahılarına giriş",
+    "dataCannotBeRecovered": "Bu məlumatlar silindikdən sonra BƏRPА EDİLƏ BİLMƏZ!",
+    "beforeYouGo": "Getməzdən əvvəl bu alternativləri nəzərdən keçirin:",
+    "alternativePrivate": "Profilinizi görənləri məhdudlaşdırmaq üçün hesabınızı şəxsi etmək",
+    "alternativeUnfollow": "Görmək istəmədiyiniz istifadəçiləri izləməyi dayandırmaq",
+    "alternativePrivateWishlists": "Arzu siyahılarınızı silmək əvəzinə onları şəxsi etmək",
+    "alternativeNotifications": "Diqqəti azaltmaq üçün bildirişləri söndürmək",
+    "alternativeBreak": "Sadəcə çıxış etmək və fasilə götürmək",
+    "alternativeDeleteWishlists": "Bütün hesabınızı silmək əvəzinə konkret arzu siyahılarını silmək",
+    "alternativesReversible": "Bütün bu seçimlər geri qaytarıla bilər. Hesabın silinməsi - yox.",
+    "typeToConfirm": "Təsdiqləmək üçün {phrase} yazın:",
+    "deleteMyAccountPhrase": "HESABIMI SİL",
+    "typeHere": "Buraya yazın...",
+    "pleaseTypeExactPhrase": "Zəhmət olmasa, davam etmək üçün dəqiq ifadəni yazın",
+    "cancelKeepAccount": "Ləğv et (Hesabımı saxla)",
+    "iUnderstandDelete": "Başa düşürəm, əbədi olaraq sil",
+    "lastChance": "Son şans!",
+    "areYouSure": "Hesabınızı silmək istədiyinizə tam əminsinizmi?",
+    "yourAccount": "Hesabınız",
+    "permanentlyDeleteWarning": "Bu əməliyyat BÜTÜN məlumatlarınızı ƏBƏDİ OLARAQ siləcək. Yenidən daxil ola bilməyəcəksiniz və heç nə bərpa edə bilməyəcəksiniz.",
+    "keepMyAccount": "Hesabımı saxla",
+    "deleteForever": "Əbədi olaraq sil",
+    "deleting": "Silinir...",
+    "failedToDelete": "Hesab silinə bilmədi"
+  },
+  "cookies": {
+    "title": "Cookie Siyasəti",
+    "lastUpdated": "Son yenilənmə",
+    "section1": {
+      "title": "1. Cookie nədir?",
+      "description": "Cookielər veb saytı ziyarət etdiyiniz zaman cihazınıza yerləşdirilən kiçik mətn fayllarıdır. Onlar veb saytların daha səmərəli işləməsi və veb sayt sahiblərinə məlumat təqdim etməsi üçün geniş istifadə olunur."
+    },
+    "section2": {
+      "title": "2. Cookieləri Necə İstifadə Edirik",
+      "description": "Wishera platformamızda təcrübənizi artırmaq üçün cookielərdən istifadə edir. Cookieləri aşağıdakı məqsədlər üçün istifadə edirik:",
+      "essential": "Əsas Cookielər: Bunlar veb saytın düzgün işləməsi üçün zəruridir və söndürülə bilməz.",
+      "authentication": "Autentifikasiya: Sizi sistemdə saxlamaq və sessiya təhlükəsizliyini təmin etmək üçün.",
+      "preferences": "Nizamlamalar: Dilinizi, temanızı və digər parametrlərinizi xatırlamaq üçün.",
+      "analytics": "Analitika: Ziyarətçilərin veb saytımızla necə qarşılıqlı əlaqədə olduğunu başa düşmək və xidmətlərimizi yaxşılaşdırmaq üçün.",
+      "functionality": "Funksionallıq: Arzu siyahısını paylaşmaq və bildirişlər kimi funksiyaları aktivləşdirmək üçün."
+    },
+    "section3": {
+      "title": "3. İstifadə Etdiyimiz Cookie Növləri",
+      "sessionTitle": "3.1 Sessiya Cookieləri",
+      "sessionDescription": "Bu müvəqqəti cookielər brauzerinizi bağladığınız zaman silinir. Onlar xidmətimizdən istifadə edərkən sessiyanızı saxlamağa kömək edir.",
+      "persistentTitle": "3.2 Davamlı Cookielər",
+      "persistentDescription": "Bu cookielər müəyyən bir müddət ərzində və ya onları silənə qədər cihazınızda qalır. Onlar bizə nizamlamalarınızı xatırlatmağa və gələcək ziyarətlərdə təcrübənizi yaxşılaşdırmağa kömək edir.",
+      "thirdPartyTitle": "3.3 Üçüncü Tərəf Cookieləri",
+      "thirdPartyDescription": "Cihazınızda cookie qoyan üçüncü tərəf provayderlərin xidmətlərindən istifadə edə bilərik. Bunlar bizə veb sayt trafikini təhlil etməyə və təkmilləşdirilmiş funksiyalar təqdim etməyə kömək edir."
+    },
+    "section4": {
+      "title": "4. Cookieləri İdarə Etmək",
+      "description": "Cookielər üzərində nəzarətiniz var. Əksər veb brauzerlər parametrləri vasitəsilə cookieləri idarə etməyə imkan verir. Siz:",
+      "view": "Cihazınızda saxlanılan cookieləri görə və silə bilərsiniz",
+      "block": "Müəyyən veb saytlardan cookieləri bloklaya bilərsiniz",
+      "blockAll": "Bütün cookieləri bloklaya bilərsiniz",
+      "delete": "Brauzerinizi bağlayanda bütün cookieləri silə bilərsiniz",
+      "note": "Xahiş edirik qeyd edək ki, cookieləri bloklamaq və ya silmək veb saytımızın müəyyən funksiyalarından istifadə etmək qabiliyyətinizə təsir edə bilər."
+    },
+    "section5": {
+      "title": "5. İzləmə Texnologiyaları",
+      "description": "Cookielərə əlavə olaraq, veb işıq siqnalları, piksel teqləri və lokal saxlama kimi digər izləmə texnologiyalarından istifadə edə bilərik. Bu texnologiyalar bizə xidmətimizlə necə qarşılıqlı əlaqədə olduğunuzu başa düşməyə və təcrübənizi yaxşılaşdırmağa kömək edir."
+    },
+    "section6": {
+      "title": "6. Bu Siyasətdə Dəyişikliklər",
+      "description": "Bu Cookie Siyasətini təcrübələrimizdəki dəyişiklikləri və ya digər əməliyyat, hüquqi və ya tənzimləyici səbəbləri əks etdirmək üçün zaman-zaman yeniləyə bilərik. Əhəmiyyətli dəyişikliklər barədə sizi bu səhifədə yeni siyasəti yerləşdirməklə məlumatlandıracağıq."
+    },
+    "section7": {
+      "title": "7. Bizimlə Əlaqə",
+      "description": "Cookielərdən istifadəmizlə bağlı suallarınız varsa, bizimlə əlaqə saxlayın:",
+      "email": "Email: wisheraapp@gmail.com"
+    }
+  },
+  "community": {
+    "title": "İcma Qaydaları",
+    "lastUpdated": "Son yenilənmə",
+    "section1": {
+      "title": "1. İcmamıza Xoş Gəlmisiniz",
+      "description": "Wishera hörmət, mehribanlıq və düşüncəli hədiyyə vermə prinsipləri əsasında qurulub. Bu qaydalar icmamızın hər kəs üçün müsbət və qonaqpərvər bir məkan olaraq qalmasına kömək edir."
+    },
+    "section2": {
+      "title": "2. Hörmətli Olun",
+      "description": "İcmanın bütün üzvlərinə hörmət və mehribanlıqla yanaşın. Biz müxtəlifliyi qeyd edirik və bütün mənşə, mədəniyyət və baxış açılarından insanları qarşılayırıq.",
+      "inclusive": "Daxil edici dil istifadə edin və təhqiramiz və ya diskriminasiya edən məzmundan çəkinin",
+      "respect": "Müxtəlif fikirləri və baxış açılarını hörmət edin",
+      "considerate": "Başqalarının hisslərinə və təcrübələrinə diqqətli olun",
+      "avoid": "Şəxsi hücumlardan, təqibdən və ya zorakılıqdan çəkinin"
+    },
+    "section3": {
+      "title": "3. Məzmun Qaydaları",
+      "appropriateTitle": "3.1 Müvafiq Məzmun",
+      "appropriateDescription": "Arzu siyahıları yaradarkən və məzmun paylaşarkən əmin olun ki:",
+      "appropriate1": "Bütün məzmun bütün auditoriyalar üçün müvafiqdir",
+      "appropriate2": "Şəkillər və təsvirlər dəqiqdir və yanıldıcı deyil",
+      "appropriate3": "Məzmun heç bir qanun və ya qaydaları pozmur",
+      "appropriate4": "Məzmun intellektual mülkiyyət hüquqlarını pozmur",
+      "prohibitedTitle": "3.2 Qadağan Olunmuş Məzmun",
+      "prohibitedDescription": "Aşağıdakı məzmun növlərinə icazə verilmir:",
+      "prohibited1": "Nifrət nitqi, diskriminasiya və ya təqib",
+      "prohibited2": "Spam, fırıldaq və ya saxta məzmun",
+      "prohibited3": "Zorakılıq, təhdidlər və ya qanunsuz fəaliyyətlər",
+      "prohibited4": "Yetkin və ya açıq məzmun",
+      "prohibited5": "Razılıq olmadan başqalarının şəxsi məlumatları"
+    },
+    "section4": {
+      "title": "4. Hədiyyə Rezervasiyaları",
+      "description": "Kiminsə arzu siyahısından hədiyyələri rezerv edərkən:",
+      "reserve1": "Yalnız həqiqətən almağı planlaşdırdığınız hədiyyələri rezerv edin",
+      "reserve2": "Rezervasiya sisteminə hörmət edin və onu sui-istifadə etməyin",
+      "reserve3": "Fikrinizi dəyişsəniz, rezervasiyaları vaxtında ləğv edin",
+      "reserve4": "Eyni hədiyyəni rezerv etmək istəyən başqalarına diqqətli olun"
+    },
+    "section5": {
+      "title": "5. Məxfilik və Təhlükəsizlik",
+      "description": "Öz məxfiliyinizi və başqalarının məxfiliyini qoruyun:",
+      "privacy1": "Şəxsi məlumatları ictimai şəkildə paylaşmayın",
+      "privacy2": "Başqalarının məxfilik parametrlərinə hörmət edin",
+      "privacy3": "Hər hansı şübhəli və ya zərərli davranışı bildirin",
+      "privacy4": "Hesab bilgilərinizi təhlükəsiz saxlayın"
+    },
+    "section6": {
+      "title": "6. Pozuntuları Bildirmək",
+      "description": "Bu qaydaları pozan məzmun və ya davranışla qarşılaşsanız:",
+      "report1": "Dərhal bizə bildirin",
+      "report2": "Mümkün qədər ətraflı məlumat verin",
+      "report3": "Vəziyyətlə məşğul olmayın və ya onu gücləndirməyin",
+      "report4": "Biz bütün hesabatları nəzərdən keçirəcək və müvafiq tədbirlər görəcəyik"
+    },
+    "section7": {
+      "title": "7. Pozuntuların Nəticələri",
+      "description": "Bu qaydaların pozulması aşağıdakılara səbəb ola bilər:",
+      "consequence1": "Məzmunun silinməsi",
+      "consequence2": "Hesabınızın xəbərdarlığı və ya dayandırılması",
+      "consequence3": "Platformadan daimi qadağa",
+      "consequence4": "Müvafiq olduqda hüquqi tədbirlər"
+    },
+    "section8": {
+      "title": "8. Müsbət İcma Qurmaq",
+      "description": "Sizi təşviq edirik:",
+      "positive1": "Düşüncəli və mənalı arzu siyahılarını paylaşın",
+      "positive2": "Başqalarının əla hədiyyələr tapmasına kömək edin",
+      "positive3": "Xüsusi hadisələri birlikdə qeyd edin",
+      "positive4": "Mehribanlıq və müsbətlik yayın",
+      "positive5": "Müxtəlif hədiyyə vermə ənənələrinə və mədəniyyətlərinə hörmət edin"
+    },
+    "section9": {
+      "title": "9. Bizimlə Əlaqə",
+      "description": "Bu qaydalar haqqında suallarınız varsa və ya pozuntu bildirmək lazımdırsa, bizimlə əlaqə saxlayın:",
+      "email": "Email: wisheraapp@gmail.com"
+    }
+  }
+}
