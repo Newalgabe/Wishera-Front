@@ -12,21 +12,7 @@ export function useSignalRChat(currentUserId?: string | null, token?: string) {
   const maxReconnectAttempts = 5;
 
   const hubUrl = useMemo(() => {
-    // Import ensureHttps dynamically to avoid circular dependency
-    const getSecureUrl = (url: string): string => {
-      if (typeof window !== 'undefined') {
-        const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-        if (isProduction && (url.includes('localhost') || url.includes('127.0.0.1'))) {
-          return 'https://wishera-chat-service.onrender.com/chat';
-        }
-        if (window.location.protocol === 'https:') {
-          return url.replace(/^http:\/\//, 'https://');
-        }
-      }
-      return url;
-    };
-    
-    const base = getSecureUrl(process.env.NEXT_PUBLIC_CHAT_HUB_URL || "https://wishera-chat-service.onrender.com/chat");
+    const base = process.env.NEXT_PUBLIC_CHAT_HUB_URL || "http://localhost:5002/chat";
     const uid = currentUserId && currentUserId !== "" ? `userId=${encodeURIComponent(currentUserId)}` : "";
     return uid ? `${base}${base.includes("?") ? "&" : "?"}${uid}` : base;
   }, [currentUserId]);

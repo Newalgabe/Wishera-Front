@@ -75,10 +75,7 @@
     "learnMore": "Learn More",
     "trustedBy": "Trusted by",
     "featuresTitle": "Everything You Need",
-    "featuresSubtitle": "Powerful features to make gift-giving effortless and fun",
-    "activeUsers": "Active Users",
-    "wishlists": "Wishlists",
-    "giftsShared": "Gifts Shared"
+    "featuresSubtitle": "Powerful features to make gift-giving effortless and fun"
   },
   "features": {
     "userAuth": {
@@ -122,7 +119,8 @@
     "alexWishlist": "Alex's Wishlist",
     "nikeAirMax": "Nike Air Max 270",
     "appleWatch": "Apple Watch SE",
-    "cloudPillow": "Cloud Pillow"
+    "cloudPillow": "Cloud Pillow",
+    "wirelessHeadphones": "Wireless Headphones"
   },
   "footer": {
     "allRightsReserved": "All rights reserved.",
@@ -217,7 +215,7 @@
       "sendButton": "Send Message",
       "sending": "Opening Email...",
       "successMessage": "✓ Email client opened! Please send the email to complete your message.",
-      "errorMessage": "✗ There was an error. Please try again or email us directly at hello@wishlistapp.com",
+      "errorMessage": "✗ There was an error. Please try again or email us directly at wisheraapp@gmail.com",
       "subjects": {
         "general": "General Inquiry",
         "support": "Technical Support",
@@ -229,7 +227,7 @@
     "methods": {
       "email": {
         "title": "Email",
-        "value": "hello@wishlistapp.com",
+        "value": "wisheraapp@gmail.com",
         "description": "We'll respond within 24 hours"
       },
       "chat": {
@@ -429,5 +427,181 @@
     "noBirthdays": "No birthdays on this date",
     "upcomingBirthdays": "Upcoming Birthdays",
     "alreadyPassed": "Already happened this year"
+  },
+  "settings": {
+    "title": "Account Settings",
+    "policiesAndLegal": "Policies & Legal",
+    "policiesDescription": "Review our policies and legal documents to understand how we protect your rights and data.",
+    "privacyPolicy": "Privacy Policy",
+    "privacyPolicyDescription": "Learn how we collect, use, and protect your personal information",
+    "termsOfService": "Terms of Service",
+    "termsOfServiceDescription": "Read our terms and conditions for using Wishera",
+    "cookiePolicy": "Cookie Policy",
+    "cookiePolicyDescription": "Understand how we use cookies and tracking technologies",
+    "communityGuidelines": "Community Guidelines",
+    "communityGuidelinesDescription": "Guidelines for being a respectful member of our community",
+    "viewPolicy": "View Policy",
+    "dangerZone": "Danger Zone",
+    "deleteAccount": "Delete Account",
+    "deleteAccountDescription": "Once you delete your account, there is no going back. Please be certain.",
+    "backToDashboard": "Back to Dashboard",
+    "lastUpdated": "Last updated",
+    "deleteWarning": "⚠️ WARNING: This action is PERMANENT and IRREVERSIBLE",
+    "youWillLose": "You will lose ALL of the following:",
+    "loseWishlists": "All your wishlists and gift items",
+    "loseFollowers": "All your followers and following connections",
+    "loseProfile": "Your profile information and settings",
+    "loseMessages": "All your messages and conversations",
+    "loseHistory": "Your account history and activity",
+    "loseSharedAccess": "Access to any shared wishlists",
+    "dataCannotBeRecovered": "This data CANNOT be recovered once deleted!",
+    "beforeYouGo": "Before you go, consider these alternatives:",
+    "alternativePrivate": "Making your account private to limit who sees your profile",
+    "alternativeUnfollow": "Unfollowing users you don't want to see",
+    "alternativePrivateWishlists": "Setting your wishlists to private instead of deleting them",
+    "alternativeNotifications": "Turning off notifications to reduce distractions",
+    "alternativeBreak": "Just logging out and taking a break",
+    "alternativeDeleteWishlists": "Deleting specific wishlists instead of your entire account",
+    "alternativesReversible": "All of these options are reversible. Account deletion is not.",
+    "typeToConfirm": "Type {phrase} to confirm:",
+    "deleteMyAccountPhrase": "DELETE MY ACCOUNT",
+    "typeHere": "Type here...",
+    "pleaseTypeExactPhrase": "Please type the exact phrase to continue",
+    "cancelKeepAccount": "Cancel (Keep My Account)",
+    "iUnderstandDelete": "I Understand, Delete Forever",
+    "lastChance": "Last Chance!",
+    "areYouSure": "Are you absolutely sure you want to delete your account?",
+    "yourAccount": "Your account",
+    "permanentlyDeleteWarning": "This action will PERMANENTLY delete ALL your data. You will NOT be able to sign in again or recover anything.",
+    "keepMyAccount": "Keep My Account",
+    "deleteForever": "Delete Forever",
+    "deleting": "Deleting...",
+    "failedToDelete": "Failed to delete account"
+  },
+  "cookies": {
+    "title": "Cookie Policy",
+    "lastUpdated": "Last updated",
+    "section1": {
+      "title": "1. What Are Cookies?",
+      "description": "Cookies are small text files that are placed on your device when you visit a website. They are widely used to make websites work more efficiently and provide information to website owners."
+    },
+    "section2": {
+      "title": "2. How We Use Cookies",
+      "description": "Wishera uses cookies to enhance your experience on our platform. We use cookies for the following purposes:",
+      "essential": "Essential Cookies: These are necessary for the website to function properly and cannot be disabled.",
+      "authentication": "Authentication: To keep you logged in and maintain your session security.",
+      "preferences": "Preferences: To remember your language, theme, and other settings.",
+      "analytics": "Analytics: To understand how visitors interact with our website and improve our services.",
+      "functionality": "Functionality: To enable features like wishlist sharing and notifications."
+    },
+    "section3": {
+      "title": "3. Types of Cookies We Use",
+      "sessionTitle": "3.1 Session Cookies",
+      "sessionDescription": "These temporary cookies are deleted when you close your browser. They help maintain your session while you're using our service.",
+      "persistentTitle": "3.2 Persistent Cookies",
+      "persistentDescription": "These cookies remain on your device for a set period or until you delete them. They help us remember your preferences and improve your experience on future visits.",
+      "thirdPartyTitle": "3.3 Third-Party Cookies",
+      "thirdPartyDescription": "We may use services from third-party providers that set cookies on your device. These help us analyze website traffic and provide enhanced features."
+    },
+    "section4": {
+      "title": "4. Managing Cookies",
+      "description": "You have control over cookies. Most web browsers allow you to control cookies through their settings. You can:",
+      "view": "View and delete cookies stored on your device",
+      "block": "Block cookies from specific websites",
+      "blockAll": "Block all cookies",
+      "delete": "Delete all cookies when you close your browser",
+      "note": "Please note that blocking or deleting cookies may affect your ability to use certain features of our website."
+    },
+    "section5": {
+      "title": "5. Tracking Technologies",
+      "description": "In addition to cookies, we may use other tracking technologies such as web beacons, pixel tags, and local storage. These technologies help us understand how you interact with our service and improve your experience."
+    },
+    "section6": {
+      "title": "6. Changes to This Policy",
+      "description": "We may update this Cookie Policy from time to time to reflect changes in our practices or for other operational, legal, or regulatory reasons. We will notify you of any material changes by posting the new policy on this page."
+    },
+    "section7": {
+      "title": "7. Contact Us",
+      "description": "If you have any questions about our use of cookies, please contact us at:",
+      "email": "Email: wisheraapp@gmail.com"
+    }
+  },
+  "community": {
+    "title": "Community Guidelines",
+    "lastUpdated": "Last updated",
+    "section1": {
+      "title": "1. Welcome to Our Community",
+      "description": "Wishera is built on the principles of respect, kindness, and thoughtful gift-giving. These guidelines help ensure that our community remains a positive and welcoming space for everyone."
+    },
+    "section2": {
+      "title": "2. Be Respectful",
+      "description": "Treat all members of the community with respect and kindness. We celebrate diversity and welcome people from all backgrounds, cultures, and perspectives.",
+      "inclusive": "Use inclusive language and avoid offensive or discriminatory content",
+      "respect": "Respect different opinions and perspectives",
+      "considerate": "Be considerate of others' feelings and experiences",
+      "avoid": "Avoid personal attacks, harassment, or bullying"
+    },
+    "section3": {
+      "title": "3. Content Guidelines",
+      "appropriateTitle": "3.1 Appropriate Content",
+      "appropriateDescription": "When creating wishlists and sharing content, ensure that:",
+      "appropriate1": "All content is appropriate for all audiences",
+      "appropriate2": "Images and descriptions are accurate and not misleading",
+      "appropriate3": "Content does not violate any laws or regulations",
+      "appropriate4": "Content does not infringe on intellectual property rights",
+      "prohibitedTitle": "3.2 Prohibited Content",
+      "prohibitedDescription": "The following types of content are not allowed:",
+      "prohibited1": "Hate speech, discrimination, or harassment",
+      "prohibited2": "Spam, scams, or fraudulent content",
+      "prohibited3": "Violence, threats, or illegal activities",
+      "prohibited4": "Adult or explicit content",
+      "prohibited5": "Personal information of others without consent"
+    },
+    "section4": {
+      "title": "4. Gift Reservations",
+      "description": "When reserving gifts from someone's wishlist:",
+      "reserve1": "Only reserve gifts you genuinely intend to purchase",
+      "reserve2": "Respect the reservation system and don't abuse it",
+      "reserve3": "Cancel reservations if you change your mind in a timely manner",
+      "reserve4": "Be considerate of others who may also want to reserve the same gift"
+    },
+    "section5": {
+      "title": "5. Privacy and Safety",
+      "description": "Protect your privacy and the privacy of others:",
+      "privacy1": "Don't share personal information publicly",
+      "privacy2": "Respect others' privacy settings",
+      "privacy3": "Report any suspicious or harmful behavior",
+      "privacy4": "Keep your account credentials secure"
+    },
+    "section6": {
+      "title": "6. Reporting Violations",
+      "description": "If you encounter content or behavior that violates these guidelines:",
+      "report1": "Report it to us immediately",
+      "report2": "Provide as much detail as possible",
+      "report3": "Don't engage with or escalate the situation",
+      "report4": "We will review all reports and take appropriate action"
+    },
+    "section7": {
+      "title": "7. Consequences of Violations",
+      "description": "Violations of these guidelines may result in:",
+      "consequence1": "Content removal",
+      "consequence2": "Warning or suspension of your account",
+      "consequence3": "Permanent ban from the platform",
+      "consequence4": "Legal action if applicable"
+    },
+    "section8": {
+      "title": "8. Building a Positive Community",
+      "description": "We encourage you to:",
+      "positive1": "Share thoughtful and meaningful wishlists",
+      "positive2": "Help others discover great gifts",
+      "positive3": "Celebrate special occasions together",
+      "positive4": "Spread kindness and positivity",
+      "positive5": "Respect different gift-giving traditions and cultures"
+    },
+    "section9": {
+      "title": "9. Contact Us",
+      "description": "If you have questions about these guidelines or need to report a violation, please contact us at:",
+      "email": "Email: wisheraapp@gmail.com"
+    }
   }
 }

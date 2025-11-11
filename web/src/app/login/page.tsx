@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { login, resendVerificationEmail, AUTH_API_URL } from "../api";
+import { login } from "../api";
 import Notification from "../../components/Notification";
 import { useLanguage } from "../../contexts/LanguageContext";
 
@@ -59,38 +59,15 @@ export default function LoginPage() {
         router.push("/dashboard");
       }, 1500);
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || t('auth.loginFailed');
-      
-      // Check if the error is about email verification
-      if (errorMessage.toLowerCase().includes('verify your email') || 
-          errorMessage.toLowerCase().includes('email address before logging in')) {
-        try {
-          // Automatically resend verification email
-          await resendVerificationEmail(email);
-          setNotification({
-            type: 'success',
-            message: `Email verification required. A confirmation link has been sent to ${email}. Please check your inbox and spam folder.`,
-            isVisible: true
-          });
-        } catch (resendErr: any) {
-          // If resend fails, just show the original error
-          setNotification({
-            type: 'error',
-            message: errorMessage,
-            isVisible: true
-          });
-        }
-      } else {
-        setNotification({
-          type: 'error',
-          message: errorMessage,
-          isVisible: true
-        });
-      }
+      setNotification({
+        type: 'error',
+        message: err.response?.data?.message || t('auth.loginFailed'),
+        isVisible: true
+      });
     } finally {
       setLoading(false);
     }
-  }, [email, password, router, t]);
+  }, [email, password, router]);
 
   const closeNotification = () => {
     setNotification(prev => ({ ...prev, isVisible: false }));
@@ -141,44 +118,20 @@ export default function LoginPage() {
         </div>
         
         <div className="mt-6">
-          <a
-            href={(() => {
-              // Use AUTH_API_URL which ensures /api is included
-              // The correct endpoint is: /api/externalauth/login/Google (lowercase)
-              const authUrl = AUTH_API_URL().trim().replace(/\/+$/, '');
-              
-              // Get the frontend URL for the redirect URI
-              // The backend will redirect here after OAuth completes
-              const frontendUrl = typeof window !== 'undefined' 
-                ? `${window.location.protocol}//${window.location.host}`
-                : 'https://wishera.vercel.app'; // Fallback for SSR
-              
-              const redirectUri = `${frontendUrl}/oauth-complete`;
-              
-              // Correct Google OAuth endpoint (lowercase externalauth)
-              // Note: The redirect_uri should be configured in the backend
-              // If the backend supports passing it as a parameter, uncomment the next line:
-              // const googleOAuthUrl = `${authUrl}/externalauth/login/Google?redirectUri=${encodeURIComponent(redirectUri)}`;
-              
-              // Otherwise, the backend should be configured with the redirect URI in Google Cloud Console
-              const googleOAuthUrl = `${authUrl}/externalauth/login/Google`;
-              
-              console.log('🔍 Google OAuth URL:', googleOAuthUrl);
-              console.log('🔍 Expected redirect URI:', redirectUri);
-              console.log('⚠️  If you get redirect_uri_mismatch error, the backend needs to be configured with this redirect URI in Google Cloud Console');
-              
-              return googleOAuthUrl;
-            })()}
-            className="flex items-center justify-center gap-2 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 font-semibold hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors text-center"
-          >
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png"
-              alt="Google logo"
-              className="h-5 w-5"
-            />
-            Continue with Google
-          </a>
-        </div>
+  <a
+    href={`${
+      process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:5219/api'
+    }/ExternalAuth/login/Google`}
+    className="flex items-center justify-center gap-2 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 font-semibold hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors text-center"
+  >
+    <img
+      src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png"
+      alt="Google logo"
+      className="h-5 w-5"
+    />
+    Continue with Google
+  </a>
+</div>
 
 
         <div className="mt-6 text-center text-gray-500 dark:text-gray-400 text-sm transition-colors duration-300">

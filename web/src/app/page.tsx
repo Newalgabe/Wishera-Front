@@ -1,7 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { UserIcon, GiftIcon, LockClosedIcon, ShareIcon, CloudIcon, SparklesIcon, ChevronLeftIcon, ChevronRightIcon, HomeIcon, InformationCircleIcon, ChatBubbleLeftRightIcon, StarIcon } from "@heroicons/react/24/outline";
+import { UserIcon, GiftIcon, LockClosedIcon, ShareIcon, CloudIcon, SparklesIcon, ChevronLeftIcon, ChevronRightIcon, HomeIcon, InformationCircleIcon, ChatBubbleLeftRightIcon, StarIcon, UserGroupIcon, ClockIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -252,87 +252,86 @@ function ScrollIndicator() {
   );
 }
 
-function AppMockup() {
+function StatisticsDisplay() {
   const { t } = useLanguage();
+  
+  const stats = [
+    {
+      number: "10K+",
+      labelKey: "about.stats.happyUsers",
+      icon: UserGroupIcon,
+      gradient: "from-blue-500 to-indigo-600",
+      bgGradient: "from-blue-500/20 to-indigo-600/20"
+    },
+    {
+      number: "50K+",
+      labelKey: "about.stats.wishlistsCreated",
+      icon: GiftIcon,
+      gradient: "from-pink-500 to-rose-600",
+      bgGradient: "from-pink-500/20 to-rose-600/20"
+    },
+    {
+      number: "100K+",
+      labelKey: "about.stats.giftsReserved",
+      icon: SparklesIcon,
+      gradient: "from-purple-500 to-fuchsia-600",
+      bgGradient: "from-purple-500/20 to-fuchsia-600/20"
+    },
+    {
+      number: "99.9%",
+      labelKey: "about.stats.uptime",
+      icon: ClockIcon,
+      gradient: "from-green-500 to-emerald-600",
+      bgGradient: "from-green-500/20 to-emerald-600/20"
+    }
+  ];
+
   return (
     <motion.div
-      className="relative z-10 glass-card rounded-3xl shadow-2xl border border-gray-100/50 dark:border-gray-700/50 w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg p-4 sm:p-6 flex flex-col gap-4 transition-all duration-300 hover:-translate-y-2 hover:shadow-3xl"
+      className="relative z-10 glass-card rounded-3xl shadow-2xl border border-gray-100/50 dark:border-gray-700/50 w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg p-6 sm:p-8 transition-all duration-300 hover:-translate-y-2 hover:shadow-3xl"
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 1, delay: 0.5 }}
       whileHover={{ scale: 1.02 }}
     >
-      <div className="flex flex-col gap-3">
-        <motion.div 
-          className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 transition-colors duration-300 border border-gray-200/50 dark:border-gray-600/50"
-          whileHover={{ scale: 1.02, x: 5 }}
-          transition={{ type: "spring", stiffness: 300 }}
-        >
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center">
-            <GiftIcon className="w-4 h-4 text-white" />
-          </div>
-          <div className="flex-1">
-            <div className="font-medium text-gray-700 dark:text-gray-200 text-sm sm:text-base transition-colors duration-300">
-              {t('mockup.nikeAirMax')}
-            </div>
-            <div className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-300">$150</div>
-          </div>
-          <span className="text-xs text-green-500 font-semibold bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full">
-            {t('common.available')}
-          </span>
-        </motion.div>
-        <motion.div 
-          className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 transition-colors duration-300 border border-gray-200/50 dark:border-gray-600/50"
-          whileHover={{ scale: 1.02, x: 5 }}
-          transition={{ type: "spring", stiffness: 300 }}
-        >
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
-            <GiftIcon className="w-4 h-4 text-white" />
-          </div>
-          <div className="flex-1">
-            <div className="font-medium text-gray-700 dark:text-gray-200 text-sm sm:text-base transition-colors duration-300">
-              {t('mockup.appleWatch')}
-            </div>
-            <div className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-300">$249</div>
-          </div>
-          <span className="text-xs text-gray-400 dark:text-gray-500 font-semibold bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full transition-colors duration-300">
-            {t('common.reserved')}
-          </span>
-        </motion.div>
-        <motion.div 
-          className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 transition-colors duration-300 border border-gray-200/50 dark:border-gray-600/50"
-          whileHover={{ scale: 1.02, x: 5 }}
-          transition={{ type: "spring", stiffness: 300 }}
-        >
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center">
-            <GiftIcon className="w-4 h-4 text-white" />
-          </div>
-          <div className="flex-1">
-            <div className="font-medium text-gray-700 dark:text-gray-200 text-sm sm:text-base transition-colors duration-300">
-              {t('mockup.cloudPillow')}
-            </div>
-            <div className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-300">$39</div>
-          </div>
-          <span className="text-xs text-green-500 font-semibold bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full">
-            {t('common.available')}
-          </span>
-        </motion.div>
-      </div>
-      <div className="mt-4 flex gap-3">
-        <motion.button 
-          className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 text-white font-semibold shadow-lg text-sm sm:text-base transition-all duration-300 hover:shadow-xl"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          {t('common.share')}
-        </motion.button>
-        <motion.button 
-          className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-600 dark:to-gray-700 text-gray-600 dark:text-gray-200 font-semibold shadow-lg text-sm sm:text-base transition-all duration-300 hover:shadow-xl"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          {t('common.reserve')}
-        </motion.button>
+      <div className="grid grid-cols-2 gap-4 sm:gap-6">
+        {stats.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <motion.div
+              key={stat.labelKey}
+              className="relative overflow-hidden rounded-2xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm p-4 sm:p-5 border border-gray-200/50 dark:border-gray-700/50 transition-all duration-300"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.7 + index * 0.1 }}
+              whileHover={{ scale: 1.05, y: -4 }}
+            >
+              <div className={`absolute inset-0 bg-gradient-to-br ${stat.bgGradient} opacity-30 dark:opacity-20`} />
+              <div className="relative z-10 flex flex-col items-center text-center">
+                <motion.div
+                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center mb-3 shadow-lg`}
+                  whileHover={{ rotate: 360 }}
+                  transition={{ duration: 0.6 }}
+                >
+                  <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                </motion.div>
+                <motion.div
+                  className="text-2xl sm:text-3xl font-extrabold mb-1"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.9 + index * 0.1 }}
+                >
+                  <span className={`bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`}>
+                    {stat.number}
+                  </span>
+                </motion.div>
+                <div className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300 transition-colors duration-300 text-center leading-tight">
+                  {t(stat.labelKey)}
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
     </motion.div>
   );
@@ -423,9 +422,9 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col transition-colors duration-300">
       <Navbar />
       {/* Hero Section */}
-      <section className="relative flex flex-col items-center justify-center py-16 sm:py-24 px-4 sm:px-8 bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-hidden w-full transition-colors duration-300">
+      <section className="relative flex flex-col-reverse md:flex-row items-center justify-center py-16 sm:py-24 px-4 sm:px-8 bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-hidden w-full transition-colors duration-300">
         <AnimatedBlobs />
-        <div className="relative z-10 flex flex-col items-center text-center w-full max-w-3xl">
+        <div className="relative z-10 flex-1 flex flex-col items-center md:items-start text-center md:text-left w-full max-w-xl">
           <motion.h1
             initial={{ opacity: 0, y: -40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -445,81 +444,22 @@ export default function Home() {
             {t('home.heroSubtitle')}
           </motion.p>
           <TrustedBy />
-          
-          {/* CTA Buttons */}
-          <motion.div
-            className="flex flex-col sm:flex-row gap-4 mt-8 mb-8"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-          >
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Link
-                href="/register"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 dark:from-purple-500 dark:via-indigo-500 dark:to-purple-600 text-white font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300"
-              >
-                <GiftIcon className="w-6 h-6" />
-                {t('home.getStarted')}
-              </Link>
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Link
-                href="/about"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-white dark:bg-gray-800 text-indigo-600 dark:text-purple-400 font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300 border-2 border-indigo-200 dark:border-purple-800"
-              >
-                <InformationCircleIcon className="w-6 h-6" />
-                {t('home.learnMore')}
-              </Link>
-            </motion.div>
-          </motion.div>
-
-          {/* Quick Stats */}
-          <motion.div
-            className="grid grid-cols-3 gap-6 sm:gap-8 mb-12 w-full max-w-2xl"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-          >
-            <motion.div 
-              className="flex flex-col items-center glass-card rounded-2xl p-4 sm:p-6"
-              whileHover={{ scale: 1.05, y: -4 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                10K+
-              </div>
-              <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium text-center">
-                {t('home.activeUsers')}
-              </div>
-            </motion.div>
-            <motion.div 
-              className="flex flex-col items-center glass-card rounded-2xl p-4 sm:p-6"
-              whileHover={{ scale: 1.05, y: -4 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent mb-2">
-                50K+
-              </div>
-              <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium text-center">
-                {t('home.wishlists')}
-              </div>
-            </motion.div>
-            <motion.div 
-              className="flex flex-col items-center glass-card rounded-2xl p-4 sm:p-6"
-              whileHover={{ scale: 1.05, y: -4 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-orange-600 to-yellow-600 bg-clip-text text-transparent mb-2">
-                100K+
-              </div>
-              <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium text-center">
-                {t('home.giftsShared')}
-              </div>
-            </motion.div>
-          </motion.div>
-
           <TestimonialCarousel />
+          <motion.div
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
+            className="inline-block mt-6"
+          >
+            <Link
+              href="/about"
+              className="inline-block px-8 py-4 rounded-2xl bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-600 dark:from-orange-500 dark:via-yellow-500 dark:to-orange-600 text-white font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:from-yellow-500 hover:via-orange-600 hover:to-yellow-700 dark:hover:from-orange-600 dark:hover:via-yellow-600 dark:hover:to-orange-700"
+            >
+              {t('home.learnMore')}
+            </Link>
+          </motion.div>
+        </div>
+        <div className="relative z-10 flex-1 flex justify-center mb-8 md:mb-0 w-full max-w-md">
+          <StatisticsDisplay />
         </div>
         <ScrollIndicator />
       </section>

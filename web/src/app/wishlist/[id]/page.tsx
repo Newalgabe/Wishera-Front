@@ -29,8 +29,7 @@ import {
   createGift,
   reserveGift,
   cancelGiftReservation,
-  type GiftDTO,
-  WISHLIST_CATEGORIES
+  type GiftDTO
 } from "../../api";
 
 export default function WishlistDetailsPage() {
@@ -64,15 +63,12 @@ export default function WishlistDetailsPage() {
     async function loadWishlistDetails() {
       try {
         setLoading(true);
-        setError(null); // Clear any previous errors
-        setWishlist(null); // Clear previous wishlist data
         const details = await getWishlistDetails(wishlistId);
         console.log('Wishlist details:', details);
         console.log('Current user ID:', currentUserId);
         console.log('Wishlist owner ID:', details.userId);
         console.log('Is owner:', details.isOwner);
         setWishlist(details);
-        setError(null); // Clear error on success
         // For now, we'll assume the user is not following since we don't have this info in the wishlist response
         // In a real app, you might want to make a separate API call to check follow status
         setIsFollowing(false);
@@ -82,7 +78,6 @@ export default function WishlistDetailsPage() {
           ? (error.response as { data?: { message?: string } })?.data?.message 
           : 'Failed to load wishlist details';
         setError(errorMessage || 'Failed to load wishlist details');
-        setWishlist(null); // Clear wishlist on error to prevent showing stale data
       } finally {
         setLoading(false);
       }
@@ -145,19 +140,13 @@ export default function WishlistDetailsPage() {
     try {
       setCreateGiftLoading(true);
       setCreateGiftError(null);
-      // First create the gift
-      const giftResponse = await createGift({
+      await createGift({
         name,
         price: priceNum,
         category: createGiftForm.category.trim() || 'Other',
+        wishlistId: wishlist.id,
         imageFile: createGiftForm.imageFile
       });
-      
-      // Then explicitly add it to the wishlist
-      if (giftResponse.id) {
-        await addGiftToWishlist(giftResponse.id, wishlist.id);
-      }
-      
       setSuccessMessage('Gift created and added to wishlist!');
       setTimeout(() => setSuccessMessage(null), 3000);
       const details = await getWishlistDetails(wishlistId);
@@ -353,7 +342,7 @@ export default function WishlistDetailsPage() {
 
   const handleShare = async () => {
     try {
-      const shareUrl = `https://wishera.vercel.app/wishlist/${wishlistId}`;
+      const shareUrl = `${window.location.origin}/wishlist/${wishlistId}`;
       await navigator.clipboard.writeText(shareUrl);
       setSuccessMessage(t('dashboard.wishlistShared'));
       setTimeout(() => setSuccessMessage(null), 3000);
@@ -361,7 +350,7 @@ export default function WishlistDetailsPage() {
       console.error('Failed to copy to clipboard:', error);
       // Fallback for older browsers
       const textArea = document.createElement('textarea');
-      textArea.value = `https://wishera.vercel.app/wishlist/${wishlistId}`;
+      textArea.value = `${window.location.origin}/wishlist/${wishlistId}`;
       document.body.appendChild(textArea);
       textArea.select();
       document.execCommand('copy');
@@ -654,40 +643,19 @@ export default function WishlistDetailsPage() {
                         onChange={(e) => setCreateGiftForm(f => ({ ...f, price: e.target.value }))}
                         className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200"
                       />
-                      <select
+                      <input
+                        type="text"
+                        placeholder="Category"
                         value={createGiftForm.category}
                         onChange={(e) => setCreateGiftForm(f => ({ ...f, category: e.target.value }))}
                         className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200"
-                      >
-                        <option value="">Select Category</option>
-                        {WISHLIST_CATEGORIES.map((cat) => (
-                          <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                      </select>
-                      <div className="space-y-2">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => setCreateGiftForm(f => ({ ...f, imageFile: e.target.files?.[0] || null }))}
-                          className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200"
-                        />
-                        {createGiftForm.imageFile && (
-                          <div className="relative">
-                            <img
-                              src={URL.createObjectURL(createGiftForm.imageFile)}
-                              alt="Preview"
-                              className="w-full h-32 object-cover rounded border border-gray-300 dark:border-gray-600"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setCreateGiftForm(f => ({ ...f, imageFile: null }))}
-                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                      />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setCreateGiftForm(f => ({ ...f, imageFile: e.target.files?.[0] || null }))}
+                        className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200"
+                      />
                     </div>
                     <div className="mt-3 flex justify-end">
                       <button

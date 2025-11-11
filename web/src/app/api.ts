@@ -1,157 +1,18 @@
 import axios, { type AxiosRequestConfig } from 'axios';
 import { BirthdayReminderDTO, Event, EventInvitation, EventInvitationListResponse, EventListResponse, InvitationStatus, CreateEventRequest, UpdateEventRequest, RespondToInvitationRequest, NotificationListDTO } from '../types';
 
-// Helper function to ensure HTTPS URLs (prevent mixed content) and block localhost in production
-export function ensureHttps(url: string): string {
-  if (!url || typeof url !== 'string') return url || '';
-  
-  // CRITICAL: Check if we're in production (Vercel deployment)
-  const isProduction = typeof window !== 'undefined' && 
-    window.location.hostname !== 'localhost' && 
-    window.location.hostname !== '127.0.0.1' &&
-    !window.location.hostname.startsWith('192.168.') &&
-    !window.location.hostname.startsWith('10.') &&
-    window.location.hostname !== '';
-  
-  // ALWAYS block localhost/127.0.0.1 in production, regardless of protocol
-  if (isProduction) {
-    const hasLocalhost = url.includes('localhost') || 
-                         url.includes('127.0.0.1') || 
-                         url.includes(':5219') || 
-                         url.includes(':5001') || 
-                         url.includes(':5002') || 
-                         url.includes(':5003') ||
-                         url.includes(':3000') ||
-                         url.match(/http:\/\/\d+\.\d+\.\d+\.\d+/); // Block any IP address with http
-    
-    if (hasLocalhost) {
-      console.error('🚫 BLOCKED localhost/IP URL in production:', url);
-      // Return default Render URL based on service type
-      if (url.includes('auth') || url.includes('5219') || url.includes('/auth/')) {
-        return 'https://wishera-auth-service.onrender.com/api';
-      }
-      if (url.includes('user') || url.includes('5001') || url.includes('/users/') || url.includes('/notifications/')) {
-        return 'https://wishera-app.onrender.com/api';
-      }
-      if (url.includes('gift') || url.includes('5003') || url.includes('/wishlists/') || url.includes('/gift')) {
-        return 'https://wishera-app.onrender.com/api';
-      }
-      if (url.includes('chat') || url.includes('5002') || url.includes('/chat/')) {
-        return 'https://wishera-chat-service.onrender.com/api';
-      }
-      return 'https://wishera-app.onrender.com/api';
-    }
-  }
-  
-  // If page is served over HTTPS, ensure API URL is also HTTPS
-  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
-    // Block any HTTP URLs when page is HTTPS
-    if (url.startsWith('http://') && !url.startsWith('https://')) {
-      const httpsUrl = url.replace(/^http:\/\//, 'https://');
-      console.warn('🔒 Upgraded HTTP to HTTPS:', url, '->', httpsUrl);
-      return httpsUrl;
-    }
-  }
-  
-  return url;
-}
-
-// Get secure URL at runtime (not at module load time)
-function getSecureApiUrl(envVar: string | undefined, defaultValue: string): string {
-  const rawUrl = envVar || defaultValue;
-  return ensureHttps(rawUrl);
-}
-
-// Use getter functions to ensure URLs are checked at runtime, not build time
-function getApiUrl(): string {
-  return getSecureApiUrl(
-    process.env.NEXT_PUBLIC_API_URL,
-    typeof window !== 'undefined' ? '/api' : 'https://wishera-app.onrender.com/api'
-  );
-}
-
-function getAuthApiUrl(): string {
-  return getSecureApiUrl(
-    process.env.NEXT_PUBLIC_AUTH_API_URL,
-    'https://wishera-auth-service.onrender.com/api'
-  );
-}
-
-function getChatApiUrl(): string {
-  return getSecureApiUrl(
-    process.env.NEXT_PUBLIC_CHAT_API_URL,
-    'https://wishera-chat-service.onrender.com/api'
-  );
-}
-
-function getGiftApiUrl(): string {
-  // All gift/wishlist requests should go through the API Gateway
-  // The API Gateway proxies to gift-wishlist-service internally
-  return getApiUrl();
-}
-
-function getuserApiUrl(): string {
-  // All user requests should go through the API Gateway
-  // The API Gateway proxies to user-service internally with HTTP fallback
-  return getApiUrl();
-}
-
-// Export getters that are called at runtime
-export const API_URL = () => getApiUrl();
-export const AUTH_API_URL = () => getAuthApiUrl();
-export const CHAT_API_URL = () => getChatApiUrl();
-export const GIFT_API_URL = () => getGiftApiUrl();
-export const USER_API_URL = () => getuserApiUrl();
+const API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? '/api' : 'http://localhost:5155/api');
+const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:5219/api';
+const CHAT_API_URL = process.env.NEXT_PUBLIC_CHAT_API_URL || 'http://localhost:5002/api';
+const GIFT_API_URL = process.env.NEXT_PUBLIC_GIFT_API_URL || 'http://localhost:5003/api';
+const USER_API_URL = process.env.NEXT_PUBLIC_USER_API_URL || 'http://localhost:5001/api';
 
 // Ensure Authorization header is attached to all requests when token exists
-// Increased timeout for Render free tier (can be slow to wake up)
-axios.defaults.timeout = 60000; // 60 seconds for Render services
-axios.defaults.withCredentials = true; // CRITICAL: Enable credentials for CORS requests
+axios.defaults.timeout = 10000;
 axios.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    // CRITICAL: Fix URLs at request time to prevent localhost in production
-    // This is the LAST LINE OF DEFENSE - catches everything!
-    if (config.url) {
-      const originalUrl = String(config.url);
-      const fixedUrl = ensureHttps(originalUrl);
-      if (fixedUrl !== originalUrl) {
-        console.error('🔧 INTERCEPTOR FIXED URL:', originalUrl, '->', fixedUrl);
-        config.url = fixedUrl;
-      }
-    }
-    
-    // Also fix baseURL if present
-    if (config.baseURL) {
-      const originalBaseUrl = String(config.baseURL);
-      const fixedBaseUrl = ensureHttps(originalBaseUrl);
-      if (fixedBaseUrl !== originalBaseUrl) {
-        console.error('🔧 INTERCEPTOR FIXED baseURL:', originalBaseUrl, '->', fixedBaseUrl);
-        config.baseURL = fixedBaseUrl;
-      }
-    }
-    
-    // Fix full URL if it's constructed from baseURL + url
-    if (config.baseURL && config.url && !config.url.startsWith('http')) {
-      const fullUrl = config.baseURL + (config.url.startsWith('/') ? config.url : '/' + config.url);
-      const fixedFullUrl = ensureHttps(fullUrl);
-      if (fixedFullUrl !== fullUrl) {
-        console.error('🔧 INTERCEPTOR FIXED full URL:', fullUrl, '->', fixedFullUrl);
-        // Extract the base URL from the fixed URL
-        try {
-          const urlObj = new URL(fixedFullUrl);
-          config.baseURL = urlObj.origin + urlObj.pathname.split('/').slice(0, -1).join('/');
-          config.url = urlObj.pathname.split('/').pop() || config.url;
-        } catch (e) {
-          // If URL parsing fails, just use the fixed full URL as the url
-          config.url = fixedFullUrl;
-          config.baseURL = '';
-        }
-      }
-    }
-    
     const token = localStorage.getItem('token');
     // Do not attach Authorization for public auth endpoints
-    // Check for both /auth/ and /Auth/ (case-insensitive matching)
     const url = String(config.url || '').toLowerCase();
     const isAuthPublic = url.includes('/auth/login')
       || url.includes('/auth/register')
@@ -204,55 +65,21 @@ export type WishlistCategory = typeof WISHLIST_CATEGORIES[number];
 // Auth endpoints (no auth header required)
 export async function login(email: string, password: string) {
   try {
-    // Get the URL and ensure it's secure
-    let authUrl = AUTH_API_URL();
-    
-    // Double-check with ensureHttps (in case env var slipped through)
-    authUrl = ensureHttps(authUrl);
-    
-    // Log for debugging
-    console.log('🔍 LOGIN DEBUG:', {
-      envVar: process.env.NEXT_PUBLIC_AUTH_API_URL,
-      computedUrl: authUrl,
-      isProduction: typeof window !== 'undefined' && window.location.hostname !== 'localhost',
-      hostname: typeof window !== 'undefined' ? window.location.hostname : 'N/A',
-      protocol: typeof window !== 'undefined' ? window.location.protocol : 'N/A'
-    });
-    
-    // Backend route is [Route("api/[controller]")] with [HttpPost("login")]
-    // So the endpoint is /api/Auth/login
-    // AUTH_API_URL already includes /api, so we need /Auth/login
-    const loginUrl = `${authUrl}/Auth/login`;
-    console.log('API: Attempting login to:', loginUrl);
-    
-    // Final safety check - if URL still contains localhost, throw error
-    if (typeof window !== 'undefined' && 
-        window.location.hostname !== 'localhost' && 
-        loginUrl.includes('localhost')) {
-      console.error('❌ CRITICAL: Localhost detected in login URL after all checks!', loginUrl);
-      throw new Error('Invalid API URL configuration. Please contact support.');
-    }
-    
-    const response = await axios.post(loginUrl, { email, password }, { timeout: 60000 });
+    console.log('API: Attempting login to:', `${AUTH_API_URL}/auth/login`);
+    const response = await axios.post(`${AUTH_API_URL}/auth/login`, { email, password });
     console.log('API: Login successful');
     return response.data;
   } catch (error) {
     console.error('API: Login failed:', error);
     if (axios.isAxiosError(error)) {
-      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-        throw new Error('Request timed out. The service may be starting up. Please try again in a moment.');
-      }
       if (error.code === 'ECONNREFUSED') {
-        throw new Error('Authentication service is not available. Please check if the auth service is running.');
+        throw new Error('Authentication service is not available. Please check if the auth service is running on port 5219.');
       }
       if (error.response?.status === 401) {
         throw new Error('Invalid email or password.');
       }
       if (error.response?.status === 404) {
         throw new Error('Login endpoint not found. Please check the auth service configuration.');
-      }
-      if (error.response?.status === 0 || !error.response) {
-        throw new Error('Unable to connect to the authentication service. The service may be starting up or unavailable.');
       }
     }
     throw error;
@@ -261,54 +88,15 @@ export async function login(email: string, password: string) {
 
 export async function register(username: string, email: string, password: string) {
   try {
-    // Get the URL and ensure it's secure
-    let authUrl = AUTH_API_URL();
-    
-    // Double-check with ensureHttps (in case env var slipped through)
-    authUrl = ensureHttps(authUrl);
-    
-    // Backend route is [Route("api/[controller]")] with [HttpPost("register")]
-    // So the endpoint is /api/Auth/register (case-insensitive, but use correct path)
-    // AUTH_API_URL already includes /api, so we need /Auth/register
-    const registerUrl = `${authUrl}/Auth/register`;
-    
-    // Log for debugging
-    console.log('🔍 REGISTER DEBUG:', {
-      envVar: process.env.NEXT_PUBLIC_AUTH_API_URL,
-      computedUrl: authUrl,
-      fullUrl: registerUrl,
-      isProduction: typeof window !== 'undefined' && window.location.hostname !== 'localhost',
-      hostname: typeof window !== 'undefined' ? window.location.hostname : 'N/A',
-      protocol: typeof window !== 'undefined' ? window.location.protocol : 'N/A'
-    });
-    
-    // Final safety check - if URL still contains localhost, throw error
-    if (typeof window !== 'undefined' && 
-        window.location.hostname !== 'localhost' && 
-        registerUrl.includes('localhost')) {
-      console.error('❌ CRITICAL: Localhost detected in register URL after all checks!', registerUrl);
-      throw new Error('Invalid API URL configuration. Please contact support.');
-    }
-    
-    console.log('API: Attempting registration to:', registerUrl);
-    const response = await axios.post(registerUrl, { username, email, password }, { timeout: 60000 });
+    console.log('API: Attempting registration to:', `${AUTH_API_URL}/auth/register`);
+    const response = await axios.post(`${AUTH_API_URL}/auth/register`, { username, email, password });
     console.log('API: Registration successful');
     return response.data;
   } catch (error) {
     console.error('API: Registration failed:', error);
     if (axios.isAxiosError(error)) {
-      if (error.response?.status === 404) {
-        console.error('❌ 404 Error - Endpoint not found. URL was:', error.config?.url);
-        throw new Error('Registration endpoint not found. The service may be misconfigured. Please contact support.');
-      }
-      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-        throw new Error('Request timed out. The service may be starting up. Please try again in a moment.');
-      }
       if (error.code === 'ECONNREFUSED') {
-        throw new Error('Authentication service is not available. Please check if the auth service is running.');
-      }
-      if (error.response?.status === 0 || !error.response) {
-        throw new Error('Unable to connect to the authentication service. The service may be starting up or unavailable.');
+        throw new Error('Authentication service is not available. Please check if the auth service is running on port 5219.');
       }
       // Pass through the actual error message from the backend
       if (error.response?.data?.message) {
@@ -327,40 +115,35 @@ export async function register(username: string, email: string, password: string
 }
 
 export async function forgotPassword(email: string) {
-  const response = await axios.post(`${AUTH_API_URL()}/Auth/forgot-password`, { email });
+  const response = await axios.post(`${AUTH_API_URL}/auth/forgot-password`, { email });
   return response.data;
 }
 
 export async function verifyEmail(token: string) {
-  const response = await axios.get(`${AUTH_API_URL()}/Auth/verify-email`, { params: { token } });
-  return response.data;
-}
-
-export async function resendVerificationEmail(email: string) {
-  const response = await axios.post(`${AUTH_API_URL()}/Auth/resend-verification`, { email });
+  const response = await axios.get(`${AUTH_API_URL}/auth/verify-email`, { params: { token } });
   return response.data;
 }
 
 export async function deleteAccount() {
   const token = localStorage.getItem('token');
-  const response = await axios.delete(`${AUTH_API_URL()}/Auth/delete-account`, {
+  const response = await axios.delete(`${AUTH_API_URL}/auth/delete-account`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   return response.data;
 }
 
 export async function resetPassword(token: string, newPassword: string) {
-  const response = await axios.post(`${AUTH_API_URL()}/Auth/reset-password`, { token, newPassword });
+  const response = await axios.post(`${AUTH_API_URL}/auth/reset-password`, { token, newPassword });
   return response.data;
 }
 
 export async function checkEmailAvailability(email: string) {
-  const response = await axios.get(`${AUTH_API_URL()}/Auth/check-email?email=${encodeURIComponent(email)}`);
+  const response = await axios.get(`${AUTH_API_URL}/auth/check-email?email=${encodeURIComponent(email)}`);
   return response.data;
 }
 
 export async function checkUsernameAvailability(username: string) {
-  const response = await axios.get(`${AUTH_API_URL()}/Auth/check-username?username=${encodeURIComponent(username)}`);
+  const response = await axios.get(`${AUTH_API_URL}/auth/check-username?username=${encodeURIComponent(username)}`);
   return response.data;
 }
 
@@ -371,9 +154,9 @@ function authConfig(): AxiosRequestConfig {
   return token
     ? { 
         headers: { Authorization: `Bearer ${token}` },
-        timeout: 60000 // 60 second timeout for Render services
+        timeout: 10000 // 10 second timeout
       }
-    : { timeout: 60000 };
+    : { timeout: 10000 };
 }
 
 // DTOs
@@ -439,25 +222,25 @@ export interface UpdateWishlistDTO {
 
 // Authorized API calls for dashboard
 export async function getFeed(page = 1, pageSize = 20): Promise<WishlistFeedDTO[]> {
-  const response = await axios.get(`${GIFT_API_URL()}/wishlists/feed?page=${page}&pageSize=${pageSize}`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/wishlists/feed?page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
 export async function getCategories(): Promise<string[]> {
-  const response = await axios.get(`${GIFT_API_URL()}/wishlists/categories`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/wishlists/categories`, authConfig());
   return response.data;
 }
 
 export async function getWishlistDetails(id: string): Promise<WishlistResponseDTO> {
-  const response = await axios.get(`${GIFT_API_URL()}/wishlists/${id}`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/wishlists/${id}`, authConfig());
   return response.data;
 }
 
 export async function getMyReservedGifts(): Promise<GiftDTO[]> {
   try {
-    // Try the main API URL first, then fallback to gift service
-    const mainApiUrl = API_URL();
-    const giftServiceUrl = GIFT_API_URL();
+    // Try the main API URL first (port 5155), then fallback to gift service (port 5003)
+    const mainApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5155';
+    const giftServiceUrl = process.env.NEXT_PUBLIC_GIFT_API_URL || 'http://localhost:5003';
     
     try {
       // Try main app first
@@ -490,17 +273,17 @@ export async function getMyReservedGifts(): Promise<GiftDTO[]> {
 }
 
 export async function likeWishlist(id: string): Promise<boolean> {
-  const response = await axios.post(`${GIFT_API_URL()}/wishlists/${id}/like`, null, authConfig());
+  const response = await axios.post(`${GIFT_API_URL}/wishlists/${id}/like`, null, authConfig());
   return response.data;
 }
 
 export async function unlikeWishlist(id: string): Promise<boolean> {
-  const response = await axios.delete(`${GIFT_API_URL()}/wishlists/${id}/unlike`, authConfig());
+  const response = await axios.delete(`${GIFT_API_URL}/wishlists/${id}/unlike`, authConfig());
   return response.data;
 }
 
 export async function createWishlist(payload: CreateWishlistDTO): Promise<WishlistResponseDTO> {
-  const response = await axios.post(`${GIFT_API_URL()}/wishlists`, payload, authConfig());
+  const response = await axios.post(`${GIFT_API_URL}/wishlists`, payload, authConfig());
   return response.data;
 }
 
@@ -511,12 +294,12 @@ export async function updateWishlist(id: string, payload: {
   isPublic?: boolean;
   allowedViewerIds?: string[];
 }): Promise<WishlistResponseDTO> {
-  const response = await axios.put(`${GIFT_API_URL()}/wishlists/${id}`, payload, authConfig());
+  const response = await axios.put(`${GIFT_API_URL}/wishlists/${id}`, payload, authConfig());
   return response.data;
 }
 
 export async function deleteWishlist(id: string): Promise<void> {
-  await axios.delete(`${GIFT_API_URL()}/wishlists/${id}`, authConfig());
+  await axios.delete(`${GIFT_API_URL}/wishlists/${id}`, authConfig());
 }
 
 // Users API
@@ -545,42 +328,42 @@ export interface UserSearchDTO {
 }
 
 export async function getUserProfile(id: string): Promise<UserProfileDTO> {
-  const response = await axios.get(`${USER_API_URL()}/users/${id}`, authConfig());
+  const response = await axios.get(`${USER_API_URL}/users/${id}`, authConfig());
   return response.data;
 }
 
 export async function searchUsers(query: string, page = 1, pageSize = 10): Promise<UserSearchDTO[]> {
-  const response = await axios.get(`${USER_API_URL()}/users/search?query=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`, authConfig());
+  const response = await axios.get(`${USER_API_URL}/users/search?query=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
 export async function getFollowers(id: string, page = 1, pageSize = 10): Promise<UserSearchDTO[]> {
-  const response = await axios.get(`${USER_API_URL()}/users/${id}/followers?page=${page}&pageSize=${pageSize}`, authConfig());
+  const response = await axios.get(`${USER_API_URL}/users/${id}/followers?page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
 export async function getFollowing(id: string, page = 1, pageSize = 10): Promise<UserSearchDTO[]> {
-  const response = await axios.get(`${USER_API_URL()}/users/${id}/following?page=${page}&pageSize=${pageSize}`, authConfig());
+  const response = await axios.get(`${USER_API_URL}/users/${id}/following?page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
 export async function getMyFriends(page = 1, pageSize = 10): Promise<UserSearchDTO[]> {
-  const response = await axios.get(`${USER_API_URL()}/users/my-friends?page=${page}&pageSize=${pageSize}`, authConfig());
+  const response = await axios.get(`${USER_API_URL}/users/my-friends?page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
 export async function followUser(id: string): Promise<boolean> {
-  const response = await axios.post(`${USER_API_URL()}/users/follow/${id}`, null, authConfig());
+  const response = await axios.post(`${USER_API_URL}/users/follow/${id}`, null, authConfig());
   return response.data;
 }
 
 export async function unfollowUser(id: string): Promise<boolean> {
-  const response = await axios.delete(`${USER_API_URL()}/users/unfollow/${id}`, authConfig());
+  const response = await axios.delete(`${USER_API_URL}/users/unfollow/${id}`, authConfig());
   return response.data;
 }
 
 export async function getSuggestedUsers(userId: string, page = 1, pageSize = 10): Promise<UserSearchDTO[]> {
-  const response = await axios.get(`${USER_API_URL()}/users/suggested?userId=${userId}&page=${page}&pageSize=${pageSize}`, authConfig());
+  const response = await axios.get(`${USER_API_URL}/users/suggested?userId=${userId}&page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
@@ -591,14 +374,14 @@ export async function updateUserProfile(updateData: {
   isPrivate?: boolean;
   birthday?: string;
 }): Promise<UserProfileDTO> {
-  const response = await axios.put(`${USER_API_URL()}/users/profile`, updateData, authConfig());
+  const response = await axios.put(`${USER_API_URL}/users/profile`, updateData, authConfig());
   return response.data;
 }
 
 export async function updateUserAvatar(file: File): Promise<{ avatarUrl: string }> {
   const formData = new FormData();
   formData.append('file', file);
-  const response = await axios.post(`${USER_API_URL()}/users/avatar`, formData, {
+  const response = await axios.post(`${USER_API_URL}/users/avatar`, formData, {
     ...authConfig(),
     headers: {
       ...authConfig().headers,
@@ -610,13 +393,13 @@ export async function updateUserAvatar(file: File): Promise<{ avatarUrl: string 
 
 // User wishlists
 export async function getUserWishlists(userId: string, page = 1, pageSize = 20): Promise<WishlistFeedDTO[]> {
-  const response = await axios.get(`${GIFT_API_URL()}/wishlists/user/${userId}?page=${page}&pageSize=${pageSize}`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/wishlists/user/${userId}?page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
 // Liked wishlists
 export async function getLikedWishlists(page = 1, pageSize = 20): Promise<WishlistFeedDTO[]> {
-  const response = await axios.get(`${GIFT_API_URL()}/wishlists/liked?page=${page}&pageSize=${pageSize}`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/wishlists/liked?page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
@@ -656,7 +439,7 @@ export async function createGift(params: {
     form.append('imageFile', params.imageFile);
   }
   const config = authConfig();
-  const response = await axios.post(`${GIFT_API_URL()}/gift`, form, {
+  const response = await axios.post(`${GIFT_API_URL}/gift`, form, {
     ...config,
     headers: {
       ...(config.headers || {}),
@@ -671,28 +454,28 @@ export async function getMyGifts(options?: { category?: string; sortBy?: 'price-
   if (options?.category) query.push(`category=${encodeURIComponent(options.category)}`);
   if (options?.sortBy) query.push(`sortBy=${encodeURIComponent(options.sortBy)}`);
   const qs = query.length ? `?${query.join('&')}` : '';
-  const response = await axios.get(`${GIFT_API_URL()}/gift/wishlist${qs}`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/gift/wishlist${qs}`, authConfig());
   return response.data;
 }
 
 export async function getGiftById(id: string): Promise<GiftDTO> {
-  const response = await axios.get(`${GIFT_API_URL()}/gift/${id}`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/gift/${id}`, authConfig());
   return response.data;
 }
 
 export async function updateGift(id: string, payload: GiftUpdateDTO): Promise<void> {
-  await axios.put(`${GIFT_API_URL()}/gift/${id}`, payload, authConfig());
+  await axios.put(`${GIFT_API_URL}/gift/${id}`, payload, authConfig());
 }
 
 export async function deleteGift(id: string): Promise<void> {
-  await axios.delete(`${GIFT_API_URL()}/gift/${id}`, authConfig());
+  await axios.delete(`${GIFT_API_URL}/gift/${id}`, authConfig());
 }
 
 export async function uploadGiftImage(id: string, file: File): Promise<{ ImageUrl: string }> {
   const form = new FormData();
   form.append('imageFile', file);
   const config = authConfig();
-  const response = await axios.post(`${GIFT_API_URL()}/gift/${id}/upload-image`, form, {
+  const response = await axios.post(`${GIFT_API_URL}/gift/${id}/upload-image`, form, {
     ...config,
     headers: {
       ...(config.headers || {}),
@@ -704,7 +487,7 @@ export async function uploadGiftImage(id: string, file: File): Promise<{ ImageUr
 
 export async function reserveGift(id: string): Promise<{ message: string; reservedBy: string }>{
   try {
-    const response = await axios.post(`${GIFT_API_URL()}/gift/${id}/reserve`, null, authConfig());
+    const response = await axios.post(`${GIFT_API_URL}/gift/${id}/reserve`, null, authConfig());
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -722,7 +505,7 @@ export async function reserveGift(id: string): Promise<{ message: string; reserv
 
 export async function cancelGiftReservation(id: string): Promise<{ message: string }>{
   try {
-    const response = await axios.post(`${GIFT_API_URL()}/gift/${id}/cancel-reserve`, null, authConfig());
+    const response = await axios.post(`${GIFT_API_URL}/gift/${id}/cancel-reserve`, null, authConfig());
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -739,28 +522,28 @@ export async function cancelGiftReservation(id: string): Promise<{ message: stri
 }
 
 export async function getReservedGifts(): Promise<GiftDTO[]> {
-  const response = await axios.get(`${GIFT_API_URL()}/gift/reserved`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/gift/reserved`, authConfig());
   return response.data;
 }
 
 export async function getSharedWishlistGifts(userId: string): Promise<GiftDTO[]> {
-  const response = await axios.get(`${GIFT_API_URL()}/gift/shared/${userId}`, authConfig());
+  const response = await axios.get(`${GIFT_API_URL}/gift/shared/${userId}`, authConfig());
   return response.data;
 }
 
 export async function addGiftToWishlist(giftId: string, wishlistId: string): Promise<{ message: string }> {
-  const response = await axios.post(`${GIFT_API_URL()}/gift/${giftId}/assign-to-wishlist`, { wishlistId }, authConfig());
+  const response = await axios.post(`${GIFT_API_URL}/gift/${giftId}/assign-to-wishlist`, { wishlistId }, authConfig());
   return response.data;
 }
 
 export async function removeGiftFromWishlist(giftId: string): Promise<{ message: string }> {
-  const response = await axios.post(`${GIFT_API_URL()}/gift/${giftId}/remove-from-wishlist`, null, authConfig());
+  const response = await axios.post(`${GIFT_API_URL}/gift/${giftId}/remove-from-wishlist`, null, authConfig());
   return response.data;
 }
 
 // Chat API (Chat microservice)
 export async function createChatToken(userId: string, expiresInMinutes?: number): Promise<{ token: string }> {
-  const response = await axios.post(`${CHAT_API_URL()}/chat/token`, { userId, expiresInMinutes });
+  const response = await axios.post(`${CHAT_API_URL}/chat/token`, { userId, expiresInMinutes });
   return response.data;
 }
 
@@ -773,7 +556,7 @@ export interface CreateOrJoinChannelDTO {
 }
 
 export async function createOrJoinChatChannel(payload: CreateOrJoinChannelDTO): Promise<void> {
-  await axios.post(`${CHAT_API_URL()}/chat/channel`, payload, authConfig());
+  await axios.post(`${CHAT_API_URL}/chat/channel`, payload, authConfig());
 }
 
 export interface SendChatMessageDTO {
@@ -785,7 +568,7 @@ export interface SendChatMessageDTO {
 }
 
 export async function sendChatMessage(payload: SendChatMessageDTO): Promise<{ messageId: string }> {
-  const response = await axios.post(`${CHAT_API_URL()}/chat/message`, payload, authConfig());
+  const response = await axios.post(`${CHAT_API_URL}/chat/message`, payload, authConfig());
   return response.data;
 }
 
@@ -803,17 +586,17 @@ export interface ChatHistoryItemDTO {
 }
 
 export async function getChatHistory(userA: string, userB: string, page = 0, pageSize = 50): Promise<ChatHistoryItemDTO[]> {
-  const response = await axios.get(`${CHAT_API_URL()}/chat/history?userA=${encodeURIComponent(userA)}&userB=${encodeURIComponent(userB)}&page=${page}&pageSize=${pageSize}`, authConfig());
+  const response = await axios.get(`${CHAT_API_URL}/chat/history?userA=${encodeURIComponent(userA)}&userB=${encodeURIComponent(userB)}&page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
 export async function editChatMessage(messageId: string, newText: string): Promise<{ updated: boolean }> {
-  const response = await axios.post(`${CHAT_API_URL()}/chat/message/edit`, { messageId, newText }, authConfig());
+  const response = await axios.post(`${CHAT_API_URL}/chat/message/edit`, { messageId, newText }, authConfig());
   return response.data;
 }
 
 export async function deleteChatMessage(messageId: string): Promise<{ deleted: boolean }> {
-  const response = await axios.post(`${CHAT_API_URL()}/chat/message/delete`, { messageId }, authConfig());
+  const response = await axios.post(`${CHAT_API_URL}/chat/message/delete`, { messageId }, authConfig());
   return response.data;
 }
 
@@ -840,7 +623,7 @@ export async function getPinnedMessages(meUserId: string, peerUserId: string): P
       const supported = localStorage.getItem('chat:pins:supported');
       if (supported === '0') throw { response: { status: 404 } } as any;
     }
-    const response = await axios.get(`${CHAT_API_URL()}/chat/pins?me=${encodeURIComponent(meUserId)}&peer=${encodeURIComponent(peerUserId)}`, authConfig());
+    const response = await axios.get(`${CHAT_API_URL}/chat/pins?me=${encodeURIComponent(meUserId)}&peer=${encodeURIComponent(peerUserId)}`, authConfig());
     if (typeof window !== 'undefined') localStorage.setItem('chat:pins:supported', '1');
     return response.data;
   } catch (e: any) {
@@ -870,7 +653,7 @@ export async function pinChatMessage(params: { me: string; peer: string; message
       const supported = localStorage.getItem('chat:pins:supported');
       if (supported === '0') throw { response: { status: 404 } } as any;
     }
-    const response = await axios.post(`${CHAT_API_URL()}/chat/pins`, params, authConfig());
+    const response = await axios.post(`${CHAT_API_URL}/chat/pins`, params, authConfig());
     if (typeof window !== 'undefined') localStorage.setItem('chat:pins:supported', '1');
     return response.data;
   } catch (e: any) {
@@ -899,7 +682,7 @@ export async function unpinChatMessage(params: { me: string; peer: string; messa
       const supported = localStorage.getItem('chat:pins:supported');
       if (supported === '0') throw { response: { status: 404 } } as any;
     }
-    const response = await axios.request({ method: 'DELETE', url: `${CHAT_API_URL()}/chat/pins`, data: params, ...authConfig() });
+    const response = await axios.request({ method: 'DELETE', url: `${CHAT_API_URL}/chat/pins`, data: params, ...authConfig() });
     if (typeof window !== 'undefined') localStorage.setItem('chat:pins:supported', '1');
     return response.data;
   } catch (e: any) {
@@ -922,12 +705,12 @@ export async function unpinChatMessage(params: { me: string; peer: string; messa
 
 // Chat preferences (e.g., per-conversation wallpaper)
 export async function getConversationWallpaper(meUserId: string, peerUserId: string): Promise<{ url: string | null }> {
-  const response = await axios.get(`${CHAT_API_URL()}/chat/preferences/wallpaper?me=${encodeURIComponent(meUserId)}&peer=${encodeURIComponent(peerUserId)}`, authConfig());
+  const response = await axios.get(`${CHAT_API_URL}/chat/preferences/wallpaper?me=${encodeURIComponent(meUserId)}&peer=${encodeURIComponent(peerUserId)}`, authConfig());
   return response.data;
 }
 
 export async function setConversationWallpaper(meUserId: string, peerUserId: string, url: string | null): Promise<{ saved: boolean }> {
-  const response = await axios.post(`${CHAT_API_URL()}/chat/preferences/wallpaper`, { me: meUserId, peer: peerUserId, url }, authConfig());
+  const response = await axios.post(`${CHAT_API_URL}/chat/preferences/wallpaper`, { me: meUserId, peer: peerUserId, url }, authConfig());
   return response.data;
 }
 
@@ -943,7 +726,7 @@ export interface WallpaperCatalogItemDTO {
 }
 
 export async function getWallpaperCatalog(userId?: string): Promise<WallpaperCatalogItemDTO[]> {
-  const url = userId ? `${CHAT_API_URL()}/chat/wallpapers?userId=${encodeURIComponent(userId)}` : `${CHAT_API_URL()}/chat/wallpapers`;
+  const url = userId ? `${CHAT_API_URL}/chat/wallpapers?userId=${encodeURIComponent(userId)}` : `${CHAT_API_URL}/chat/wallpapers`;
   const response = await axios.get(url, authConfig());
   return response.data;
 }
@@ -977,7 +760,7 @@ export async function uploadCustomWallpaper(
   form.append('supportsDark', supportsDark.toString());
   form.append('supportsLight', supportsLight.toString());
 
-  const response = await axios.post(`${CHAT_API_URL()}/chat/upload-wallpaper`, form, {
+  const response = await axios.post(`${CHAT_API_URL}/chat/upload-wallpaper`, form, {
     ...authConfig(),
     headers: {
       'Content-Type': 'multipart/form-data',
@@ -987,12 +770,12 @@ export async function uploadCustomWallpaper(
 }
 
 export async function getCustomWallpapers(userId: string): Promise<WallpaperCatalogItemDTO[]> {
-  const response = await axios.get(`${CHAT_API_URL()}/chat/custom-wallpapers?userId=${encodeURIComponent(userId)}`, authConfig());
+  const response = await axios.get(`${CHAT_API_URL}/chat/custom-wallpapers?userId=${encodeURIComponent(userId)}`, authConfig());
   return response.data;
 }
 
 export async function deleteCustomWallpaper(wallpaperId: string, userId: string): Promise<{ deleted: boolean }> {
-  const response = await axios.delete(`${CHAT_API_URL()}/chat/custom-wallpapers/${encodeURIComponent(wallpaperId)}?userId=${encodeURIComponent(userId)}`, authConfig());
+  const response = await axios.delete(`${CHAT_API_URL}/chat/custom-wallpapers/${encodeURIComponent(wallpaperId)}?userId=${encodeURIComponent(userId)}`, authConfig());
   return response.data;
 }
 
@@ -1002,18 +785,18 @@ export interface WallpaperPrefDTO {
   wallpaperUrl?: string | null; 
 }
 export async function getConversationWallpaperPref(meUserId: string, peerUserId: string): Promise<WallpaperPrefDTO> {
-  const response = await axios.get(`${CHAT_API_URL()}/chat/preferences/wallpaper?me=${encodeURIComponent(meUserId)}&peer=${encodeURIComponent(peerUserId)}`, authConfig());
+  const response = await axios.get(`${CHAT_API_URL}/chat/preferences/wallpaper?me=${encodeURIComponent(meUserId)}&peer=${encodeURIComponent(peerUserId)}`, authConfig());
   return response.data;
 }
 
 export async function setConversationWallpaperPref(params: { me: string; peer: string; wallpaperId: string | null; opacity?: number }): Promise<{ saved: boolean }>{
-  const response = await axios.post(`${CHAT_API_URL()}/chat/preferences/wallpaper`, params, authConfig());
+  const response = await axios.post(`${CHAT_API_URL}/chat/preferences/wallpaper`, params, authConfig());
   return response.data;
 }
 
 // Build absolute URLs for chat-server static assets (e.g., /wallpapers/*.svg)
 export function chatAssetUrl(relativePath: string): string {
-  const base = (CHAT_API_URL() || '').replace(/\/?api$/i, '');
+  const base = (CHAT_API_URL || '').replace(/\/?api$/i, '');
   const path = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
   return `${base}${path}`;
 }
@@ -1023,7 +806,7 @@ export async function uploadChatMedia(file: File): Promise<{ url: string; mediaT
   const form = new FormData();
   form.append('file', file);
   const config = authConfig();
-  const response = await axios.post(`${CHAT_API_URL()}/chat/upload-media`, form, {
+  const response = await axios.post(`${CHAT_API_URL}/chat/upload-media`, form, {
     ...config,
     headers: {
       ...(config.headers || {}),
@@ -1054,46 +837,46 @@ export interface NotificationCountDTO {
 }
 
 export async function getNotifications(page = 1, pageSize = 20) {
-  // Use user service since NotificationsController is in user_service
-  const userServiceUrl = USER_API_URL();
+  // Use user service port 5001 since NotificationsController is in user_service
+  const userServiceUrl = 'http://localhost:5001/api';
   const response = await axios.get(`${userServiceUrl}/notifications?page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
 export async function getUnreadNotificationCount(): Promise<number> {
-  // Use user service
-  const userServiceUrl = USER_API_URL();
+  // Use user service port 5001
+  const userServiceUrl = 'http://localhost:5001/api';
   const response = await axios.get(`${userServiceUrl}/notifications/unread-count`, authConfig());
   return response.data.unreadCount;
 }
 
 export async function markNotificationAsRead(notificationId: string): Promise<void> {
-  // Use user service - mark-read endpoint expects array of IDs
-  const userServiceUrl = USER_API_URL();
+  // Use user service port 5001 - mark-read endpoint expects array of IDs
+  const userServiceUrl = 'http://localhost:5001/api';
   await axios.put(`${userServiceUrl}/notifications/mark-read`, {
     notificationIds: [notificationId]
   }, authConfig());
 }
 
 export async function markAllNotificationsAsRead(): Promise<void> {
-  // Use user service
-  const userServiceUrl = USER_API_URL();
+  // Use user service port 5001
+  const userServiceUrl = 'http://localhost:5001/api';
   await axios.put(`${userServiceUrl}/notifications/mark-all-read`, null, authConfig());
 }
 
 export async function deleteNotification(notificationId: string): Promise<void> {
-  // Use user service
-  const userServiceUrl = USER_API_URL();
+  // Use user service port 5001
+  const userServiceUrl = 'http://localhost:5001/api';
   await axios.delete(`${userServiceUrl}/notifications/${notificationId}`, authConfig());
 }
 
 export async function getUpcomingBirthdays(daysAhead: number = 7): Promise<BirthdayReminderDTO[]> {
   try {
-    console.log('API: Fetching birthdays from:', `${USER_API_URL()}/notifications/birthdays?daysAhead=${daysAhead}`);
-    console.log('API: USER_API_URL():', USER_API_URL());
+    console.log('API: Fetching birthdays from:', `${USER_API_URL}/notifications/birthdays?daysAhead=${daysAhead}`);
+    console.log('API: USER_API_URL:', USER_API_URL);
     
     // Try the user service first
-    const response = await axios.get(`${USER_API_URL()}/notifications/birthdays?daysAhead=${daysAhead}`, authConfig());
+    const response = await axios.get(`${USER_API_URL}/notifications/birthdays?daysAhead=${daysAhead}`, authConfig());
     console.log('API: Birthday response:', response.data);
     
     // The backend now returns BirthdayReminderDTO[] directly
@@ -1139,7 +922,7 @@ export async function getUpcomingBirthdays(daysAhead: number = 7): Promise<Birth
         
         // Try without /api prefix
         try {
-          const altResponse = await axios.get(`${USER_API_URL().replace('/api', '')}/notifications/birthdays?daysAhead=7`, authConfig());
+          const altResponse = await axios.get(`${USER_API_URL.replace('/api', '')}/notifications/birthdays?daysAhead=7`, authConfig());
           console.log('API: Alternative endpoint success:', altResponse.data);
           return altResponse.data;
         } catch (altError) {
@@ -1155,7 +938,7 @@ export async function getUpcomingBirthdays(daysAhead: number = 7): Promise<Birth
 }
 
 export async function updateUserBirthday(birthday: string): Promise<void> {
-  await axios.put(`${USER_API_URL()}/users/birthday`, { birthday }, authConfig());
+  await axios.put(`${USER_API_URL}/users/birthday`, { birthday }, authConfig());
 }
 
 // Events API
@@ -1166,57 +949,57 @@ export async function createEvent(eventData: CreateEventRequest): Promise<Event>
     eventTime: eventData.eventTime ? `${eventData.eventTime}:00` : undefined
   };
   
-  const response = await axios.post(`${USER_API_URL()}/events`, formattedData, authConfig());
+  const response = await axios.post(`${USER_API_URL}/events`, formattedData, authConfig());
   return response.data;
 }
 
 export async function getEventById(id: string): Promise<Event> {
-  const response = await axios.get(`${USER_API_URL()}/events/${id}`, authConfig());
+  const response = await axios.get(`${USER_API_URL}/events/${id}`, authConfig());
   return response.data;
 }
 
 export async function getMyEvents(page = 1, pageSize = 10): Promise<EventListResponse> {
-  const response = await axios.get(`${USER_API_URL()}/events/my-events?page=${page}&pageSize=${pageSize}`, authConfig());
+  const response = await axios.get(`${USER_API_URL}/events/my-events?page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
 export async function getInvitedEvents(page = 1, pageSize = 10): Promise<EventListResponse> {
-  const response = await axios.get(`${USER_API_URL()}/events/invited-events?page=${page}&pageSize=${pageSize}`, authConfig());
+  const response = await axios.get(`${USER_API_URL}/events/invited-events?page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
 export async function updateEvent(id: string, eventData: UpdateEventRequest): Promise<Event> {
-  const response = await axios.put(`${USER_API_URL()}/events/${id}`, eventData, authConfig());
+  const response = await axios.put(`${USER_API_URL}/events/${id}`, eventData, authConfig());
   return response.data;
 }
 
 export async function cancelEvent(id: string): Promise<{ message: string; success: boolean }> {
-  const response = await axios.put(`${USER_API_URL()}/events/${id}/cancel`, null, authConfig());
+  const response = await axios.put(`${USER_API_URL}/events/${id}/cancel`, null, authConfig());
   return response.data;
 }
 
 export async function deleteEvent(id: string): Promise<{ message: string; success: boolean }> {
-  const response = await axios.delete(`${USER_API_URL()}/events/${id}`, authConfig());
+  const response = await axios.delete(`${USER_API_URL}/events/${id}`, authConfig());
   return response.data;
 }
 
 export async function getEventInvitations(eventId: string): Promise<EventInvitation[]> {
-  const response = await axios.get(`${USER_API_URL()}/events/${eventId}/invitations`, authConfig());
+  const response = await axios.get(`${USER_API_URL}/events/${eventId}/invitations`, authConfig());
   return response.data;
 }
 
 // Event Invitations API
 export async function getMyInvitations(page = 1, pageSize = 10): Promise<EventInvitationListResponse> {
-  const response = await axios.get(`${USER_API_URL()}/events/my-invitations?page=${page}&pageSize=${pageSize}`, authConfig());
+  const response = await axios.get(`${USER_API_URL}/events/my-invitations?page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
 export async function getPendingInvitations(page = 1, pageSize = 10): Promise<EventInvitationListResponse> {
-  const response = await axios.get(`${USER_API_URL()}/events/my-invitations?page=${page}&pageSize=${pageSize}`, authConfig());
+  const response = await axios.get(`${USER_API_URL}/events/my-invitations?page=${page}&pageSize=${pageSize}`, authConfig());
   return response.data;
 }
 
 export async function respondToInvitation(invitationId: string, response: RespondToInvitationRequest): Promise<EventInvitation> {
-  const axiosResponse = await axios.post(`${USER_API_URL()}/events/invitations/${invitationId}/respond`, response, authConfig());
+  const axiosResponse = await axios.post(`${USER_API_URL}/events/invitations/${invitationId}/respond`, response, authConfig());
   return axiosResponse.data;
 }

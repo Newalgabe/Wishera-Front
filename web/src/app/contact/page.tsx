@@ -48,7 +48,7 @@ function ContactForm() {
 
     try {
       // Create mailto link for email functionality
-      const mailtoLink = `mailto:hello@wishlistapp.com?subject=${encodeURIComponent(formData.subject)}&body=${encodeURIComponent(`Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`)}`;
+      const mailtoLink = `mailto:wisheraapp@gmail.com?subject=${encodeURIComponent(formData.subject)}&body=${encodeURIComponent(`Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`)}`;
       
       // Open default email client
       window.location.href = mailtoLink;

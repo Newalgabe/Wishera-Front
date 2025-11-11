@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { 
   HomeIcon, 
@@ -51,11 +51,10 @@ import {
     deleteGift,
     reserveGift,
     cancelGiftReservation,
-    addGiftToWishlist,
     type GiftDTO,
     getSuggestedUsers,
 } from "../api";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import ThemeToggle from "../../components/ThemeToggle";
 import LanguageSelector from "../../components/LanguageSelector";
 import UserSearchAutocomplete from "../../components/UserSearchAutocomplete";
@@ -80,10 +79,9 @@ type UIWishlist = {
 };
 
 
-function Dashboard() {
+export default function Dashboard() {
   const { t } = useLanguage();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { logout } = useAuth();
   const [wishlists, setWishlists] = useState<UIWishlist[]>([]);
   const [likedWishlists, setLikedWishlists] = useState<WishlistFeedDTO[]>([]);
@@ -160,18 +158,6 @@ function Dashboard() {
   useEffect(() => {
     console.log('Dashboard: showBirthdayNotification state:', showBirthdayNotification);
   }, [showBirthdayNotification]);
-
-  // Check for create query parameter and open modal
-  useEffect(() => {
-    const createParam = searchParams?.get('create');
-    if (createParam === 'true') {
-      setIsCreateOpen(true);
-      loadAvailableGifts();
-      // Clean up URL
-      router.replace('/dashboard');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
 
 
   // Get current user ID (kept in state so it updates if we derive it from JWT)
@@ -1259,7 +1245,7 @@ function Dashboard() {
                                 onClick={async () => {
                                   setActiveDropdown(null);
                                   try {
-                                    const shareUrl = `https://wishera.vercel.app/wishlist/${wishlist.id}`;
+                                    const shareUrl = `${window.location.origin}/wishlist/${wishlist.id}`;
                                     await navigator.clipboard.writeText(shareUrl);
                                     setSuccessMessage(t('dashboard.wishlistShared'));
                                     setTimeout(() => setSuccessMessage(null), 3000);
@@ -1267,7 +1253,7 @@ function Dashboard() {
                                     console.error('Failed to copy to clipboard:', error);
                                     // Fallback for older browsers
                                     const textArea = document.createElement('textarea');
-                                    textArea.value = `https://wishera.vercel.app/wishlist/${wishlist.id}`;
+                                    textArea.value = `${window.location.origin}/wishlist/${wishlist.id}`;
                                     document.body.appendChild(textArea);
                                     textArea.select();
                                     document.execCommand('copy');
@@ -1504,11 +1490,37 @@ function Dashboard() {
                                 hasImage: !!giftForm.imageFile
                               });
                               
-                              // Create gift without wishlist assignment - user must manually assign it later
+                              // Get user's wishlists to associate the gift with one
+                              let wishlistId: string | undefined;
+                              try {
+                                const userWishlists = await getUserWishlists(currentUserId || '');
+                                if (userWishlists.length > 0) {
+                                  // Use the first wishlist
+                                  wishlistId = userWishlists[0].id;
+                                  console.log('Associating gift with wishlist:', wishlistId);
+                                } else {
+                                  // Create a default wishlist for the user
+                                  console.log('No wishlists found, creating default wishlist');
+                                  const defaultWishlist = await createWishlist({
+                                    title: 'My Wishlist',
+                                    description: 'Default wishlist for my gifts',
+                                    category: 'General',
+                                    isPublic: false,
+                                    allowedViewerIds: []
+                                  });
+                                  wishlistId = defaultWishlist.id;
+                                  console.log('Created default wishlist:', wishlistId);
+                                }
+                              } catch (error) {
+                                console.error('Failed to get/create wishlist:', error);
+                                // Continue without wishlistId - gift will be orphaned but created
+                              }
+                              
                               await createGift({
                                 name: giftForm.name.trim(),
                                 price: priceNumber,
                                 category: giftForm.category.trim() || 'General',
+                                wishlistId: wishlistId,
                                 imageFile: giftForm.imageFile || undefined,
                               });
                               setGiftForm({ name: '', price: '', category: '', imageFile: null });
@@ -1809,14 +1821,14 @@ function Dashboard() {
                                 onClick={async () => {
                                   setActiveDropdown(null);
                                   try {
-                                    const shareUrl = `https://wishera.vercel.app/wishlist/${wishlist.id}`;
+                                    const shareUrl = `${window.location.origin}/wishlist/${wishlist.id}`;
                                     await navigator.clipboard.writeText(shareUrl);
                                     setSuccessMessage(t('dashboard.wishlistShared'));
                                     setTimeout(() => setSuccessMessage(null), 3000);
                                   } catch (error) {
                                     console.error('Failed to copy to clipboard:', error);
                                     const textArea = document.createElement('textarea');
-                                    textArea.value = `https://wishera.vercel.app/wishlist/${wishlist.id}`;
+                                    textArea.value = `${window.location.origin}/wishlist/${wishlist.id}`;
                                     document.body.appendChild(textArea);
                                     textArea.select();
                                     document.execCommand('copy');
@@ -2128,41 +2140,19 @@ function Dashboard() {
                           ))}
                         </select>
                       </div>
-                      <div className="space-y-2">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const newGifts = [...createForm.gifts];
-                              newGifts[index] = { ...newGifts[index], imageFile: file };
-                              setCreateForm({ ...createForm, gifts: newGifts });
-                            }
-                          }}
-                          className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
-                        />
-                        {gift.imageFile && (
-                          <div className="relative">
-                            <img
-                              src={URL.createObjectURL(gift.imageFile)}
-                              alt="Preview"
-                              className="w-full h-32 object-cover rounded border border-gray-300 dark:border-gray-600"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newGifts = [...createForm.gifts];
-                                newGifts[index] = { ...newGifts[index], imageFile: undefined };
-                                setCreateForm({ ...createForm, gifts: newGifts });
-                              }}
-                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const newGifts = [...createForm.gifts];
+                            newGifts[index] = { ...newGifts[index], imageFile: file };
+                            setCreateForm({ ...createForm, gifts: newGifts });
+                          }
+                        }}
+                        className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
                     </div>
                   ))}
                   
@@ -2232,15 +2222,30 @@ function Dashboard() {
                         const existingGift = availableGifts.find(g => g.id === giftId);
                         if (existingGift) {
                           try {
-                            // Use the proper API function to add gift to wishlist
-                            await addGiftToWishlist(giftId, created.id);
-                            addedGifts.push({
-                              id: existingGift.id,
-                              name: existingGift.name,
-                              price: existingGift.price,
-                              category: existingGift.category,
-                              imageUrl: existingGift.imageUrl
+                            // Update the existing gift to link it to this wishlist
+                            const giftResponse = await fetch(`${process.env.NEXT_PUBLIC_GIFT_API_URL || 'http://localhost:5003/api'}/gifts/${giftId}`, {
+                              method: 'PUT',
+                              headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                                'Content-Type': 'application/json'
+                              },
+                              body: JSON.stringify({
+                                name: existingGift.name,
+                                price: existingGift.price,
+                                category: existingGift.category,
+                                wishlistId: created.id
+                              })
                             });
+                            
+                            if (giftResponse.ok) {
+                              addedGifts.push({
+                                id: existingGift.id,
+                                name: existingGift.name,
+                                price: existingGift.price,
+                                category: existingGift.category,
+                                imageUrl: existingGift.imageUrl
+                              });
+                            }
                           } catch (giftError) {
                             console.error('Failed to add existing gift:', giftError);
                             // Continue with other gifts even if one fails
@@ -2252,23 +2257,33 @@ function Dashboard() {
                       for (const gift of createForm.gifts) {
                         if (gift.name.trim()) {
                           try {
-                            // Use the proper API function to create gift
-                            const giftResult = await createGift({
-                              name: gift.name,
-                              price: parseFloat(gift.price) || 0,
-                              category: gift.category || 'Other',
-                              wishlistId: created.id,
-                              imageFile: gift.imageFile || undefined
+                            const giftData = new FormData();
+                            giftData.append('name', gift.name);
+                            giftData.append('price', gift.price || '0');
+                            giftData.append('category', gift.category || '');
+                            giftData.append('wishlistId', created.id);
+                            if (gift.imageFile) {
+                              giftData.append('imageFile', gift.imageFile);
+                            }
+                            
+                            const giftResponse = await fetch(`${process.env.NEXT_PUBLIC_GIFT_API_URL || 'http://localhost:5003/api'}/gifts`, {
+                              method: 'POST',
+                              headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                              },
+                              body: giftData
                             });
                             
-                            // Gift is automatically added to wishlist when wishlistId is provided
-                            addedGifts.push({
-                              id: giftResult.id,
-                              name: gift.name,
-                              price: parseFloat(gift.price) || 0,
-                              category: gift.category,
-                              imageUrl: gift.imageFile ? 'uploaded' : null
-                            });
+                            if (giftResponse.ok) {
+                              const giftResult = await giftResponse.json();
+                              addedGifts.push({
+                                id: giftResult.id,
+                                name: gift.name,
+                                price: parseFloat(gift.price) || 0,
+                                category: gift.category,
+                                imageUrl: gift.imageFile ? 'uploaded' : null
+                              });
+                            }
                           } catch (giftError) {
                             console.error('Failed to create gift:', giftError);
                             // Continue with other gifts even if one fails
@@ -2738,21 +2753,4 @@ function Dashboard() {
       )}
     </div>
   );
-}
-
-function DashboardWrapper() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
-        </div>
-      </div>
-    }>
-      <Dashboard />
-    </Suspense>
-  );
-}
-
-export default DashboardWrapper; 
+} 
