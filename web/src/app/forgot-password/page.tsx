@@ -2,6 +2,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { forgotPassword } from "../api";
 import Notification from "../../components/Notification";
 import { useLanguage } from "../../contexts/LanguageContext";
@@ -21,6 +22,7 @@ function AnimatedBlobs() {
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
   const [notification, setNotification] = useState<{
     type: 'success' | 'error';
     message: string;
@@ -38,24 +40,27 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     setNotification({ type: 'success', message: '', isVisible: false });
     
-          try {
-        await forgotPassword(email);
-        setNotification({
-          type: 'success',
-          message: t('forgotPassword.successMessage'),
-          isVisible: true
-        });
-        setEmail("");
-      } catch (err: any) {
-        setNotification({
-          type: 'error',
-          message: err.response?.data?.message || t('forgotPassword.errorMessage'),
-          isVisible: true
-        });
-      } finally {
-        setLoading(false);
-      }
-  }, [email]);
+    try {
+      await forgotPassword(email);
+      setNotification({
+        type: 'success',
+        message: t('forgotPassword.successMessage'),
+        isVisible: true
+      });
+      // Navigate to verify code screen with email
+      setTimeout(() => {
+        router.push(`/verify-code?email=${encodeURIComponent(email)}&type=reset`);
+      }, 1500);
+    } catch (err: any) {
+      setNotification({
+        type: 'error',
+        message: err.response?.data?.message || err.message || t('forgotPassword.errorMessage'),
+        isVisible: true
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [email, router, t]);
 
   const closeNotification = () => {
     setNotification(prev => ({ ...prev, isVisible: false }));

@@ -59,15 +59,22 @@ export default function LoginPage() {
         router.push("/dashboard");
       }, 1500);
     } catch (err: any) {
+      // Check if login code is required
+      if (err.code === 'LOGIN_CODE_REQUIRED' && err.email) {
+        // Navigate to code verification screen for login
+        router.push(`/verify-code?email=${encodeURIComponent(err.email)}&type=login`);
+        return;
+      }
+      
       setNotification({
         type: 'error',
-        message: err.response?.data?.message || t('auth.loginFailed'),
+        message: err.response?.data?.message || err.message || t('auth.loginFailed'),
         isVisible: true
       });
     } finally {
       setLoading(false);
     }
-  }, [email, password, router]);
+  }, [email, password, router, t]);
 
   const closeNotification = () => {
     setNotification(prev => ({ ...prev, isVisible: false }));

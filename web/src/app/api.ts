@@ -18,6 +18,9 @@ axios.interceptors.request.use((config) => {
       || url.includes('/auth/register')
       || url.includes('/auth/forgot-password')
       || url.includes('/auth/reset-password')
+      || url.includes('/auth/verify-reset-code')
+      || url.includes('/auth/verify-login-code')
+      || url.includes('/auth/resend-login-code')
       || url.includes('/auth/check-email')
       || url.includes('/auth/check-username');
 
@@ -75,6 +78,10 @@ export async function login(email: string, password: string) {
       if (error.code === 'ECONNREFUSED') {
         throw new Error('Authentication service is not available. Please check if the auth service is running on port 5219.');
       }
+      // Check if login code is required
+      if (error.response?.data?.message === 'LOGIN_CODE_REQUIRED') {
+        throw { code: 'LOGIN_CODE_REQUIRED', email };
+      }
       if (error.response?.status === 401) {
         throw new Error('Invalid email or password.');
       }
@@ -115,7 +122,12 @@ export async function register(username: string, email: string, password: string
 }
 
 export async function forgotPassword(email: string) {
-  const response = await axios.post(`${AUTH_API_URL}/auth/forgot-password`, { email });
+  // Add X-Client-Type header to indicate this is a mobile request (to get codes instead of links)
+  const response = await axios.post(`${AUTH_API_URL}/auth/forgot-password`, { email }, {
+    headers: {
+      'X-Client-Type': 'mobile'
+    }
+  });
   return response.data;
 }
 
@@ -134,6 +146,21 @@ export async function deleteAccount() {
 
 export async function resetPassword(token: string, newPassword: string) {
   const response = await axios.post(`${AUTH_API_URL}/auth/reset-password`, { token, newPassword });
+  return response.data;
+}
+
+export async function verifyResetCode(email: string, code: string) {
+  const response = await axios.post(`${AUTH_API_URL}/auth/verify-reset-code`, { email, code });
+  return response.data;
+}
+
+export async function verifyLoginCode(email: string, code: string) {
+  const response = await axios.post(`${AUTH_API_URL}/auth/verify-login-code`, { email, code });
+  return response.data;
+}
+
+export async function resendLoginCode(email: string) {
+  const response = await axios.post(`${AUTH_API_URL}/auth/resend-login-code`, { email });
   return response.data;
 }
 
