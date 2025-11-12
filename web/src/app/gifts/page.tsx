@@ -1,6 +1,7 @@
 "use client";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import type { AxiosError } from "axios";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type ApiError = { message?: string } | undefined;
 import { useRouter, useSearchParams } from "next/navigation";
@@ -18,6 +19,7 @@ type SortBy = "price-asc" | "price-desc" | "name-asc" | "name-desc" | "";
 
 function GiftsPageInner() {
   const router = useRouter();
+  const { t } = useLanguage();
   const params = useSearchParams();
   const sharedUserId = params.get("userId");
 
@@ -124,18 +126,52 @@ function GiftsPageInner() {
   }
 
   async function handleReserve(id: string, isReserved: boolean) {
+    const currentUserId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
+    const gift = gifts.find(g => g.id === id);
+    
+    // Check if gift is already reserved by someone else
+    if (!isReserved && gift?.reservedByUserId && gift.reservedByUserId !== currentUserId) {
+      setError(t('reservedGifts.alreadyReserved'));
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+    
     try {
       if (isReserved) {
         await cancelGiftReservation(id);
         setGifts(prev => prev.map(g => g.id === id ? { ...g, reservedByUserId: null, reservedByUsername: null } : g));
       } else {
         const res = await reserveGift(id);
-        const currentUserId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
-        setGifts(prev => prev.map(g => g.id === id ? { ...g, reservedByUserId: currentUserId || g.reservedByUserId, reservedByUsername: res.reservedBy } : g));
+        setGifts(prev => prev.map(g => g.id === id ? { ...g, reservedByUserId: currentUserId || g.reservedByUserId, reservedByUsername: null } : g));
       }
     } catch (error) {
       console.error('Failed to reserve/cancel gift:', error);
-      setError('Failed to reserve/cancel gift. Please try again.');
+      let errorMessage = t('reservedGifts.reserveError');
+      
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as any;
+        const errorMsg = axiosError.response?.data?.message || axiosError.message || '';
+        
+        // Check if gift is already reserved
+        if (errorMsg.toLowerCase().includes('already reserved') || 
+            (errorMsg.toLowerCase().includes('reserved') && !isReserved) ||
+            axiosError.response?.status === 409 || // Conflict status
+            (axiosError.response?.status === 400 && errorMsg.toLowerCase().includes('reserved'))) {
+          errorMessage = t('reservedGifts.alreadyReserved');
+        } else if (errorMsg) {
+          errorMessage = errorMsg;
+        }
+      } else if (error && typeof error === 'object' && 'message' in error) {
+        const errorMsg = (error as Error).message;
+        if (errorMsg.toLowerCase().includes('already reserved') || 
+            errorMsg.toLowerCase().includes('reserved')) {
+          errorMessage = t('reservedGifts.alreadyReserved');
+        } else {
+          errorMessage = errorMsg;
+        }
+      }
+      
+      setError(errorMessage);
       setTimeout(() => setError(null), 3000);
     }
   }
@@ -227,8 +263,8 @@ function GiftsPageInner() {
                       <div className="font-medium">{g.name}</div>
                       <div className="text-indigo-600 font-semibold">${g.price}</div>
                       <div className="text-sm text-gray-500">{g.category}</div>
-                      {g.reservedByUsername ? (
-                        <div className="text-xs text-amber-600">Reserved by {g.reservedByUsername}</div>
+                      {g.reservedByUserId ? (
+                        <div className="text-xs text-amber-600">Reserved</div>
                       ) : (
                         <div className="text-xs text-green-600">Available</div>
                       )}
@@ -240,21 +276,16 @@ function GiftsPageInner() {
                           >Delete</button>
                         )}
                         <button
-                          onClick={() => handleReserve(g.id, !!g.reservedByUserId)}
+                          onClick={() => handleReserve(g.id, !!g.reservedByUserId && g.reservedByUserId === (typeof window !== 'undefined' ? localStorage.getItem('userId') : null))}
                           className={`px-2 py-1 text-sm rounded ${
-                            g.reservedByUserId && g.reservedByUserId !== (typeof window !== 'undefined' ? localStorage.getItem('userId') : null)
-                              ? 'bg-gray-400 text-white cursor-not-allowed'
-                              : g.reservedByUserId
-                                ? 'bg-orange-600 text-white'
-                                : 'bg-indigo-600 text-white'
+                            g.reservedByUserId && g.reservedByUserId === (typeof window !== 'undefined' ? localStorage.getItem('userId') : null)
+                              ? 'bg-orange-600 text-white'
+                              : 'bg-indigo-600 text-white'
                           }`}
-                          disabled={g.reservedByUserId && g.reservedByUserId !== (typeof window !== 'undefined' ? localStorage.getItem('userId') : null)}
                         >
                           {g.reservedByUserId && g.reservedByUserId === (typeof window !== 'undefined' ? localStorage.getItem('userId') : null)
                             ? "Cancel"
-                            : g.reservedByUserId
-                              ? "Reserved"
-                              : "Reserve"}
+                            : "Reserve"}
                         </button>
                       </div>
                     </div>

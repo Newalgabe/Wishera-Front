@@ -69,9 +69,8 @@ export default function WishlistDetailsPage() {
         console.log('Wishlist owner ID:', details.userId);
         console.log('Is owner:', details.isOwner);
         setWishlist(details);
-        // For now, we'll assume the user is not following since we don't have this info in the wishlist response
-        // In a real app, you might want to make a separate API call to check follow status
-        setIsFollowing(false);
+        // Set follow status from the wishlist response
+        setIsFollowing(details.isFollowing ?? false);
       } catch (error: unknown) {
         console.error('Failed to load wishlist details:', error);
         const errorMessage = error && typeof error === 'object' && 'response' in error 
@@ -113,6 +112,7 @@ export default function WishlistDetailsPage() {
       // Reload wishlist details to show the new gift
       const details = await getWishlistDetails(wishlistId);
       setWishlist(details);
+      setIsFollowing(details.isFollowing ?? false);
       
       // Hide the gift selector
       setShowGiftSelector(false);
@@ -151,6 +151,7 @@ export default function WishlistDetailsPage() {
       setTimeout(() => setSuccessMessage(null), 3000);
       const details = await getWishlistDetails(wishlistId);
       setWishlist(details);
+      setIsFollowing(details.isFollowing ?? false);
       // reset form
       setCreateGiftForm({ name: "", price: "", category: "", imageFile: null });
       setShowGiftSelector(false);
@@ -175,6 +176,7 @@ export default function WishlistDetailsPage() {
       // Reload wishlist details to reflect the removal
       const details = await getWishlistDetails(wishlistId);
       setWishlist(details);
+      setIsFollowing(details.isFollowing ?? false);
     } catch (error: unknown) {
       console.error('Failed to remove gift from wishlist:', error);
       const errorMessage = error && typeof error === 'object' && 'response' in error 
@@ -186,6 +188,14 @@ export default function WishlistDetailsPage() {
 
   const handleReserveGift = async (giftId: string, isReserved: boolean) => {
     if (!wishlist) return;
+    
+    // Check if gift is already reserved by someone else before making API call
+    const gift = wishlist.items?.find(g => g.giftId === giftId);
+    if (!isReserved && gift?.isReserved && gift.reservedByUserId !== currentUserId) {
+      setError(t('reservedGifts.alreadyReserved'));
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
     
     console.log('Reserving gift:', { giftId, isReserved, wishlistItems: wishlist.items?.length });
     setReservingGiftId(giftId);
@@ -222,28 +232,32 @@ export default function WishlistDetailsPage() {
     try {
       if (isReserved) {
         await cancelGiftReservation(giftId);
-        setSuccessMessage('Gift reservation cancelled successfully!');
+        setSuccessMessage(t('reservedGifts.cancelSuccess'));
+        // Refresh wishlist details from server to ensure state is in sync
+        if (wishlist?.id) {
+          try {
+            const details = await getWishlistDetails(wishlist.id);
+            setWishlist(details);
+            // Preserve follow status
+            setIsFollowing(details.isFollowing ?? false);
+          } catch (refreshError) {
+            console.error('Failed to refresh wishlist after canceling reservation:', refreshError);
+          }
+        }
       } else {
-        const response = await reserveGift(giftId);
-        setSuccessMessage('Gift reserved successfully!');
-        
-        // Update with the actual username from the API response
-        setWishlist(prevWishlist => {
-          if (!prevWishlist || !prevWishlist.items || !Array.isArray(prevWishlist.items)) return prevWishlist;
-          
-          return {
-            ...prevWishlist,
-            items: prevWishlist.items.map(gift => {
-              if (gift.giftId === giftId) {
-                return {
-                  ...gift,
-                  reservedByUsername: response.reservedBy || 'You'
-                };
-              }
-              return gift;
-            })
-          };
-        });
+        await reserveGift(giftId);
+        setSuccessMessage(t('reservedGifts.reserveSuccess'));
+        // Refresh wishlist details from server to ensure state is in sync
+        if (wishlist?.id) {
+          try {
+            const details = await getWishlistDetails(wishlist.id);
+            setWishlist(details);
+            // Preserve follow status
+            setIsFollowing(details.isFollowing ?? false);
+          } catch (refreshError) {
+            console.error('Failed to refresh wishlist after reserving:', refreshError);
+          }
+        }
       }
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error: unknown) {
@@ -278,19 +292,33 @@ export default function WishlistDetailsPage() {
         };
       });
 
-      let errorMessage = 'Failed to reserve/cancel gift';
+      let errorMessage = t('reservedGifts.reserveError');
 
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as any;
-        if (axiosError.response?.status === 404) {
+        const errorMsg = axiosError.response?.data?.message || axiosError.message || '';
+        
+        // Check if gift is already reserved
+        if (errorMsg.toLowerCase().includes('already reserved') || 
+            (errorMsg.toLowerCase().includes('reserved') && !isReserved) ||
+            axiosError.response?.status === 409 || // Conflict status
+            (axiosError.response?.status === 400 && errorMsg.toLowerCase().includes('reserved'))) {
+          errorMessage = t('reservedGifts.alreadyReserved');
+        } else if (axiosError.response?.status === 404) {
           errorMessage = 'Gift not found. Please refresh the page and try again.';
         } else if (axiosError.response?.status === 0 || axiosError.code === 'ECONNREFUSED') {
           errorMessage = 'Gift service is currently unavailable. Please try again later.';
-        } else if (axiosError.response?.data?.message) {
-          errorMessage = axiosError.response.data.message;
+        } else if (errorMsg) {
+          errorMessage = errorMsg;
         }
       } else if (error && typeof error === 'object' && 'message' in error) {
-        errorMessage = (error as Error).message;
+        const errorMsg = (error as Error).message;
+        if (errorMsg.toLowerCase().includes('already reserved') || 
+            errorMsg.toLowerCase().includes('reserved')) {
+          errorMessage = t('reservedGifts.alreadyReserved');
+        } else {
+          errorMessage = errorMsg;
+        }
       }
 
       setError(errorMessage);
@@ -327,17 +355,21 @@ export default function WishlistDetailsPage() {
       if (isFollowing) {
         await unfollowUser(wishlist.userId);
         setIsFollowing(false);
+        // Update wishlist object to reflect the change
+        setWishlist(prev => prev ? { ...prev, isFollowing: false } : null);
       } else {
         await followUser(wishlist.userId);
         setIsFollowing(true);
+        // Update wishlist object to reflect the change
+        setWishlist(prev => prev ? { ...prev, isFollowing: true } : null);
       }
-          } catch (error: unknown) {
-        console.error('Failed to follow/unfollow user:', error);
-        const errorMessage = error && typeof error === 'object' && 'response' in error 
-          ? (error.response as { data?: { message?: string } })?.data?.message 
-          : 'Failed to update follow status';
-        setError(errorMessage || 'Failed to update follow status');
-      }
+    } catch (error: unknown) {
+      console.error('Failed to follow/unfollow user:', error);
+      const errorMessage = error && typeof error === 'object' && 'response' in error 
+        ? (error.response as { data?: { message?: string } })?.data?.message 
+        : 'Failed to update follow status';
+      setError(errorMessage || 'Failed to update follow status');
+    }
   };
 
   const handleShare = async () => {
@@ -552,10 +584,10 @@ export default function WishlistDetailsPage() {
                               {getTranslatedCategoryLabel(gift.category)}
                             </span>
                           )}
-                          {gift.reservedByUsername && !wishlist.isOwner && (
+                          {gift.isReserved && !wishlist.isOwner && (
                             <div className="mt-2">
                               <span className="inline-block px-2 py-1 text-xs bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-full">
-                                Reserved by {gift.reservedByUsername}
+                                Reserved
                               </span>
                             </div>
                           )}
@@ -563,16 +595,14 @@ export default function WishlistDetailsPage() {
                         <div className="flex flex-col space-y-2">
                           {!wishlist.isOwner && gift.giftId && (
                             <button
-                              onClick={() => handleReserveGift(gift.giftId!, !!gift.reservedByUserId)}
+                              onClick={() => handleReserveGift(gift.giftId!, !!(gift.isReserved && gift.reservedByUserId === currentUserId))}
                               className={`px-3 py-1 text-sm rounded transition-colors flex items-center gap-2 ${
-                                gift.reservedByUserId && gift.reservedByUserId === currentUserId
+                                gift.isReserved && gift.reservedByUserId === currentUserId
                                   ? 'bg-orange-600 hover:bg-orange-700 text-white'
-                                  : gift.reservedByUserId
-                                    ? 'bg-gray-400 text-white cursor-not-allowed'
-                                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                                  : 'bg-indigo-600 hover:bg-indigo-700 text-white'
                               }`}
-                              title={gift.reservedByUserId ? "Cancel reservation" : "Reserve gift"}
-                              disabled={gift.reservedByUserId && gift.reservedByUserId !== currentUserId || reservingGiftId === gift.giftId}
+                              title={gift.isReserved && gift.reservedByUserId === currentUserId ? "Cancel reservation" : "Reserve gift"}
+                              disabled={reservingGiftId === gift.giftId}
                             >
                               {reservingGiftId === gift.giftId ? (
                                 <>
@@ -581,11 +611,9 @@ export default function WishlistDetailsPage() {
                                 </>
                               ) : (
                                 <>
-                                  {gift.reservedByUserId && gift.reservedByUserId === currentUserId 
+                                  {gift.isReserved && gift.reservedByUserId === currentUserId 
                                     ? "Cancel Reserve" 
-                                    : gift.reservedByUserId 
-                                      ? "Reserved" 
-                                      : "Reserve"}
+                                    : "Reserve"}
                                 </>
                               )}
                             </button>

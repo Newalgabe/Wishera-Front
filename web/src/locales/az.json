@@ -455,7 +455,7 @@
       "userSuggestion": "İstifadəçi tövsiyəsi"
     },
     "messages": {
-      "giftReserved": "{{username}} arzu siyahınızdan '{{giftName}}' rezerv etdi",
+      "giftReserved": "Arzu siyahınızdan '{{giftName}}' rezerv edildi",
       "giftReceived": "{{username}} sizə hədiyyə göndərdi",
       "wishlistLiked": "{{username}} arzu siyahınızı '{{wishlistName}}' bəyəndi",
       "newFollower": "{{username}} sizi izləməyə başladı",
@@ -478,7 +478,11 @@
       "title": "Rezerv Edilmiş Hədiyyə Yoxdur",
       "description": "Hələ heç bir hədiyyə rezerv etməmisiniz. Rezerv etmək üçün hədiyyə tapmaq üçün dostlarınızın arzu siyahılarına baxın!",
       "browseGifts": "Hədiyyələrə Bax"
-    }
+    },
+    "alreadyReserved": "Bu hədiyyə artıq rezerv edilib",
+    "reserveSuccess": "Hədiyyə uğurla rezerv edildi!",
+    "cancelSuccess": "Hədiyyə rezervasiyası uğurla ləğv edildi!",
+    "reserveError": "Hədiyyəni rezerv etmək/ləğv etmək mümkün olmadı. Zəhmət olmasa yenidən cəhd edin."
   },
   "calendar": {
     "title": "Ad Günü Təqvimi",

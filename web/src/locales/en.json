@@ -473,7 +473,7 @@
       "userSuggestion": "User Suggestion"
     },
     "messages": {
-      "giftReserved": "{{username}} reserved '{{giftName}}' from your wishlist",
+      "giftReserved": "'{{giftName}}' has been reserved from your wishlist",
       "giftReceived": "{{username}} sent you a gift",
       "wishlistLiked": "{{username}} liked your wishlist '{{wishlistName}}'",
       "newFollower": "{{username}} started following you",
@@ -496,7 +496,11 @@
       "title": "No Reserved Gifts",
       "description": "You haven't reserved any gifts yet. Browse your friends' wishlists to find gifts to reserve!",
       "browseGifts": "Browse Gifts"
-    }
+    },
+    "alreadyReserved": "This gift is already reserved",
+    "reserveSuccess": "Gift reserved successfully!",
+    "cancelSuccess": "Gift reservation cancelled successfully!",
+    "reserveError": "Failed to reserve/cancel gift. Please try again."
   },
   "calendar": {
     "title": "Birthday Calendar",

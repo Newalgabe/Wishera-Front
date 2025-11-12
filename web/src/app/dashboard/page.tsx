@@ -1716,7 +1716,7 @@ export default function Dashboard() {
                                   </svg>
                                 </div>
                               )}
-                              {g.reservedByUsername && (
+                              {g.reservedByUserId && (
                                 <span className="absolute top-3 left-3 text-xs px-3 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-medium shadow-lg">
                                   {t('common.reserved')}
                                 </span>
@@ -1738,11 +1738,6 @@ export default function Dashboard() {
                                 <span className="text-xs px-3 py-1 rounded-full bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 text-indigo-800 dark:text-indigo-200 font-medium">
                                   {getTranslatedCategoryLabel(g.category) || 'General'}
                                 </span>
-                                {g.reservedByUsername && (
-                                  <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-                                    {t('dashboard.by')} {g.reservedByUsername}
-                                  </span>
-                                )}
                               </div>
                               <div className="flex gap-2">
                                 <button
@@ -1761,13 +1756,30 @@ export default function Dashboard() {
                                         await cancelGiftReservation(g.id);
                                         setGifts(prev=> prev.map(x=> x.id===g.id ? { ...x, reservedByUserId: null, reservedByUsername: null } : x));
                                       } else {
-                                        const res = await reserveGift(g.id);
+                                        await reserveGift(g.id);
                                         const currentUserId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
-                                        setGifts(prev=> prev.map(x=> x.id===g.id ? { ...x, reservedByUserId: currentUserId || x.reservedByUserId, reservedByUsername: res.reservedBy } : x));
+                                        setGifts(prev=> prev.map(x=> x.id===g.id ? { ...x, reservedByUserId: currentUserId || x.reservedByUserId, reservedByUsername: null } : x));
                                       }
                                     } catch (error) {
                                       console.error('Failed to reserve/cancel gift:', error);
-                                      setError('Failed to reserve/cancel gift. Please try again.');
+                                      let errorMessage = t('reservedGifts.reserveError');
+                                      
+                                      if (error && typeof error === 'object' && 'response' in error) {
+                                        const axiosError = error as any;
+                                        const errorMsg = axiosError.response?.data?.message || axiosError.message || '';
+                                        
+                                        // Check if gift is already reserved
+                                        if (errorMsg.toLowerCase().includes('already reserved') || 
+                                            (errorMsg.toLowerCase().includes('reserved') && !g.reservedByUserId) ||
+                                            axiosError.response?.status === 409 || // Conflict status
+                                            (axiosError.response?.status === 400 && errorMsg.toLowerCase().includes('reserved'))) {
+                                          errorMessage = t('reservedGifts.alreadyReserved');
+                                        } else if (errorMsg) {
+                                          errorMessage = errorMsg;
+                                        }
+                                      }
+                                      
+                                      setError(errorMessage);
                                       setTimeout(() => setError(null), 3000);
                                     }
                                   }}

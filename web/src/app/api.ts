@@ -232,6 +232,9 @@ export interface WishlistItemDTO {
   price?: number | null;
   url?: string | null;
   giftId?: string | null;
+  isReserved?: boolean;
+  reservedByUserId?: string | null;
+  reservedByUsername?: string | null;
 }
 
 export interface WishlistResponseDTO {
@@ -250,6 +253,7 @@ export interface WishlistResponseDTO {
   commentCount: number;
   isLiked: boolean;
   isOwner: boolean;
+  isFollowing?: boolean;
 }
 
 export interface CreateWishlistDTO {
@@ -533,7 +537,7 @@ export async function uploadGiftImage(id: string, file: File): Promise<{ ImageUr
   return response.data;
 }
 
-export async function reserveGift(id: string): Promise<{ message: string; reservedBy: string }>{
+export async function reserveGift(id: string): Promise<{ message: string }>{
   try {
     const response = await axios.post(`${GIFT_API_URL}/gift/${id}/reserve`, null, authConfig());
     return response.data;

@@ -311,7 +311,10 @@ export default function NotificationDropdown({
       }
       
       const params: Record<string, string> = {};
-      if (username) params.username = username;
+      // Only add username if the message template requires it (not for giftReserved)
+      if (username && notification.type !== NotificationType.GiftReserved) {
+        params.username = username;
+      }
       if (giftName) params.giftName = giftName;
       if (wishlistName) params.wishlistName = wishlistName;
       if (eventName) params.eventName = eventName;
@@ -422,8 +425,8 @@ export default function NotificationDropdown({
                               );
                             })()}
                             
-                            {/* Related user info */}
-                            {notification.relatedUserUsername && (
+                            {/* Related user info - hide for gift reserved notifications to maintain privacy */}
+                            {notification.relatedUserUsername && notification.type !== NotificationType.GiftReserved && (
                               <div className="flex items-center gap-2 mt-2">
                                 {notification.relatedUserAvatarUrl ? (
                                   <img
