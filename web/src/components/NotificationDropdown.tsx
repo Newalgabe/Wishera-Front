@@ -204,6 +204,131 @@ export default function NotificationDropdown({
     }
   };
 
+  const getNotificationTitleKey = (type: NotificationType): string => {
+    switch (type) {
+      case NotificationType.GiftReserved:
+        return 'notifications.titles.giftReserved';
+      case NotificationType.GiftReceived:
+        return 'notifications.titles.giftReceived';
+      case NotificationType.LikeReceived:
+        return 'notifications.titles.wishlistLiked';
+      case NotificationType.FriendRequest:
+        return 'notifications.titles.friendRequest';
+      case NotificationType.FriendAccepted:
+        return 'notifications.titles.newFollower';
+      case NotificationType.EventInvitation:
+        return 'notifications.titles.eventInvitation';
+      case NotificationType.EventReminder:
+        return 'notifications.titles.eventReminder';
+      case NotificationType.BirthdayReminder:
+        return 'notifications.titles.birthdayReminder';
+      case NotificationType.WishlistShared:
+        return 'notifications.titles.wishlistShared';
+      case NotificationType.CommentAdded:
+        return 'notifications.titles.commentAdded';
+      case NotificationType.UserSuggestion:
+        return 'notifications.titles.userSuggestion';
+      default:
+        return 'notifications.title';
+    }
+  };
+
+  const getNotificationMessageKey = (type: NotificationType): string => {
+    switch (type) {
+      case NotificationType.GiftReserved:
+        return 'notifications.messages.giftReserved';
+      case NotificationType.GiftReceived:
+        return 'notifications.messages.giftReceived';
+      case NotificationType.LikeReceived:
+        return 'notifications.messages.wishlistLiked';
+      case NotificationType.FriendRequest:
+        return 'notifications.messages.friendRequest';
+      case NotificationType.FriendAccepted:
+        return 'notifications.messages.newFollower';
+      case NotificationType.EventInvitation:
+        return 'notifications.messages.eventInvitation';
+      case NotificationType.EventReminder:
+        return 'notifications.messages.eventReminder';
+      case NotificationType.WishlistShared:
+        return 'notifications.messages.wishlistShared';
+      case NotificationType.CommentAdded:
+        return 'notifications.messages.commentAdded';
+      case NotificationType.UserSuggestion:
+        return 'notifications.messages.userSuggestion';
+      default:
+        return '';
+    }
+  };
+
+  const translateNotification = (notification: NotificationDTO) => {
+    const titleKey = getNotificationTitleKey(notification.type);
+    let title = t(titleKey);
+    
+    // If translation key doesn't exist or returns the key itself, fallback to original
+    if (title === titleKey) {
+      title = notification.title;
+    }
+
+    const messageKey = getNotificationMessageKey(notification.type);
+    let message = '';
+    
+    if (messageKey) {
+      // Extract parameters from notification message or metadata
+      let username = notification.relatedUserUsername || '';
+      const metadata = notification.metadata || {};
+      
+      // If username not in relatedUserUsername, try to extract from message
+      if (!username) {
+        // Try common patterns: "Username verb..." or "Username's..."
+        const usernameMatch = notification.message.match(/^([A-Za-zА-Яа-яА-Яа-я\s]+?)\s+(?:reserved|liked|started|sent|invited|accepted|commented|shared)/i);
+        if (usernameMatch) {
+          username = usernameMatch[1].trim();
+        }
+      }
+      
+      // Try to extract giftName, wishlistName, eventName from the original message or metadata
+      let giftName = metadata.giftName || '';
+      let wishlistName = metadata.wishlistName || '';
+      let eventName = metadata.eventName || '';
+      
+      // If not in metadata, try to parse from the original message
+      if (!giftName && notification.type === NotificationType.GiftReserved) {
+        // Try to extract gift name from message like "Amina reserved 'Hot wheels' from your wishlist"
+        const match = notification.message.match(/'([^']+)'/);
+        if (match) giftName = match[1];
+      }
+      
+      if (!wishlistName && notification.type === NotificationType.LikeReceived) {
+        // Try to extract wishlist name from message like "Gabe Newal liked your wishlist 'For BD'"
+        const match = notification.message.match(/'([^']+)'/);
+        if (match) wishlistName = match[1];
+      }
+      
+      if (!eventName && (notification.type === NotificationType.EventInvitation || notification.type === NotificationType.EventReminder)) {
+        // Try to extract event name from message
+        const match = notification.message.match(/'([^']+)'/);
+        if (match) eventName = match[1];
+      }
+      
+      const params: Record<string, string> = {};
+      if (username) params.username = username;
+      if (giftName) params.giftName = giftName;
+      if (wishlistName) params.wishlistName = wishlistName;
+      if (eventName) params.eventName = eventName;
+      
+      message = t(messageKey, params);
+      
+      // If translation returns the key itself, fallback to original message
+      if (message === messageKey) {
+        message = notification.message;
+      }
+    } else {
+      message = notification.message;
+    }
+    
+    return { title, message };
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -283,12 +408,19 @@ export default function NotificationDropdown({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1">
-                            <h4 className={`text-sm font-medium ${notification.isRead ? 'text-gray-600 dark:text-gray-400' : 'text-gray-900 dark:text-gray-100'}`}>
-                              {notification.title}
-                            </h4>
-                            <p className={`text-sm mt-1 ${notification.isRead ? 'text-gray-500 dark:text-gray-500' : 'text-gray-700 dark:text-gray-300'}`}>
-                              {notification.message}
-                            </p>
+                            {(() => {
+                              const translated = translateNotification(notification);
+                              return (
+                                <>
+                                  <h4 className={`text-sm font-medium ${notification.isRead ? 'text-gray-600 dark:text-gray-400' : 'text-gray-900 dark:text-gray-100'}`}>
+                                    {translated.title}
+                                  </h4>
+                                  <p className={`text-sm mt-1 ${notification.isRead ? 'text-gray-500 dark:text-gray-500' : 'text-gray-700 dark:text-gray-300'}`}>
+                                    {translated.message}
+                                  </p>
+                                </>
+                              );
+                            })()}
                             
                             {/* Related user info */}
                             {notification.relatedUserUsername && (

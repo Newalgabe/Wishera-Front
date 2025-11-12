@@ -277,7 +277,7 @@ export default function Dashboard() {
           description: w.description,
           category: w.category,
           isPublic: w.isPublic,
-          gifts: [],
+          gifts: w.gifts || [], // Use gifts from feed if available
           likes: w.likeCount,
           isLiked: w.isLiked,
           isBookmarked: false,
@@ -312,21 +312,30 @@ export default function Dashboard() {
   useEffect(() => {
     let isCancelled = false;
     async function hydrateItems() {
-      const targets = wishlists.filter(w => w.gifts.length === 0).slice(0, 6);
-      for (const w of targets) {
-        try {
-          const details = await getWishlistDetails(w.id);
-          if (isCancelled) return;
-          const items = (details.items || []).slice(0, 6).map((it, idx) => ({
-            id: `${w.id}-${idx}`,
-            name: it.title,
-            price: it.price ?? null,
-            image: it.imageUrl ?? null,
-          }));
-          setWishlists(prev => prev.map(x => x.id === w.id ? { ...x, gifts: items } : x));
-        } catch {
-          // ignore individual failures
-        }
+      // Load gifts for all wishlists that don't have gifts yet
+      const targets = wishlists.filter(w => w.gifts.length === 0);
+      if (targets.length === 0) return;
+      
+      // Process in batches to avoid overwhelming the API
+      const batchSize = 6;
+      for (let i = 0; i < targets.length; i += batchSize) {
+        const batch = targets.slice(i, i + batchSize);
+        await Promise.all(batch.map(async (w) => {
+          try {
+            const details = await getWishlistDetails(w.id);
+            if (isCancelled) return;
+            const items = (details.items || []).slice(0, 6).map((it, idx) => ({
+              id: `${w.id}-${idx}`,
+              name: it.title,
+              price: it.price ?? null,
+              image: it.imageUrl ?? null,
+            }));
+            setWishlists(prev => prev.map(x => x.id === w.id ? { ...x, gifts: items } : x));
+          } catch (error) {
+            console.error(`Failed to load gifts for wishlist ${w.id}:`, error);
+            // ignore individual failures
+          }
+        }));
       }
     }
     if (wishlists.length > 0) {
@@ -566,7 +575,7 @@ export default function Dashboard() {
           description: w.description,
           category: w.category,
           isPublic: w.isPublic,
-          gifts: [],
+          gifts: w.gifts || [], // Use gifts from feed if available
           likes: w.likeCount,
           isLiked: w.isLiked,
           isBookmarked: false,
@@ -635,14 +644,33 @@ export default function Dashboard() {
       return;
     }
     
-
+    // Check if wishlist has gifts - warn user but allow deletion
+    try {
+      const details = await getWishlistDetails(deletingWishlist.id);
+      if (details.items && details.items.length > 0) {
+        const confirmDelete = window.confirm(
+          `This wishlist contains ${details.items.length} gift(s). Deleting it will remove all associated gifts. Are you sure you want to continue?`
+        );
+        if (!confirmDelete) {
+          setIsDeleteWishlistOpen(false);
+          setDeletingWishlist(null);
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to check wishlist details before deletion:', error);
+      // Continue with deletion even if we can't check details
+    }
     
     setDeleteWishlistLoading(true);
     
     try {
       await deleteWishlist(deletingWishlist.id);
       
-      // Refresh wishlists data
+      // Remove from local state immediately for better UX
+      setWishlists(prev => prev.filter(w => w.id !== deletingWishlist.id));
+      
+      // Refresh wishlists data to ensure consistency
       try {
         const refreshedWishlists = await getFeed(1, 20);
         const mapped: UIWishlist[] = refreshedWishlists.map(w => ({
@@ -652,7 +680,7 @@ export default function Dashboard() {
           description: w.description,
           category: w.category,
           isPublic: w.isPublic,
-          gifts: [],
+          gifts: w.gifts || [], // Use gifts from feed if available
           likes: w.likeCount,
           isLiked: w.isLiked,
           isBookmarked: false,
@@ -673,24 +701,33 @@ export default function Dashboard() {
       console.error('Delete wishlist error:', error);
       
       // Handle different types of errors
+      let errorMessage = 'Failed to delete wishlist';
       if (error.response) {
         if (error.response.status === 403) {
-          setSuccessMessage('You do not have permission to delete this wishlist');
+          errorMessage = 'You do not have permission to delete this wishlist';
         } else if (error.response.status === 404) {
-          setSuccessMessage('Wishlist not found');
+          errorMessage = 'Wishlist not found';
+        } else if (error.response.status === 400) {
+          errorMessage = error.response.data?.message || 'Cannot delete wishlist. It may contain gifts that need to be removed first.';
         } else if (error.response.status === 500) {
-          setSuccessMessage('Server error occurred. Please try again later.');
+          errorMessage = 'Server error occurred. Please try again later.';
         } else {
-          setSuccessMessage(error.response.data?.message || 'Failed to delete wishlist');
+          errorMessage = error.response.data?.message || 'Failed to delete wishlist';
         }
       } else if (error.request) {
-        setSuccessMessage('Network error. Please check your connection and try again.');
+        errorMessage = 'Network error. Please check your connection and try again.';
       } else {
-        setSuccessMessage(error.message || 'Failed to delete wishlist');
+        errorMessage = error.message || 'Failed to delete wishlist';
       }
       
+      setSuccessMessage(errorMessage);
+      setError(errorMessage);
+      
       // Clear error message after 5 seconds
-      setTimeout(() => setSuccessMessage(null), 5000);
+      setTimeout(() => {
+        setSuccessMessage(null);
+        setError(null);
+      }, 5000);
     } finally {
       setDeleteWishlistLoading(false);
     }
@@ -919,7 +956,7 @@ export default function Dashboard() {
                 className="w-full flex items-center px-4 py-3 text-left rounded-lg transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:translate-x-1 border-l-4 border-transparent"
               >
                 <CalendarIcon className="h-5 w-5 mr-3" />
-                <span className="font-medium">Events</span>
+                <span className="font-medium">{t('navigation.events')}</span>
               </button>
               <button
                 onClick={() => setActiveTab('liked')}
@@ -1164,7 +1201,7 @@ export default function Dashboard() {
 
                         {profile.followers.length === 0 && profile.following.length === 0 && (
                           <div className="text-center text-gray-500 dark:text-gray-400 py-4 text-sm">
-                            No friends yet
+                            {t('dashboard.noFriendsYet')}
                           </div>
                         )}
                       </div>
@@ -1495,11 +1532,14 @@ export default function Dashboard() {
                               try {
                                 const userWishlists = await getUserWishlists(currentUserId || '');
                                 if (userWishlists.length > 0) {
-                                  // Use the first wishlist
-                                  wishlistId = userWishlists[0].id;
+                                  // Use the first wishlist (prefer non-default if multiple exist)
+                                  const defaultWishlist = userWishlists.find(w => 
+                                    w.title === 'My Wishlist' && w.description === 'Default wishlist for my gifts'
+                                  );
+                                  wishlistId = defaultWishlist ? defaultWishlist.id : userWishlists[0].id;
                                   console.log('Associating gift with wishlist:', wishlistId);
                                 } else {
-                                  // Create a default wishlist for the user
+                                  // Create a default wishlist for the user only if none exists
                                   console.log('No wishlists found, creating default wishlist');
                                   const defaultWishlist = await createWishlist({
                                     title: 'My Wishlist',
@@ -1510,6 +1550,22 @@ export default function Dashboard() {
                                   });
                                   wishlistId = defaultWishlist.id;
                                   console.log('Created default wishlist:', wishlistId);
+                                  // Refresh the feed to show the new wishlist
+                                  const refreshedWishlists = await getFeed(1, 20);
+                                  const mapped: UIWishlist[] = refreshedWishlists.map(w => ({
+                                    id: w.id,
+                                    user: { id: w.userId, name: w.username, avatar: w.avatarUrl || "", username: formatUsername(w.username) },
+                                    title: w.title,
+                                    description: w.description,
+                                    category: w.category,
+                                    isPublic: w.isPublic,
+                                    gifts: w.gifts || [], // Use gifts from feed if available
+                                    likes: w.likeCount,
+                                    isLiked: w.isLiked,
+                                    isBookmarked: false,
+                                    createdAt: new Date(w.createdAt).toLocaleString()
+                                  }));
+                                  setWishlists(mapped);
                                 }
                               } catch (error) {
                                 console.error('Failed to get/create wishlist:', error);
@@ -1972,7 +2028,7 @@ export default function Dashboard() {
               <div className="space-y-4">
                 {/* Wishlist Details */}
                 <div className="space-y-3">
-                  <h4 className="font-medium text-gray-900 dark:text-white">Wishlist Details</h4>
+                  <h4 className="font-medium text-gray-900 dark:text-white">{t('dashboard.wishlistDetails')}</h4>
                   <input
                     type="text"
                     value={createForm.title}
@@ -2002,7 +2058,7 @@ export default function Dashboard() {
                     <UserSearchAutocomplete
                       value={createForm.allowedViewerIds}
                       onChange={(userIds) => setCreateForm({ ...createForm, allowedViewerIds: userIds })}
-                      placeholder="Search and add people to share with..."
+                      placeholder={t('dashboard.searchAndAddPeople')}
                       className="w-full"
                     />
                   )}
@@ -2018,11 +2074,11 @@ export default function Dashboard() {
 
                 {/* Existing Gifts Section */}
                 <div className="space-y-3">
-                  <h4 className="font-medium text-gray-900 dark:text-white">Add Existing Gifts</h4>
+                  <h4 className="font-medium text-gray-900 dark:text-white">{t('dashboard.addExistingGifts')}</h4>
                   {availableGiftsLoading ? (
                     <div className="text-center py-4">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600 mx-auto"></div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Loading your gifts...</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{t('dashboard.loadingYourGifts')}</p>
                     </div>
                   ) : availableGifts.length > 0 ? (
                     <div className="max-h-48 overflow-y-auto space-y-2">
@@ -2064,7 +2120,7 @@ export default function Dashboard() {
                     </div>
                   ) : (
                     <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-                      No existing gifts found. Create new gifts below!
+                      {t('dashboard.noExistingGiftsFound')}
                     </p>
                   )}
                 </div>
@@ -2072,7 +2128,7 @@ export default function Dashboard() {
                 {/* New Gifts Section */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-medium text-gray-900 dark:text-white">Create New Gifts</h4>
+                    <h4 className="font-medium text-gray-900 dark:text-white">{t('dashboard.createNewGifts')}</h4>
                     <button
                       type="button"
                       onClick={() => setCreateForm({
@@ -2081,14 +2137,14 @@ export default function Dashboard() {
                       })}
                       className="px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors"
                     >
-                      + Add New Gift
+                      + {t('dashboard.addNewGift')}
                     </button>
                   </div>
                   
                   {createForm.gifts.map((gift, index) => (
                     <div key={index} className="p-3 border border-gray-200 dark:border-gray-600 rounded-lg space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Gift {index + 1}</span>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('dashboard.gift')} {index + 1}</span>
                         <button
                           type="button"
                           onClick={() => setCreateForm({
@@ -2097,7 +2153,7 @@ export default function Dashboard() {
                           })}
                           className="text-red-500 hover:text-red-700 text-sm"
                         >
-                          Remove
+                          {t('dashboard.remove')}
                         </button>
                       </div>
                       <input
@@ -2108,7 +2164,7 @@ export default function Dashboard() {
                           newGifts[index] = { ...newGifts[index], name: e.target.value };
                           setCreateForm({ ...createForm, gifts: newGifts });
                         }}
-                        placeholder="Gift name"
+                        placeholder={t('dashboard.giftName')}
                         className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
                       />
                       <div className="grid grid-cols-2 gap-2">
@@ -2120,7 +2176,7 @@ export default function Dashboard() {
                             newGifts[index] = { ...newGifts[index], price: e.target.value };
                             setCreateForm({ ...createForm, gifts: newGifts });
                           }}
-                          placeholder="Price"
+                          placeholder={t('dashboard.price')}
                           className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
                         />
                         <select
@@ -2132,7 +2188,7 @@ export default function Dashboard() {
                           }}
                           className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
                         >
-                          <option value="">Category</option>
+                          <option value="">{t('dashboard.category')}</option>
                           {getTranslatedCategories().map((category) => (
                             <option key={category.value} value={category.value}>
                               {category.label}
@@ -2158,7 +2214,7 @@ export default function Dashboard() {
                   
                   {createForm.gifts.length === 0 && (
                     <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-                      No new gifts added yet. Click "Add New Gift" to get started!
+                      {t('dashboard.noNewGiftsAdded')}
                     </p>
                   )}
                 </div>
@@ -2166,12 +2222,12 @@ export default function Dashboard() {
                 {/* Summary Section */}
                 {(selectedExistingGifts.length > 0 || createForm.gifts.some(g => g.name.trim())) && (
                   <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                    <h5 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Wishlist Summary</h5>
+                    <h5 className="font-medium text-blue-900 dark:text-blue-100 mb-2">{t('dashboard.wishlistSummary')}</h5>
                     <div className="text-sm text-blue-800 dark:text-blue-200">
-                      <p>• {selectedExistingGifts.length} existing gift{selectedExistingGifts.length !== 1 ? 's' : ''} selected</p>
-                      <p>• {createForm.gifts.filter(g => g.name.trim()).length} new gift{createForm.gifts.filter(g => g.name.trim()).length !== 1 ? 's' : ''} to create</p>
+                      <p>• {selectedExistingGifts.length} {t('dashboard.existingGiftsSelected')}</p>
+                      <p>• {createForm.gifts.filter(g => g.name.trim()).length} {t('dashboard.newGiftsToCreate')}</p>
                       <p className="font-medium mt-1">
-                        Total: {selectedExistingGifts.length + createForm.gifts.filter(g => g.name.trim()).length} gift{selectedExistingGifts.length + createForm.gifts.filter(g => g.name.trim()).length !== 1 ? 's' : ''}
+                        {t('dashboard.total')}: {selectedExistingGifts.length + createForm.gifts.filter(g => g.name.trim()).length} {t('dashboard.gift')}{selectedExistingGifts.length + createForm.gifts.filter(g => g.name.trim()).length !== 1 ? 's' : ''}
                       </p>
                     </div>
                   </div>
@@ -2663,7 +2719,7 @@ export default function Dashboard() {
                     <UserSearchAutocomplete
                       value={editWishlistForm.allowedViewerIds}
                       onChange={(userIds) => setEditWishlistForm({ ...editWishlistForm, allowedViewerIds: userIds })}
-                      placeholder="Search and add people to share with..."
+                      placeholder={t('dashboard.searchAndAddPeople')}
                       className="w-full"
                     />
                   </div>

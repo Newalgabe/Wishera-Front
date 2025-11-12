@@ -624,28 +624,28 @@ export default function WishlistDetailsPage() {
                   </div>
                   {/* Create new gift */}
                   <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
-                    <h5 className="font-medium text-gray-900 dark:text-white mb-3">Create New Gift</h5>
+                    <h5 className="font-medium text-gray-900 dark:text-white mb-3">{t('dashboard.createNewGifts')}</h5>
                     {createGiftError && (
                       <div className="mb-3 text-sm text-red-500">{createGiftError}</div>
                     )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <input
                         type="text"
-                        placeholder="Name"
+                        placeholder={t('dashboard.name')}
                         value={createGiftForm.name}
                         onChange={(e) => setCreateGiftForm(f => ({ ...f, name: e.target.value }))}
                         className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200"
                       />
                       <input
                         type="number"
-                        placeholder="Price"
+                        placeholder={t('dashboard.price')}
                         value={createGiftForm.price}
                         onChange={(e) => setCreateGiftForm(f => ({ ...f, price: e.target.value }))}
                         className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200"
                       />
                       <input
                         type="text"
-                        placeholder="Category"
+                        placeholder={t('dashboard.category')}
                         value={createGiftForm.category}
                         onChange={(e) => setCreateGiftForm(f => ({ ...f, category: e.target.value }))}
                         className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200"

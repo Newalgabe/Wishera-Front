@@ -119,11 +119,35 @@ export default function BirthdayCalendar({ className = '' }: BirthdayCalendarPro
     return compareDate < today && compareDate.getFullYear() === today.getFullYear();
   };
 
+  const monthNames = [
+    t('calendar.months.january'),
+    t('calendar.months.february'),
+    t('calendar.months.march'),
+    t('calendar.months.april'),
+    t('calendar.months.may'),
+    t('calendar.months.june'),
+    t('calendar.months.july'),
+    t('calendar.months.august'),
+    t('calendar.months.september'),
+    t('calendar.months.october'),
+    t('calendar.months.november'),
+    t('calendar.months.december')
+  ];
+
+  const dayNames = [
+    t('calendar.days.sun'),
+    t('calendar.days.mon'),
+    t('calendar.days.tue'),
+    t('calendar.days.wed'),
+    t('calendar.days.thu'),
+    t('calendar.days.fri'),
+    t('calendar.days.sat')
+  ];
+
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', { 
-      month: 'long', 
-      year: 'numeric' 
-    });
+    const monthIndex = date.getMonth();
+    const year = date.getFullYear();
+    return `${monthNames[monthIndex]} ${year}`;
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {
@@ -155,13 +179,6 @@ export default function BirthdayCalendar({ className = '' }: BirthdayCalendarPro
   const { daysInMonth, startingDayOfWeek } = getDaysInMonth(currentDate);
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const emptyDays = Array.from({ length: startingDayOfWeek }, (_, i) => i);
-
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   if (loading) {
     return (

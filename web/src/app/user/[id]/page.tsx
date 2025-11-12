@@ -44,7 +44,7 @@ type UIWishlist = {
 };
 
 export default function UserProfilePage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const router = useRouter();
   const params = useParams();
   const userId = params.id as string;
@@ -236,23 +236,31 @@ export default function UserProfilePage() {
                   {formatUsername(profile.username)}
                 </div>
                 <div className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                  {profile.followersCount} {t('dashboard.followers')} • {profile.followingCount} {t('dashboard.following')} • {profile.wishlistCount} wishlists
+                  {profile.followersCount} {t('dashboard.followers')} • {profile.followingCount} {t('dashboard.following')} • {profile.wishlistCount} {t('dashboard.wishlists')}
                 </div>
                 {profile.bio && (
                   <p className="text-gray-700 dark:text-gray-300 max-w-md">{profile.bio}</p>
                 )}
                 {profile.birthday && (() => {
-                  const birthdayInfo = getBirthdayInfo(profile.birthday, false);
+                  const localeMap: Record<string, string> = { en: 'en-US', ru: 'ru-RU', az: 'az-AZ' };
+                  const locale = localeMap[language] || 'en-US';
+                  const birthdayInfo = getBirthdayInfo(profile.birthday, false, t);
+                  // Format date with correct locale
+                  const formattedDate = new Date(profile.birthday).toLocaleDateString(locale, { 
+                    month: 'long', 
+                    day: 'numeric',
+                    year: 'numeric'
+                  });
                   return (
                     <div className="mt-3 p-3 bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20 rounded-xl border border-pink-200 dark:border-pink-800">
                       <div className="flex items-center gap-2 text-sm">
                         <CalendarIcon className="w-4 h-4 text-pink-600 dark:text-pink-400" />
                         <span className="font-medium text-gray-700 dark:text-gray-300">
-                          {birthdayInfo.formattedDate}
+                          {formattedDate}
                         </span>
                       </div>
                       <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                        Age: {birthdayInfo.age} years old
+                        {t('dashboard.age')}: {birthdayInfo.age} {t('dashboard.yearsOld')}
                       </div>
                       <div className="mt-1 text-xs text-pink-600 dark:text-pink-400 font-medium">
                         {birthdayInfo.countdownMessage}
@@ -313,7 +321,7 @@ export default function UserProfilePage() {
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
               }`}
             >
-              Friends ({followers.length + following.length})
+              {t('dashboard.friends')} ({followers.length + following.length})
             </button>
           </div>
 
@@ -338,8 +346,8 @@ export default function UserProfilePage() {
                             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{wishlist.description}</p>
                           )}
                           <div className="flex items-center gap-4 mt-2 text-xs text-gray-500 dark:text-gray-400">
-                            <span>{wishlist.gifts.length} items</span>
-                            <span>{wishlist.likes} likes</span>
+                            <span>{wishlist.gifts.length} {wishlist.gifts.length === 1 ? t('dashboard.item') : t('dashboard.items')}</span>
+                            <span>{wishlist.likes} {t('dashboard.likes')}</span>
                             <span>{wishlist.createdAt}</span>
                           </div>
                         </div>
@@ -355,7 +363,7 @@ export default function UserProfilePage() {
               <div className="space-y-6">
                 {followers.length === 0 && following.length === 0 ? (
                   <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-                    No friends yet
+                    {t('dashboard.noFriendsYet')}
                   </div>
                 ) : (
                   <>

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useSignalRChat } from "@/hooks/useSignalRChat";
 import { useCall } from "@/hooks/useCall";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { createChatToken, createOrJoinChatChannel, sendChatMessage, searchUsers, getFollowing, getChatHistory, editChatMessage, deleteChatMessage, getConversationWallpaper, setConversationWallpaper, getWallpaperCatalog, getConversationWallpaperPref, setConversationWallpaperPref, chatAssetUrl, uploadChatMedia, getPinnedMessages, pinChatMessage, unpinChatMessage, uploadCustomWallpaper, getCustomWallpapers, deleteCustomWallpaper, type WallpaperCatalogItemDTO, type UserSearchDTO, type PinnedMessageDTO, type PinScope, type CustomWallpaperUploadDTO } from "../api";
 import EmojiGifPicker from "@/components/EmojiGifPicker";
 import EmojiPicker from "@/components/EmojiPicker";
@@ -48,6 +49,7 @@ type ChatContact = {
 
 export default function ChatPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [channelType, setChannelType] = useState("messaging");
   const [channelId, setChannelId] = useState("");
   const [memberIds, setMemberIds] = useState("");
@@ -586,11 +588,11 @@ export default function ChatPage() {
 
   const getConnectionStatusText = (state: string) => {
     switch (state) {
-      case 'Connected': return 'Connected';
-      case 'Reconnecting': return 'Reconnecting...';
-      case 'Disconnected': return 'Disconnected';
-      case 'Failed': return 'Connection Failed';
-      default: return 'Unknown';
+      case 'Connected': return t('chat.connected');
+      case 'Reconnecting': return t('chat.reconnecting');
+      case 'Disconnected': return t('chat.disconnected');
+      case 'Failed': return t('chat.connectionFailed');
+      default: return t('chat.unknown');
     }
   };
 
@@ -604,7 +606,7 @@ export default function ChatPage() {
           id: user.id,
           name: user.username,
           avatar: user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.username)}`,
-          lastMessage: "Start a conversation!",
+          lastMessage: t('chat.startConversationExclamation'),
           lastMessageTime: "",
           unreadCount: 0,
           isOnline: false,
@@ -894,7 +896,7 @@ export default function ChatPage() {
       if (error?.message?.includes('Connection')) {
         setError('Connection lost. Message will be sent when connection is restored.');
       } else {
-        setError(error?.response?.data?.message || error?.message || 'Failed to send message');
+        setError(error?.response?.data?.message || error?.message || t('chat.failedToSendMessage'));
       }
     }
   }
@@ -903,7 +905,7 @@ export default function ChatPage() {
     if (!text.trim()) return;
     if (!currentUserId) return;
     if (!chat.connected) {
-      setError('Connection lost. Please wait for reconnection...');
+      setError(t('chat.connectionLost'));
       return;
     }
     const id = crypto.randomUUID();
@@ -979,7 +981,7 @@ export default function ChatPage() {
       setReplyTo(null);
     } catch (error) {
       console.error('Failed to send voice message:', error);
-      setError('Failed to send voice message. Please try again.');
+      setError(t('chat.failedToSendVoiceMessage'));
     }
   };
 
@@ -1100,14 +1102,89 @@ export default function ChatPage() {
         
         if (currentUserId && contact?.id) {
           const history = await getChatHistory(currentUserId, contact.id, 0, 50);
-          const fromServer = history.map(m => ({
-            id: m.id,
-            text: m.text,
-            userId: m.senderUserId,
-            createdAt: m.sentAt, // Use server timestamp
-            replyToMessageId: (m as any).replyToMessageId ?? null,
-            reactions: (m as any).reactions || {}
-          }));
+          console.log('Loaded chat history from server:', history); // Debug log
+          
+          // Create a map of cached messages by ID to preserve replyToMessageId if server doesn't have it
+          const cachedMap = new Map(cachedMessages.map(m => [m.id, m]));
+          
+          const fromServer = history.map(m => {
+            // Try multiple possible field names for replyToMessageId
+            let replyToMessageId = m.replyToMessageId ?? 
+                                    (m as any).replyToMessageId ?? 
+                                    (m as any).replyToId ?? 
+                                    (m as any).replyTo ?? 
+                                    (m.customData as any)?.replyToMessageId ?? 
+                                    null;
+            
+            // If server doesn't have replyToMessageId, try to get it from cache
+            if (!replyToMessageId) {
+              const cachedMsg = cachedMap.get(m.id);
+              if (cachedMsg?.replyToMessageId) {
+                replyToMessageId = cachedMsg.replyToMessageId;
+                console.log('Preserved replyToMessageId from cache for message:', m.id, replyToMessageId);
+              }
+            }
+            
+            // Try multiple possible field names for messageType
+            let messageType = m.messageType ?? 
+                               (m as any).messageType ?? 
+                               (m.customData as any)?.messageType ?? 
+                               null;
+            
+            // If server doesn't have messageType, try to get it from cache
+            if (!messageType) {
+              const cachedMsg = cachedMap.get(m.id);
+              if (cachedMsg?.messageType) {
+                messageType = cachedMsg.messageType;
+              }
+            }
+            messageType = messageType || 'text';
+            
+            let audioUrl = m.audioUrl ?? 
+                            (m as any).audioUrl ?? 
+                            (m.customData as any)?.audioUrl ?? 
+                            null;
+            
+            // If server doesn't have audioUrl, try to get it from cache
+            if (!audioUrl) {
+              const cachedMsg = cachedMap.get(m.id);
+              if (cachedMsg?.audioUrl) {
+                audioUrl = cachedMsg.audioUrl;
+              }
+            }
+            
+            let audioDuration = m.audioDuration ?? 
+                                 (m as any).audioDuration ?? 
+                                 (m.customData as any)?.audioDuration ?? 
+                                 null;
+            
+            // If server doesn't have audioDuration, try to get it from cache
+            if (!audioDuration) {
+              const cachedMsg = cachedMap.get(m.id);
+              if (cachedMsg?.audioDuration) {
+                audioDuration = cachedMsg.audioDuration;
+              }
+            }
+            
+            const message: ChatMessage = {
+              id: m.id,
+              text: m.text,
+              userId: m.senderUserId,
+              createdAt: m.sentAt, // Use server timestamp
+              replyToMessageId: replyToMessageId,
+              messageType: messageType as 'text' | 'voice' | 'image' | 'video',
+              ...(audioUrl && { audioUrl }),
+              ...(audioDuration && { audioDuration }),
+              reactions: m.reactions || (m as any).reactions || {}
+            };
+            
+            // Debug log for messages with replies
+            if (replyToMessageId) {
+              console.log('Message with reply found:', { id: m.id, replyToMessageId, messageType, source: m.replyToMessageId ? 'server' : 'cache' });
+            }
+            
+            return message;
+          });
           
           // Update conversation with server messages
           updateConversationMessages(conversationId, fromServer);
@@ -1128,21 +1205,61 @@ export default function ChatPage() {
 
   function quotePreview() {
     if (!replyTo) return null;
+    
+    // Check if it's a media message
+    const isImage = replyTo.messageType === 'image' || (replyTo.text && looksLikeImageUrl(replyTo.text));
+    const isVideo = replyTo.messageType === 'video' || (replyTo.text && looksLikeVideoUrl(replyTo.text));
+    const isVoice = replyTo.messageType === 'voice';
+    
     return (
       <div className="mt-4 mx-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl border border-indigo-200/50 dark:border-indigo-700/50 shadow-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <div className="w-2 h-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full mr-3"></div>
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Replying to:</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('chat.replyingTo')}</span>
           </div>
           <button 
             onClick={() => setReplyTo(null)} 
             className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors font-medium"
           >
-            Cancel
+            {t('chat.cancel')}
           </button>
         </div>
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 truncate">{replyTo.text}</p>
+        <div className="mt-2">
+          {isVoice ? (
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <MicrophoneIcon className="w-4 h-4" />
+              <span>{t('chat.voiceMessage')}</span>
+            </div>
+          ) : isImage ? (
+            <div className="flex items-center gap-3">
+              <img
+                src={replyTo.text}
+                alt="Preview"
+                className="h-12 w-12 object-cover rounded-lg"
+                loading="lazy"
+              />
+              <span className="text-xs text-gray-500 dark:text-gray-400">{t('chat.photo')}</span>
+            </div>
+          ) : isVideo ? (
+            <div className="flex items-center gap-3">
+              <div className="relative h-12 w-20 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
+                <video
+                  src={replyTo.text}
+                  className="h-full w-full object-cover"
+                  muted
+                  playsInline
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <VideoCameraIcon className="w-5 h-5 text-white opacity-80" />
+                </div>
+              </div>
+              <span className="text-xs text-gray-500 dark:text-gray-400">{t('chat.video')}</span>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{replyTo.text}</p>
+          )}
+        </div>
       </div>
     );
   }
@@ -1199,8 +1316,8 @@ export default function ChatPage() {
         <div className="p-6 border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-indigo-500 to-purple-600">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-white">Messages</h1>
-              <p className="text-indigo-100 text-sm mt-1">Connect with your friends</p>
+              <h1 className="text-2xl font-bold text-white">{t('chat.messages')}</h1>
+              <p className="text-indigo-100 text-sm mt-1">{t('chat.connectWithFriends')}</p>
             </div>
             <button className="p-3 rounded-2xl bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-all duration-200 hover:scale-105 shadow-lg">
               <PlusIcon className="w-5 h-5" />
@@ -1212,7 +1329,7 @@ export default function ChatPage() {
             <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search users..."
+              placeholder={t('chat.searchUsers')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 py-3 rounded-2xl border-0 bg-white/90 dark:bg-gray-700/90 backdrop-blur-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-white/50 focus:outline-none transition-all duration-200 shadow-lg"
@@ -1231,7 +1348,7 @@ export default function ChatPage() {
             <div className="p-4">
               <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
                 <MagnifyingGlassIcon className="w-4 h-4 mr-2" />
-                Search Results
+                {t('chat.searchResults')}
               </h3>
             </div>
             {searchResults.map((user) => (
@@ -1258,7 +1375,7 @@ export default function ChatPage() {
                     )}
                   </div>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    {user.isFollowing ? 'Following' : 'Not following'}
+                    {user.isFollowing ? t('chat.following') : t('chat.notFollowing')}
                   </p>
                 </div>
               </div>
@@ -1273,15 +1390,15 @@ export default function ChatPage() {
               <div className="w-20 h-20 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg">
                 <UserPlusIcon className="w-10 h-10 text-indigo-500 dark:text-indigo-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">No contacts yet</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Search for users to start conversations</p>
+              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('chat.noContactsYet')}</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('chat.searchForUsers')}</p>
             </div>
           ) : (
             <>
               <div className="p-4 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800/50 dark:to-slate-800/50 border-b border-gray-200/50 dark:border-gray-700/50">
                 <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center">
                   <div className="w-2 h-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full mr-2"></div>
-                  Your Contacts
+                  {t('chat.yourContacts')}
                 </h3>
               </div>
               {contacts.map((contact) => (
@@ -1374,7 +1491,7 @@ export default function ChatPage() {
                       <div className="flex items-center">
                         <div className={`w-2 h-2 rounded-full mr-2 ${selectedContact.isOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
                         <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                          {selectedContact.isOnline ? 'Online' : 'Offline'}
+                          {selectedContact.isOnline ? t('chat.online') : t('chat.offline')}
                         </p>
                       </div>
                       <div className="flex items-center">
@@ -1398,19 +1515,19 @@ export default function ChatPage() {
                     {showWallpaperPicker && (
                       <div className="absolute right-0 mt-2 w-80 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-2xl p-3 z-50 pointer-events-auto">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Chat Wallpaper</span>
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('chat.chatWallpaper')}</span>
                           <div className="flex items-center space-x-2">
                             <button
                               onClick={() => setShowCustomWallpaperUpload(!showCustomWallpaperUpload)}
                               className="text-xs bg-indigo-500 hover:bg-indigo-600 text-white px-2 py-1 rounded-lg transition-colors"
                             >
-                              Upload
+                              {t('chat.upload')}
                             </button>
                             <button
                               className="text-xs text-red-500 hover:text-red-600"
                               onClick={() => handleApplyWallpaper(null, null, 0.25)}
                             >
-                              Reset
+                              {t('chat.reset')}
                             </button>
                           </div>
                         </div>
@@ -1418,26 +1535,43 @@ export default function ChatPage() {
                         {/* Custom Wallpaper Upload Form */}
                         {showCustomWallpaperUpload && (
                           <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                            <div className="space-y-2">
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => setCustomWallpaperFile(e.target.files?.[0] || null)}
-                                className="text-xs w-full"
-                              />
+                            <div className="space-y-3">
+                              <div className="relative">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => setCustomWallpaperFile(e.target.files?.[0] || null)}
+                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                  id="wallpaper-file-input"
+                                />
+                                <label
+                                  htmlFor="wallpaper-file-input"
+                                  className="flex flex-col items-center justify-center w-full px-4 py-3 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-center text-gray-500 dark:text-gray-400 hover:border-indigo-500 dark:hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all duration-200 cursor-pointer group"
+                                >
+                                  <svg className="w-6 h-6 mx-auto mb-2 text-gray-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                  </svg>
+                                  <span className="text-sm font-medium">
+                                    {customWallpaperFile ? customWallpaperFile.name : t('chat.chooseFile')}
+                                  </span>
+              <span className="text-xs mt-1 text-gray-400">
+                {customWallpaperFile ? t('chat.clickToChange') : t('chat.fileFormat')}
+              </span>
+                                </label>
+                              </div>
                               <input
                                 type="text"
-                                placeholder="Wallpaper name"
+                                placeholder={t('chat.wallpaperName')}
                                 value={customWallpaperName}
                                 onChange={(e) => setCustomWallpaperName(e.target.value)}
-                                className="text-xs w-full px-2 py-1 rounded border"
+                                className="text-sm w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                               />
                               <input
                                 type="text"
-                                placeholder="Description"
+                                placeholder={t('chat.wallpaperDescription')}
                                 value={customWallpaperDescription}
                                 onChange={(e) => setCustomWallpaperDescription(e.target.value)}
-                                className="text-xs w-full px-2 py-1 rounded border"
+                                className="text-sm w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                               />
                               <div className="flex items-center space-x-2 text-xs">
                                 <label className="flex items-center">
@@ -1447,7 +1581,7 @@ export default function ChatPage() {
                                     onChange={(e) => setCustomWallpaperSupportsDark(e.target.checked)}
                                     className="mr-1"
                                   />
-                                  Dark mode
+                                  {t('chat.supportsDarkMode')}
                                 </label>
                                 <label className="flex items-center">
                                   <input
@@ -1456,15 +1590,30 @@ export default function ChatPage() {
                                     onChange={(e) => setCustomWallpaperSupportsLight(e.target.checked)}
                                     className="mr-1"
                                   />
-                                  Light mode
+                                  {t('chat.supportsLightMode')}
                                 </label>
                               </div>
                               <button
                                 onClick={handleCustomWallpaperUpload}
                                 disabled={!customWallpaperFile || uploadingWallpaper}
-                                className="w-full text-xs bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-2 py-1 rounded transition-colors"
+                                className="w-full text-sm font-medium bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-4 py-2.5 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg disabled:shadow-none disabled:cursor-not-allowed flex items-center justify-center gap-2"
                               >
-                                {uploadingWallpaper ? 'Uploading...' : 'Upload Wallpaper'}
+                                {uploadingWallpaper ? (
+                                  <>
+                                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    {t('chat.uploading')}
+                                  </>
+                                ) : (
+                                  <>
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                    </svg>
+                                    {t('chat.uploadWallpaper')}
+                                  </>
+                                )}
                               </button>
                             </div>
                           </div>
@@ -1506,7 +1655,7 @@ export default function ChatPage() {
                           ))}
                         </div>
                         <div className="mt-3">
-                          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Opacity</label>
+                          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('chat.opacity')}</label>
                           <input
                             type="range"
                             min={0}
@@ -1550,9 +1699,6 @@ export default function ChatPage() {
                   >
                     <VideoCameraIcon className="w-5 h-5" />
                   </button>
-                  <button className="p-2 rounded-2xl hover:bg-gray-100/80 dark:hover:bg-gray-700/80 text-gray-600 dark:text-gray-400 transition-all duration-200 shadow-lg">
-                    <EllipsisHorizontalIcon className="w-5 h-5" />
-                  </button>
                 </div>
               </div>
             </div>
@@ -1583,8 +1729,8 @@ export default function ChatPage() {
                   <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl">
                     <PaperAirplaneIcon className="w-12 h-12 text-indigo-500 dark:text-indigo-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">No messages yet</h3>
-                  <p className="text-sm">Start a conversation with {selectedContact.name}!</p>
+                  <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('chat.noMessagesYet')}</h3>
+                  <p className="text-sm">{t('chat.startConversation', { name: selectedContact.name })}</p>
                 </div>
               ) : (
                 currentMessages.map((message) => (
@@ -1594,11 +1740,61 @@ export default function ChatPage() {
                     className={`flex ${message.userId === currentUserId ? 'justify-end' : 'justify-start'} group`}
                   >
                     <div className={`max-w-[80%] md:max-w-[65%] lg:max-w-[60%] ${message.userId === currentUserId ? 'order-2' : 'order-1'}`}>
-                      {message.replyToMessageId && (
-                        <div className="mb-2 text-xs text-gray-500 dark:text-gray-400 italic bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-lg">
-                          Replying to...
-                        </div>
-                      )}
+                      {message.replyToMessageId && (() => {
+                        // Find the original message being replied to
+                        const originalMessage = currentMessages.find(m => m.id === message.replyToMessageId);
+                        if (!originalMessage) {
+                          return (
+                            <div className="mb-2 text-xs text-gray-500 dark:text-gray-400 italic bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-lg">
+                              {t('chat.replyingToEllipsis')}
+                            </div>
+                          );
+                        }
+                        
+                        // Check if it's a media message
+                        const isImage = originalMessage.messageType === 'image' || (originalMessage.text && looksLikeImageUrl(originalMessage.text));
+                        const isVideo = originalMessage.messageType === 'video' || (originalMessage.text && looksLikeVideoUrl(originalMessage.text));
+                        const isVoice = originalMessage.messageType === 'voice';
+                        
+                        return (
+                          <div className="mb-2 text-xs bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg border-l-2 border-indigo-500">
+                            <div className="text-gray-500 dark:text-gray-400 italic mb-1">{t('chat.replyingTo')}</div>
+                            {isVoice ? (
+                              <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
+                                <MicrophoneIcon className="w-3 h-3" />
+                                <span>{t('chat.voiceMessage')}</span>
+                              </div>
+                            ) : isImage ? (
+                              <div className="flex items-center gap-2">
+                                <img
+                                  src={originalMessage.text}
+                                  alt="Preview"
+                                  className="h-8 w-8 object-cover rounded"
+                                  loading="lazy"
+                                />
+                                <span className="text-gray-600 dark:text-gray-300 truncate">{t('chat.photo')}</span>
+                              </div>
+                            ) : isVideo ? (
+                              <div className="flex items-center gap-2">
+                                <div className="relative h-8 w-12 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
+                                  <video
+                                    src={originalMessage.text}
+                                    className="h-full w-full object-cover"
+                                    muted
+                                    playsInline
+                                  />
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <VideoCameraIcon className="w-3 h-3 text-white opacity-80" />
+                                  </div>
+                                </div>
+                                <span className="text-gray-600 dark:text-gray-300 truncate">{t('chat.video')}</span>
+                              </div>
+                            ) : (
+                              <div className="text-gray-600 dark:text-gray-300 truncate">{originalMessage.text}</div>
+                            )}
+                          </div>
+                        );
+                      })()}
                       {message.userId !== currentUserId && (
                         <div className="flex items-center mb-2">
                           <img
@@ -1685,10 +1881,10 @@ export default function ChatPage() {
                             </div>
                           )}
                           <span className="mx-1 text-gray-400">|</span>
-                          <button onClick={() => setReplyTo(message)} className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors">Reply</button>
+                          <button onClick={() => setReplyTo(message)} className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors">{t('common.reply')}</button>
                           {message.userId === currentUserId && (
                             <>
-                              <button onClick={() => { setEditingId(message.id); setInput(message.text); inputRef.current?.focus(); }} className="text-[11px] text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">Edit</button>
+                              <button onClick={() => { setEditingId(message.id); setInput(message.text); inputRef.current?.focus(); }} className="text-[11px] text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">{t('chat.edit')}</button>
                               <button onClick={async () => {
                                 try {
                                   await deleteChatMessage(message.id);
@@ -1703,7 +1899,7 @@ export default function ChatPage() {
                                     });
                                   }
                                 } catch {}
-                              }} className="text-[11px] text-red-600 hover:text-red-700 transition-colors">Delete</button>
+                              }} className="text-[11px] text-red-600 hover:text-red-700 transition-colors">{t('chat.delete')}</button>
                             </>
                           )}
                         </div>
@@ -1720,12 +1916,12 @@ export default function ChatPage() {
             {showPinsPanel && currentConversationId && (
               <div className="absolute right-3 top-20 bottom-28 w-72 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-2xl p-3 z-30">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Pinned</span>
-                  <button className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" onClick={() => setShowPinsPanel(false)}>Close</button>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('chat.pinned')}</span>
+                  <button className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" onClick={() => setShowPinsPanel(false)}>{t('common.close')}</button>
                 </div>
                 <div className="space-y-2 overflow-y-auto max-h-full pr-1">
                   {((pinnedByConversation[currentConversationId] || []).length === 0 && (serverPinsByConversation[currentConversationId] || []).length === 0) && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">No pinned messages</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('chat.noPinnedMessages')}</p>
                   )}
                   {/* Global pins (all) */}
                   {(serverPinsByConversation[currentConversationId] || []).map(pin => {
@@ -1745,8 +1941,8 @@ export default function ChatPage() {
                             {renderMessageContent(msg.text, { compact: true })}
                           </div>
                           <div className="flex items-center justify-between mt-1">
-                            <span className="text-[10px] text-gray-500 dark:text-gray-400">{formatTime(msg.createdAt)} • all</span>
-                            <button className="text-[10px] text-red-600 hover:text-red-700" onClick={async (e) => { e.stopPropagation(); if (!currentUserId || !selectedContact?.id) return; try { await unpinChatMessage({ me: currentUserId, peer: selectedContact.id, messageId: pin.messageId, scope: 'global' }); const remote = await getPinnedMessages(currentUserId, selectedContact.id); if (currentConversationId) setServerPinsByConversation(prev => ({ ...prev, [currentConversationId]: remote })); } catch {} }}>Remove</button>
+                            <span className="text-[10px] text-gray-500 dark:text-gray-400">{formatTime(msg.createdAt)} • {t('chat.all')}</span>
+                            <button className="text-[10px] text-red-600 hover:text-red-700" onClick={async (e) => { e.stopPropagation(); if (!currentUserId || !selectedContact?.id) return; try { await unpinChatMessage({ me: currentUserId, peer: selectedContact.id, messageId: pin.messageId, scope: 'global' }); const remote = await getPinnedMessages(currentUserId, selectedContact.id); if (currentConversationId) setServerPinsByConversation(prev => ({ ...prev, [currentConversationId]: remote })); } catch {} }}>{t('chat.remove')}</button>
                           </div>
                         </div>
                       </div>
@@ -1768,8 +1964,8 @@ export default function ChatPage() {
                         >
                           <div className="truncate">{renderMessageContent(msg.text, { compact: true })}</div>
                           <div className="flex items-center justify-between mt-1">
-                            <span className="text-[10px] text-gray-500 dark:text-gray-400">{formatTime(msg.createdAt)} • me</span>
-                            <button className="text-[10px] text-red-600 hover:text-red-700" onClick={(e) => { e.stopPropagation(); togglePin(currentConversationId, id); }}>Remove</button>
+                            <span className="text-[10px] text-gray-500 dark:text-gray-400">{formatTime(msg.createdAt)} • {t('chat.me')}</span>
+                            <button className="text-[10px] text-red-600 hover:text-red-700" onClick={(e) => { e.stopPropagation(); togglePin(currentConversationId, id); }}>{t('chat.remove')}</button>
                           </div>
                         </div>
                       </div>
@@ -1799,10 +1995,10 @@ export default function ChatPage() {
                   </button>
                   {showAttachMenu && (
                     <div className="absolute bottom-full mb-3 left-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-2xl p-3 z-50 w-56">
-                      <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 px-1">Attach</div>
+                      <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 px-1">{t('chat.attach')}</div>
                       <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
                         <span className="text-lg">📷</span>
-                        <span className="text-sm">Photo</span>
+                        <span className="text-sm">{t('chat.photo')}</span>
                         <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                           const f = e.target.files?.[0];
                           if (!f || !selectedContact) return;
@@ -1815,7 +2011,7 @@ export default function ChatPage() {
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
                         <span className="text-lg">🎬</span>
-                        <span className="text-sm">Video</span>
+                        <span className="text-sm">{t('chat.video')}</span>
                         <input type="file" accept="video/*" className="hidden" onChange={async (e) => {
                           const f = e.target.files?.[0];
                           if (!f || !selectedContact) return;
@@ -1833,7 +2029,7 @@ export default function ChatPage() {
                   <input
                     ref={inputRef}
                     type="text"
-                    placeholder="Type a message..."
+                    placeholder={t('chat.typeAMessage')}
                     value={input}
                     onChange={onInputChange}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}

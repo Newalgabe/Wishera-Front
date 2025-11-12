@@ -74,9 +74,36 @@ export function formatBirthdayDate(birthday: string, locale: string = 'en-US'): 
 
 /**
  * Get countdown message for birthday
+ * @param birthday - Birthday date string
+ * @param isOwn - Whether this is the user's own birthday
+ * @param t - Optional translation function
  */
-export function getBirthdayCountdownMessage(birthday: string, isOwn: boolean = false): string {
+export function getBirthdayCountdownMessage(
+  birthday: string, 
+  isOwn: boolean = false,
+  t?: (key: string, params?: Record<string, string | number>) => string
+): string {
   const daysUntil = getDaysUntilBirthday(birthday);
+  
+  if (t) {
+    // Use translations if available
+    if (daysUntil === 0) {
+      return t('dashboard.birthdayTodayProfile');
+    } else if (daysUntil === 1) {
+      return t('dashboard.birthdayTomorrowProfile');
+    } else if (daysUntil <= 30) {
+      return t('dashboard.birthdayInDaysProfile', { days: daysUntil });
+    } else {
+      const approxMonths = Math.max(1, Math.min(12, Math.round(daysUntil / 30.44)));
+      if (approxMonths === 1) {
+        return t('dashboard.birthdayInMonthsProfile', { months: approxMonths });
+      } else {
+        return t('dashboard.birthdayInMonthsProfilePlural', { months: approxMonths });
+      }
+    }
+  }
+  
+  // Fallback to English if no translation function provided
   const prefix = isOwn ? 'Your' : 'Birthday';
   
   if (daysUntil === 0) {
@@ -96,14 +123,21 @@ export function getBirthdayCountdownMessage(birthday: string, isOwn: boolean = f
 
 /**
  * Get complete birthday information
+ * @param birthday - Birthday date string
+ * @param isOwn - Whether this is the user's own birthday
+ * @param t - Optional translation function
  */
-export function getBirthdayInfo(birthday: string, isOwn: boolean = false): BirthdayInfo {
+export function getBirthdayInfo(
+  birthday: string, 
+  isOwn: boolean = false,
+  t?: (key: string, params?: Record<string, string | number>) => string
+): BirthdayInfo {
   const age = calculateAge(birthday);
   const daysUntil = getDaysUntilBirthday(birthday);
   const isToday = daysUntil === 0;
   const isTomorrow = daysUntil === 1;
   const formattedDate = formatBirthdayDate(birthday);
-  const countdownMessage = getBirthdayCountdownMessage(birthday, isOwn);
+  const countdownMessage = getBirthdayCountdownMessage(birthday, isOwn, t);
   
   return {
     age,

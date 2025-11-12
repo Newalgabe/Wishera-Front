@@ -631,6 +631,12 @@ export interface ChatHistoryItemDTO {
   deliveredAt?: string | null;
   readAt?: string | null;
   clientMessageId?: string | null;
+  replyToMessageId?: string | null;
+  messageType?: 'text' | 'voice' | 'image' | 'video';
+  audioUrl?: string | null;
+  audioDuration?: number | null;
+  customData?: Record<string, any>;
+  reactions?: Record<string, string[]>;
 }
 
 export async function getChatHistory(userA: string, userB: string, page = 0, pageSize = 50): Promise<ChatHistoryItemDTO[]> {
