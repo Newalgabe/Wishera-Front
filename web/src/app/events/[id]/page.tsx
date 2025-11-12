@@ -36,7 +36,7 @@ interface EventDetailPageProps {}
 export default function EventDetailPage({}: EventDetailPageProps) {
   const params = useParams();
   const router = useRouter();
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
   const [event, setEvent] = useState<Event | null>(null);
   const [invitations, setInvitations] = useState<EventInvitation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -212,13 +212,13 @@ export default function EventDetailPage({}: EventDetailPageProps) {
   const getStatusText = (status: InvitationStatus) => {
     switch (status) {
       case InvitationStatus.Accepted:
-        return "Accepted";
+        return t('events.accepted');
       case InvitationStatus.Declined:
-        return "Declined";
+        return t('events.declined');
       case InvitationStatus.Maybe:
-        return "Maybe";
+        return t('events.maybe');
       default:
-        return "Pending";
+        return t('events.pending');
     }
   };
 
@@ -274,7 +274,7 @@ export default function EventDetailPage({}: EventDetailPageProps) {
             <div className="flex items-center space-x-3">
               {event.isCancelled && (
                 <span className="px-3 py-1.5 bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-semibold rounded-full shadow-lg">
-                  Cancelled
+                  {t('events.cancelled')}
                 </span>
               )}
               <div className="flex space-x-2">
@@ -286,14 +286,14 @@ export default function EventDetailPage({}: EventDetailPageProps) {
                   className="px-4 py-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 text-white text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex items-center gap-2"
                 >
                   <PencilIcon className="h-4 w-4" />
-                  Edit
+                  {t('common.edit')}
                 </button>
                 {!event.isCancelled && (
                   <button
                     onClick={handleCancelEvent}
                     className="px-4 py-2 bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-600 text-white text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95"
                   >
-                    Cancel Event
+                    {t('events.cancelEvent')}
                   </button>
                 )}
                 <button
@@ -301,7 +301,7 @@ export default function EventDetailPage({}: EventDetailPageProps) {
                   className="px-4 py-2 bg-gradient-to-r from-red-500 via-pink-500 to-red-600 text-white text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex items-center gap-2"
                 >
                   <TrashIcon className="h-4 w-4" />
-                  Delete
+                  {t('common.delete')}
                 </button>
               </div>
             </div>

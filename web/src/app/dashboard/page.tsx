@@ -16,7 +16,8 @@ import {
   EyeIcon,
   ArrowRightOnRectangleIcon,
   CalendarIcon,
-  Cog6ToothIcon
+  Cog6ToothIcon,
+  CheckCircleIcon
 } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartIconSolid } from "@heroicons/react/24/solid";
 import { useLanguage } from "../../contexts/LanguageContext";
@@ -946,10 +947,8 @@ export default function Dashboard() {
                 onClick={() => router.push('/reserved-gifts')}
                 className="w-full flex items-center px-4 py-3 text-left rounded-lg transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:translate-x-1 border-l-4 border-transparent"
               >
-                <svg className="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="font-medium">{t('reservedGifts.title')}</span>
+                <CheckCircleIcon className="h-5 w-5 mr-3 flex-shrink-0" />
+                <span className="font-medium break-words">{t('reservedGifts.title')}</span>
               </button>
               <button
                 onClick={() => router.push('/events')}

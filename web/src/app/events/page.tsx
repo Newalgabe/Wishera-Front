@@ -56,6 +56,7 @@ interface CreateEventModalProps {
 }
 
 function CreateEventModal({ isOpen, onClose, onCreateEvent, friends }: CreateEventModalProps) {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState<CreateEventRequest>({
     title: "",
     description: "",
@@ -110,12 +111,12 @@ function CreateEventModal({ isOpen, onClose, onCreateEvent, friends }: CreateEve
         exit={{ opacity: 0, scale: 0.95 }}
         className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
       >
-        <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Create Event</h2>
+        <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">{t('events.createEvent')}</h2>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Event Title *
+              {t('events.eventTitle')} *
             </label>
             <input
               type="text"
@@ -123,27 +124,27 @@ function CreateEventModal({ isOpen, onClose, onCreateEvent, friends }: CreateEve
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-              placeholder="Enter event title"
+              placeholder={t('events.enterEventTitle')}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Description
+              {t('events.description')}
             </label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
               rows={3}
-              placeholder="Describe your event"
+              placeholder={t('events.describeEvent')}
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Event Date *
+                {t('events.eventDate')} *
               </label>
               <input
                 type="date"
@@ -156,7 +157,7 @@ function CreateEventModal({ isOpen, onClose, onCreateEvent, friends }: CreateEve
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Event Time
+                {t('events.eventTime')}
               </label>
               <input
                 type="time"
@@ -169,55 +170,55 @@ function CreateEventModal({ isOpen, onClose, onCreateEvent, friends }: CreateEve
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Location
+              {t('events.location')}
             </label>
             <input
               type="text"
               value={formData.location}
               onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-              placeholder="Where will the event take place?"
+              placeholder={t('events.locationPlaceholder')}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Event Type
+              {t('events.eventType')}
             </label>
             <select
               value={formData.eventType}
               onChange={(e) => setFormData(prev => ({ ...prev, eventType: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             >
-              <option value="General">General</option>
-              <option value="Birthday">Birthday</option>
-              <option value="Party">Party</option>
-              <option value="Meeting">Meeting</option>
-              <option value="Celebration">Celebration</option>
-              <option value="Other">Other</option>
+              <option value="General">{t('events.eventTypeGeneral')}</option>
+              <option value="Birthday">{t('events.eventTypeBirthday')}</option>
+              <option value="Party">{t('events.eventTypeParty')}</option>
+              <option value="Meeting">{t('events.eventTypeMeeting')}</option>
+              <option value="Celebration">{t('events.eventTypeCelebration')}</option>
+              <option value="Other">{t('events.eventTypeOther')}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Additional Notes
+              {t('events.additionalNotes')}
             </label>
             <textarea
               value={formData.additionalNotes}
               onChange={(e) => setFormData(prev => ({ ...prev, additionalNotes: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
               rows={2}
-              placeholder="Dress code, special instructions, etc."
+              placeholder={t('events.additionalNotesPlaceholder')}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Invite Friends
+              {t('events.inviteFriends')}
             </label>
             <div className="max-h-40 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-md p-2">
               {friends.length === 0 ? (
-                <p className="text-gray-500 dark:text-gray-400 text-sm">No friends to invite</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">{t('events.noFriendsToInvite')}</p>
               ) : (
                 friends.map(friend => (
                   <label key={friend.id} className="flex items-center space-x-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded">
@@ -240,14 +241,14 @@ function CreateEventModal({ isOpen, onClose, onCreateEvent, friends }: CreateEve
               onClick={onClose}
               className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
-              {isSubmitting ? "Creating..." : "Create Event"}
+              {isSubmitting ? t('events.creating') : t('events.createEvent')}
             </button>
           </div>
         </form>
@@ -267,6 +268,7 @@ interface EventCardProps {
 
 function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: EventCardProps) {
   const router = useRouter();
+  const { t } = useLanguage();
   const [showResponseMenu, setShowResponseMenu] = useState(false);
   const [dropdownCoords, setDropdownCoords] = useState({ x: 0, y: 0 });
   
@@ -382,13 +384,13 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
   const getStatusText = (status?: InvitationStatus) => {
     switch (status) {
       case InvitationStatus.Accepted:
-        return "Accepted";
+        return t('events.accepted');
       case InvitationStatus.Declined:
-        return "Declined";
+        return t('events.declined');
       case InvitationStatus.Maybe:
-        return "Maybe";
+        return t('events.maybe');
       default:
-        return "Pending";
+        return t('events.pending');
     }
   };
 
@@ -412,11 +414,11 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
             </h3>
             {event.isCancelled && (
               <span className="px-3 py-1.5 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-semibold rounded-full shadow-lg flex-shrink-0">
-                Cancelled
+                {t('events.cancelled')}
               </span>
             )}
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">by {event.creatorUsername}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{t('events.by')} {event.creatorUsername}</p>
         </div>
 
         {/* Description */}
@@ -454,7 +456,7 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
         {event.additionalNotes && (
           <div className="mb-5 p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-xl border border-amber-200 dark:border-amber-800/30">
             <p className="text-sm text-gray-700 dark:text-gray-300">
-              <span className="font-semibold text-amber-700 dark:text-amber-300">Notes:</span> {event.additionalNotes}
+              <span className="font-semibold text-amber-700 dark:text-amber-300">{t('events.notes')}:</span> {event.additionalNotes}
             </p>
           </div>
         )}
@@ -497,7 +499,7 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
               className="px-4 py-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 text-white text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex items-center gap-2"
             >
               <PencilIcon className="h-4 w-4" />
-              <span>Edit</span>
+              <span>{t('common.edit')}</span>
             </button>
             {!event.isCancelled && (
               <button
@@ -507,7 +509,7 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
                 }}
                 className="px-4 py-2 bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-600 text-white text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             )}
             <button
@@ -518,7 +520,7 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
               className="px-4 py-2 bg-gradient-to-r from-red-500 via-pink-500 to-red-600 text-white text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex items-center gap-2"
             >
               <TrashIcon className="h-4 w-4" />
-              <span>Delete</span>
+              <span>{t('common.delete')}</span>
             </button>
           </div>
         ) : (
@@ -1135,20 +1137,6 @@ export default function EventsPage() {
             </div>
           </div>
 
-          {/* Debug Info */}
-          <div className="mb-6 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-md p-4">
-            <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">Debug Info:</h4>
-            <div className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
-              <p>User: {user ? `${user.username} (${user.id})` : 'Not logged in'}</p>
-              <p>Auth Loading: {authLoading ? 'Yes' : 'No'}</p>
-              <p>Data Loading: {isLoading ? 'Yes' : 'No'}</p>
-              <p>My Events: {myEvents.length}</p>
-              <p>Invited Events: {invitedEvents.length}</p>
-              <p>My Invitations: {myInvitations.length}</p>
-              <p>Friends: {friends.length}</p>
-            </div>
-          </div>
-
           {/* Success Message */}
           {successMessage && (
             <div className="mb-6 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-md p-4">
@@ -1206,69 +1194,43 @@ export default function EventsPage() {
       {/* Right Sidebar */}
       <div className="hidden xl:block w-80 bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-l border-gray-200 dark:border-gray-700 fixed right-0 top-16 bottom-0 overflow-y-auto">
         <div className="p-4 sm:p-6">
-          {/* Quick Actions */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 mb-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                <CalendarIcon className="w-4 h-4 text-white" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                Quick Actions
-              </h3>
-            </div>
-            <div className="space-y-3">
-              <button
-                onClick={() => setIsCreateModalOpen(true)}
-                className="w-full flex items-center justify-center px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-medium"
-              >
-                <PlusIcon className="h-5 w-5 mr-2" />
-                Create Event
-              </button>
-              <button
-                onClick={() => setActiveTab('my-events')}
-                className={`w-full flex items-center justify-center px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
-                  activeTab === 'my-events'
-                    ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }`}
-              >
-                {t('events.myEvents')}
-              </button>
-              <button
-                onClick={() => setActiveTab('invited-events')}
-                className={`w-full flex items-center justify-center px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
-                  activeTab === 'invited-events'
-                    ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }`}
-              >
-                {t('events.invitedEvents')}
-              </button>
-            </div>
-          </div>
-
           {/* Event Stats */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                <CheckIcon className="w-4 h-4 text-white" />
+              <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+                <CheckIcon className="w-5 h-5 text-white" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                Event Stats
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                {t('events.stats')}
               </h3>
             </div>
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400">{t('events.myEvents')}</span>
-                <span className="font-semibold text-gray-900 dark:text-white">{myEvents.length}</span>
+              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-100 dark:border-blue-800/30 hover:shadow-md transition-all duration-200">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                    <CalendarIcon className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-gray-700 dark:text-gray-300 font-medium">{t('events.myEvents')}</span>
+                </div>
+                <span className="text-2xl font-bold text-gray-900 dark:text-white">{myEvents.length}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400">{t('events.invitedEvents')}</span>
-                <span className="font-semibold text-gray-900 dark:text-white">{invitedEvents.length}</span>
+              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-100 dark:border-purple-800/30 hover:shadow-md transition-all duration-200">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
+                    <CalendarIcon className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-gray-700 dark:text-gray-300 font-medium">{t('events.invitedEvents')}</span>
+                </div>
+                <span className="text-2xl font-bold text-gray-900 dark:text-white">{invitedEvents.length}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400">{t('events.totalEvents')}</span>
-                <span className="font-semibold text-gray-900 dark:text-white">{myEvents.length + invitedEvents.length}</span>
+              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-100 dark:border-green-800/30 hover:shadow-md transition-all duration-200">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                    <CheckIcon className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-gray-700 dark:text-gray-300 font-medium">{t('events.totalEvents')}</span>
+                </div>
+                <span className="text-2xl font-bold text-gray-900 dark:text-white">{myEvents.length + invitedEvents.length}</span>
               </div>
             </div>
           </div>

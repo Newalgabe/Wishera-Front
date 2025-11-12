@@ -61,18 +61,10 @@ export default function ReservedGiftsPage() {
     }
   };
 
-  const getTranslatedCategoryLabel = (category: string) => {
-    const categoryMap: { [key: string]: string } = {
-      'Electronics': t('categories.electronics'),
-      'Clothing': t('categories.clothing'),
-      'Books': t('categories.books'),
-      'Home': t('categories.home'),
-      'Sports': t('categories.sports'),
-      'Toys': t('categories.toys'),
-      'Beauty': t('categories.beauty'),
-      'Other': t('categories.other')
-    };
-    return categoryMap[category] || category;
+  const getTranslatedCategoryLabel = (category: string | null | undefined) => {
+    if (!category) return t('dashboard.categories.other');
+    const categoryKey = category.toLowerCase().replace(/[^a-z]/g, '');
+    return t(`dashboard.categories.${categoryKey}`) || category;
   };
 
   if (loading) {
@@ -206,7 +198,7 @@ export default function ReservedGiftsPage() {
 
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-xs px-3 py-1 rounded-full bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 text-indigo-800 dark:text-indigo-200 font-medium">
-                      {getTranslatedCategoryLabel(gift.category) || t('categories.other')}
+                      {getTranslatedCategoryLabel(gift.category)}
                     </span>
                     <span className="text-xs px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-medium">
                       {t('reservedGifts.reserved')}
