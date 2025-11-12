@@ -3,7 +3,7 @@ import { Suspense, useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { verifyLoginCode, verifyResetCode, resendLoginCode, forgotPassword } from "../api";
+import { verifyLoginCode, verifyResetCode, verifyEmailCode, resendLoginCode, resendVerificationCode, forgotPassword } from "../api";
 import Notification from "../../components/Notification";
 import { useLanguage } from "../../contexts/LanguageContext";
 
@@ -27,7 +27,7 @@ function VerifyCodeInner() {
   const { t } = useLanguage();
 
   const email = searchParams.get("email") || "";
-  const codeType = searchParams.get("type") || "reset"; // 'reset' or 'login'
+  const codeType = searchParams.get("type") || "reset"; // 'reset', 'login', or 'verify'
 
   const [notification, setNotification] = useState<{
     type: 'success' | 'error';
@@ -49,6 +49,8 @@ function VerifyCodeInner() {
       setTimeout(() => {
         if (codeType === 'reset') {
           router.push('/forgot-password');
+        } else if (codeType === 'verify') {
+          router.push('/register');
         } else {
           router.push('/login');
         }
@@ -105,13 +107,24 @@ function VerifyCodeInner() {
         
         setNotification({
           type: 'success',
-          message: 'Sign in successful!',
+          message: t('verifyCode.signInSuccessful'),
           isVisible: true
         });
         
         setTimeout(() => {
           router.push("/dashboard");
         }, 1500);
+      } else if (codeType === 'verify') {
+        await verifyEmailCode(email, codeString);
+        setNotification({
+          type: 'success',
+          message: t('verifyCode.emailVerified'),
+          isVisible: true
+        });
+        
+        setTimeout(() => {
+          router.push("/login");
+        }, 2000);
       } else {
         const data = await verifyResetCode(email, codeString);
         // Navigate to reset password screen with token
@@ -120,7 +133,7 @@ function VerifyCodeInner() {
     } catch (err: any) {
       setNotification({
         type: 'error',
-        message: err.response?.data?.message || err.message || 'Invalid or expired code',
+        message: err.response?.data?.message || err.message || t('verifyCode.invalidCode'),
         isVisible: true
       });
     } finally {
@@ -137,14 +150,21 @@ function VerifyCodeInner() {
         await resendLoginCode(email);
         setNotification({
           type: 'success',
-          message: 'Code has been resent to your email',
+          message: t('verifyCode.codeResent'),
+          isVisible: true
+        });
+      } else if (codeType === 'verify') {
+        await resendVerificationCode(email);
+        setNotification({
+          type: 'success',
+          message: t('verifyCode.verificationCodeResent'),
           isVisible: true
         });
       } else {
         await forgotPassword(email);
         setNotification({
           type: 'success',
-          message: 'Code has been resent to your email',
+          message: t('verifyCode.codeResent'),
           isVisible: true
         });
       }
@@ -173,12 +193,14 @@ function VerifyCodeInner() {
         transition={{ duration: 0.7 }}
       >
         <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2 text-center transition-colors duration-300">
-          {codeType === 'login' ? 'Sign In Confirmation' : 'Verify Code'}
+          {codeType === 'login' ? t('verifyCode.signInConfirmation') : codeType === 'verify' ? t('verifyCode.verifyEmail') : t('verifyCode.title')}
         </h1>
         <p className="text-gray-600 dark:text-gray-300 text-center mb-2 transition-colors duration-300">
           {codeType === 'login'
-            ? 'Enter the 6-digit code sent to your email to complete sign in'
-            : 'Enter the 6-digit code sent to your email'}
+            ? t('verifyCode.enterCodeLogin')
+            : codeType === 'verify'
+            ? t('verifyCode.enterCodeVerify')
+            : t('verifyCode.enterCodeReset')}
         </p>
         <p className="text-indigo-500 dark:text-purple-400 text-center mb-6 font-semibold transition-colors duration-300">
           {email}
@@ -206,7 +228,7 @@ function VerifyCodeInner() {
             className="mt-2 py-3 rounded-lg bg-gradient-to-r from-indigo-500 to-blue-500 dark:from-purple-500 dark:to-indigo-500 text-white font-semibold text-lg shadow-md hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed" 
             disabled={loading || code.join('').length !== 6}
           >
-            {loading ? 'Verifying...' : 'Verify Code'}
+            {loading ? t('verifyCode.verifying') : t('verifyCode.verifyButton')}
           </button>
         </form>
         
@@ -216,13 +238,13 @@ function VerifyCodeInner() {
             disabled={loading}
             className="text-indigo-500 dark:text-purple-400 hover:underline text-sm transition-colors duration-300 disabled:opacity-50"
           >
-            Didn't receive the code? Resend
+            {t('verifyCode.resendCode')}
           </button>
         </div>
         
         <div className="mt-6 text-center text-gray-500 dark:text-gray-400 text-sm transition-colors duration-300">
           <Link href="/login" className="text-indigo-500 dark:text-purple-400 hover:underline font-medium transition-colors duration-300">
-            Back to Login
+            {t('verifyCode.backToLogin')}
           </Link>
         </div>
       </motion.div>

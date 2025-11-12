@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { login } from "../api";
+import { login, resendVerificationCode } from "../api";
 import Notification from "../../components/Notification";
 import { useLanguage } from "../../contexts/LanguageContext";
 
@@ -66,9 +66,39 @@ export default function LoginPage() {
         return;
       }
       
+      // Check if error message mentions email verification
+      const errorMessage = err.response?.data?.message || err.message || '';
+      const lowerMessage = errorMessage.toLowerCase();
+      const isEmailVerificationError = errorMessage && (
+        (lowerMessage.includes('verify') && lowerMessage.includes('email')) ||
+        lowerMessage.includes('verification link') ||
+        (lowerMessage.includes('verification') && lowerMessage.includes('email'))
+      );
+      
+      if (isEmailVerificationError && email) {
+        // Automatically send verification code and redirect to verify-code page
+        try {
+          await resendVerificationCode(email);
+          // Redirect to verify-code page
+          router.push(`/verify-code?email=${encodeURIComponent(email)}&type=verify`);
+          return;
+        } catch (resendErr: any) {
+          // If resend fails, show error but still redirect
+          console.error('Failed to resend verification code:', resendErr);
+          router.push(`/verify-code?email=${encodeURIComponent(email)}&type=verify`);
+          return;
+        }
+      }
+      
+      // For other errors, show notification
+      let displayMessage = errorMessage || t('auth.loginFailed');
+      if (isEmailVerificationError) {
+        displayMessage = t('auth.emailVerificationRequired');
+      }
+      
       setNotification({
         type: 'error',
-        message: err.response?.data?.message || err.message || t('auth.loginFailed'),
+        message: displayMessage,
         isVisible: true
       });
     } finally {

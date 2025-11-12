@@ -31,6 +31,7 @@
   "auth": {
     "loginTitle": "Wishera-ya daxil ol",
     "registerTitle": "Hesab yarat",
+    "name": "Ad",
     "email": "E-poçt",
     "password": "Şifrə",
     "confirmPassword": "Şifrəni təsdiq et",
@@ -48,7 +49,8 @@
     "resetPasswordTitle": "Şifrə sıfırlama",
     "sendResetLink": "Sıfırlama linkini göndər",
     "newPassword": "Yeni şifrə",
-    "resetPasswordSuccess": "Şifrə uğurla sıfırlandı!"
+    "resetPasswordSuccess": "Şifrə uğurla sıfırlandı!",
+    "emailVerificationRequired": "Daxil olmadan əvvəl email ünvanınızı təsdiqləyin. Təsdiq kodunu almaq üçün poçt qutunuzu yoxlayın."
   },
   "home": {
     "heroTitle": "Mükəmməl Arzu Siyahısı Təcrübəsi",
@@ -144,6 +146,9 @@
       "giftsReserved": "Rezerv Edilmiş Hədiyyə",
       "uptime": "İş Vaxtı"
     },
+    "globalCommunity": "Qlobal İcma",
+    "innovativeDesign": "İnnovativ Dizayn",
+    "continuousLearning": "Davamlı Öyrənmə",
     "faqs": {
       "q1": {
         "question": "Hədiyyə rezervasiya sistemi necə işləyir?",
@@ -231,19 +236,22 @@
   },
   "forgotPassword": {
     "title": "Şifrəni unutmusunuz?",
-    "subtitle": "Email ünvanınızı daxil edin və sizə şifrə sıfırlama keçidi göndərəcəyik.",
+    "subtitle": "Email ünvanınızı daxil edin və sizə şifrə sıfırlama üçün təsdiq kodu göndərəcəyik.",
     "emailPlaceholder": "Email ünvanınızı daxil edin",
-    "sendButton": "Sıfırlama Keçidi Göndər",
+    "sendButton": "Sıfırlama Kodu Göndər",
     "sending": "Göndərilir...",
-    "successMessage": "Şifrə sıfırlama keçidi emailinizə göndərildi! Gələn qutuya (və spam qovluğuna) baxın.",
-    "errorMessage": "Sıfırlama emaili göndərilmədi. Email ünvanınızı yoxlayın və yenidən cəhd edin.",
+    "successMessage": "Şifrə sıfırlama kodu emailinizə göndərildi! Gələn qutuya (və spam qovluğuna) baxın.",
+    "errorMessage": "Sıfırlama kodu göndərilmədi. Email ünvanınızı yoxlayın və yenidən cəhd edin.",
     "rememberPassword": "Şifrənizi xatırladınız?",
     "backToLogin": "Girişə qayıt"
   },
   "resetPassword": {
-    "invalidLinkTitle": "Sıfırlama Keçidi Etibarsızdır",
-    "invalidLinkDescription": "Şifrə sıfırlama keçidi etibarsızdır və ya vaxtı bitib.",
-    "requestNewLink": "Yeni sıfırlama keçidi istə",
+    "invalidLinkTitle": "Sıfırlama Kodu Etibarsızdır",
+    "invalidLinkDescription": "Şifrə sıfırlama kodu etibarsızdır və ya vaxtı bitib.",
+    "requestNewLink": "Yeni sıfırlama kodu istə",
+    "invalidTokenMessage": "Etibarsız və ya vaxtı bitmiş sıfırlama tokeni",
+    "passwordMismatchMessage": "Şifrələr uyğun gəlmir",
+    "passwordResetSuccessMessage": "Şifrə uğurla sıfırlandı! Giriş səhifəsinə yönləndirilir...",
     "title": "Şifrənizi Sıfırlayın",
     "subtitle": "Aşağıya yeni şifrənizi daxil edin.",
     "newPasswordPlaceholder": "Yeni şifrə",
@@ -253,6 +261,23 @@
     "rememberPassword": "Şifrənizi xatırladınız?",
     "backToLogin": "Girişə qayıt",
     "errorMessage": "Şifrəni sıfırlamaq mümkün olmadı"
+  },
+  "verifyCode": {
+    "title": "Kodu Təsdiqlə",
+    "signInConfirmation": "Giriş Təsdiqi",
+    "verifyEmail": "Email-inizi Təsdiqləyin",
+    "enterCodeLogin": "Girişi tamamlamaq üçün emailinizə göndərilən 6 rəqəmli kodu daxil edin",
+    "enterCodeVerify": "Hesabınızı təsdiqləmək üçün emailinizə göndərilən 6 rəqəmli təsdiq kodunu daxil edin",
+    "enterCodeReset": "Emailinizə göndərilən 6 rəqəmli kodu daxil edin",
+    "verifying": "Yoxlanılır...",
+    "verifyButton": "Kodu Təsdiqlə",
+    "resendCode": "Kodu almadınız? Yenidən göndər",
+    "codeResent": "Kod emailinizə yenidən göndərildi",
+    "verificationCodeResent": "Təsdiq kodu emailinizə yenidən göndərildi",
+    "backToLogin": "Girişə Qayıt",
+    "invalidCode": "Etibarsız və ya vaxtı bitmiş kod",
+    "emailVerified": "Email uğurla təsdiqləndi! İndi daxil ola bilərsiniz.",
+    "signInSuccessful": "Giriş uğurlu oldu!"
   },
   "dashboard": {
     "followers": "izləyici",

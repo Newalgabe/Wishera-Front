@@ -49,6 +49,7 @@
   "auth": {
     "loginTitle": "Login to Wishera",
     "registerTitle": "Create Your Account",
+    "name": "Name",
     "email": "Email",
     "password": "Password",
     "confirmPassword": "Confirm Password",
@@ -66,7 +67,8 @@
     "resetPasswordTitle": "Reset Password",
     "sendResetLink": "Send Reset Link",
     "newPassword": "New Password",
-    "resetPasswordSuccess": "Password reset successful!"
+    "resetPasswordSuccess": "Password reset successful!",
+    "emailVerificationRequired": "Please verify your email address before logging in. Check your inbox for the verification code."
   },
   "home": {
     "heroTitle": "Your Ultimate Wishlist Experience",
@@ -162,6 +164,9 @@
       "giftsReserved": "Gifts Reserved",
       "uptime": "Uptime"
     },
+    "globalCommunity": "Global Community",
+    "innovativeDesign": "Innovative Design",
+    "continuousLearning": "Continuous Learning",
     "faqs": {
       "q1": {
         "question": "How does the gift reservation system work?",
@@ -249,19 +254,22 @@
   },
   "forgotPassword": {
     "title": "Forgot Password?",
-    "subtitle": "Enter your email address and we'll send you a link to reset your password.",
+    "subtitle": "Enter your email address and we'll send you a verification code to reset your password.",
     "emailPlaceholder": "Enter your email",
-    "sendButton": "Send Reset Link",
+    "sendButton": "Send Reset Code",
     "sending": "Sending...",
-    "successMessage": "Password reset link sent to your email! Check your inbox (and spam folder).",
-    "errorMessage": "Failed to send reset email. Please check your email address and try again.",
+    "successMessage": "Password reset code sent to your email! Check your inbox (and spam folder).",
+    "errorMessage": "Failed to send reset code. Please check your email address and try again.",
     "rememberPassword": "Remember your password?",
     "backToLogin": "Back to Login"
   },
   "resetPassword": {
-    "invalidLinkTitle": "Invalid Reset Link",
-    "invalidLinkDescription": "The password reset link is invalid or has expired.",
-    "requestNewLink": "Request a new reset link",
+    "invalidLinkTitle": "Invalid Reset Code",
+    "invalidLinkDescription": "The password reset code is invalid or has expired.",
+    "requestNewLink": "Request a new reset code",
+    "invalidTokenMessage": "Invalid or expired reset token",
+    "passwordMismatchMessage": "Passwords do not match",
+    "passwordResetSuccessMessage": "Password reset successful! Redirecting to login...",
     "title": "Reset Your Password",
     "subtitle": "Enter your new password below.",
     "newPasswordPlaceholder": "New password",
@@ -271,6 +279,23 @@
     "rememberPassword": "Remember your password?",
     "backToLogin": "Back to Login",
     "errorMessage": "Failed to reset password"
+  },
+  "verifyCode": {
+    "title": "Verify Code",
+    "signInConfirmation": "Sign In Confirmation",
+    "verifyEmail": "Verify Your Email",
+    "enterCodeLogin": "Enter the 6-digit code sent to your email to complete sign in",
+    "enterCodeVerify": "Enter the 6-digit verification code sent to your email to verify your account",
+    "enterCodeReset": "Enter the 6-digit code sent to your email",
+    "verifying": "Verifying...",
+    "verifyButton": "Verify Code",
+    "resendCode": "Didn't receive the code? Resend",
+    "codeResent": "Code has been resent to your email",
+    "verificationCodeResent": "Verification code has been resent to your email",
+    "backToLogin": "Back to Login",
+    "invalidCode": "Invalid or expired code",
+    "emailVerified": "Email verified successfully! You can now log in.",
+    "signInSuccessful": "Sign in successful!"
   },
   "dashboard": {
     "followers": "followers",

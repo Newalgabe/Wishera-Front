@@ -305,17 +305,17 @@ export default function About() {
               {t('about.subtitle')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <div className="flex items-center gap-2 text-gray-600">
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300 transition-colors duration-300">
                 <GlobeAltIcon className="w-6 h-6" />
-                <span>Global Community</span>
+                <span>{t('about.globalCommunity')}</span>
               </div>
-              <div className="flex items-center gap-2 text-gray-600">
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300 transition-colors duration-300">
                 <LightBulbIcon className="w-6 h-6" />
-                <span>Innovative Design</span>
+                <span>{t('about.innovativeDesign')}</span>
               </div>
-              <div className="flex items-center gap-2 text-gray-600">
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300 transition-colors duration-300">
                 <AcademicCapIcon className="w-6 h-6" />
-                <span>Continuous Learning</span>
+                <span>{t('about.continuousLearning')}</span>
               </div>
             </div>
           </motion.div>

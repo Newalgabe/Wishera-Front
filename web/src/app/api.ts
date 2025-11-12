@@ -20,7 +20,9 @@ axios.interceptors.request.use((config) => {
       || url.includes('/auth/reset-password')
       || url.includes('/auth/verify-reset-code')
       || url.includes('/auth/verify-login-code')
+      || url.includes('/auth/verify-email-code')
       || url.includes('/auth/resend-login-code')
+      || url.includes('/auth/resend-verification-code')
       || url.includes('/auth/check-email')
       || url.includes('/auth/check-username');
 
@@ -96,7 +98,12 @@ export async function login(email: string, password: string) {
 export async function register(username: string, email: string, password: string) {
   try {
     console.log('API: Attempting registration to:', `${AUTH_API_URL}/auth/register`);
-    const response = await axios.post(`${AUTH_API_URL}/auth/register`, { username, email, password });
+    // Add X-Client-Type header to request verification codes instead of links
+    const response = await axios.post(`${AUTH_API_URL}/auth/register`, { username, email, password }, {
+      headers: {
+        'X-Client-Type': 'mobile'
+      }
+    });
     console.log('API: Registration successful');
     return response.data;
   } catch (error) {
@@ -161,6 +168,20 @@ export async function verifyLoginCode(email: string, code: string) {
 
 export async function resendLoginCode(email: string) {
   const response = await axios.post(`${AUTH_API_URL}/auth/resend-login-code`, { email });
+  return response.data;
+}
+
+export async function verifyEmailCode(email: string, code: string) {
+  const response = await axios.post(`${AUTH_API_URL}/auth/verify-email-code`, { email, code });
+  return response.data;
+}
+
+export async function resendVerificationCode(email: string) {
+  const response = await axios.post(`${AUTH_API_URL}/auth/resend-verification-code`, { email }, {
+    headers: {
+      'X-Client-Type': 'mobile'
+    }
+  });
   return response.data;
 }
 

@@ -31,6 +31,7 @@
   "auth": {
     "loginTitle": "Войти в Wishera",
     "registerTitle": "Создать аккаунт",
+    "name": "Имя",
     "email": "Электронная почта",
     "password": "Пароль",
     "confirmPassword": "Подтвердите пароль",
@@ -48,7 +49,8 @@
     "resetPasswordTitle": "Сброс пароля",
     "sendResetLink": "Отправить ссылку сброса",
     "newPassword": "Новый пароль",
-    "resetPasswordSuccess": "Пароль успешно сброшен!"
+    "resetPasswordSuccess": "Пароль успешно сброшен!",
+    "emailVerificationRequired": "Пожалуйста, подтвердите ваш email адрес перед входом. Проверьте вашу почту для получения кода подтверждения."
   },
   "home": {
     "heroTitle": "Ваш идеальный список желаний",
@@ -144,6 +146,9 @@
       "giftsReserved": "Забронированных подарков",
       "uptime": "Время работы"
     },
+    "globalCommunity": "Глобальное сообщество",
+    "innovativeDesign": "Инновационный дизайн",
+    "continuousLearning": "Непрерывное обучение",
     "faqs": {
       "q1": {
         "question": "Как работает система бронирования подарков?",
@@ -231,19 +236,22 @@
   },
   "forgotPassword": {
     "title": "Забыли пароль?",
-    "subtitle": "Введите ваш email, и мы отправим вам ссылку для сброса пароля.",
+    "subtitle": "Введите ваш email, и мы отправим вам код подтверждения для сброса пароля.",
     "emailPlaceholder": "Введите ваш email",
-    "sendButton": "Отправить ссылку для сброса",
+    "sendButton": "Отправить код сброса",
     "sending": "Отправка...",
-    "successMessage": "Ссылка для сброса пароля отправлена на ваш email! Проверьте входящие (и папку спам).",
-    "errorMessage": "Не удалось отправить email для сброса. Проверьте адрес и попробуйте снова.",
+    "successMessage": "Код для сброса пароля отправлен на ваш email! Проверьте входящие (и папку спам).",
+    "errorMessage": "Не удалось отправить код для сброса. Проверьте адрес и попробуйте снова.",
     "rememberPassword": "Вспомнили пароль?",
     "backToLogin": "Вернуться ко входу"
   },
   "resetPassword": {
-    "invalidLinkTitle": "Недействительная ссылка сброса",
-    "invalidLinkDescription": "Ссылка для сброса пароля недействительна или истекла.",
-    "requestNewLink": "Запросить новую ссылку",
+    "invalidLinkTitle": "Недействительный код сброса",
+    "invalidLinkDescription": "Код для сброса пароля недействителен или истек.",
+    "requestNewLink": "Запросить новый код сброса",
+    "invalidTokenMessage": "Недействительный или истекший токен сброса",
+    "passwordMismatchMessage": "Пароли не совпадают",
+    "passwordResetSuccessMessage": "Пароль успешно сброшен! Перенаправление на страницу входа...",
     "title": "Сбросьте ваш пароль",
     "subtitle": "Введите новый пароль ниже.",
     "newPasswordPlaceholder": "Новый пароль",
@@ -253,6 +261,23 @@
     "rememberPassword": "Вспомнили пароль?",
     "backToLogin": "Вернуться ко входу",
     "errorMessage": "Не удалось сбросить пароль"
+  },
+  "verifyCode": {
+    "title": "Подтвердить код",
+    "signInConfirmation": "Подтверждение входа",
+    "verifyEmail": "Подтвердите ваш email",
+    "enterCodeLogin": "Введите 6-значный код, отправленный на ваш email, чтобы завершить вход",
+    "enterCodeVerify": "Введите 6-значный код подтверждения, отправленный на ваш email, чтобы подтвердить аккаунт",
+    "enterCodeReset": "Введите 6-значный код, отправленный на ваш email",
+    "verifying": "Проверка...",
+    "verifyButton": "Подтвердить код",
+    "resendCode": "Не получили код? Отправить снова",
+    "codeResent": "Код повторно отправлен на ваш email",
+    "verificationCodeResent": "Код подтверждения повторно отправлен на ваш email",
+    "backToLogin": "Вернуться ко входу",
+    "invalidCode": "Недействительный или истекший код",
+    "emailVerified": "Email успешно подтвержден! Теперь вы можете войти.",
+    "signInSuccessful": "Вход выполнен успешно!"
   },
   "dashboard": {
     "followers": "подписчиков",

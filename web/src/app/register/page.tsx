@@ -130,14 +130,14 @@ export default function RegisterPage() {
       
       setNotification({
         type: 'success',
-        message: 'Registration successful! Please check your email to verify your account.',
+        message: 'Registration successful! Please check your email for the verification code.',
         isVisible: true
       });
       
-      // Redirect to login after showing success message
+      // Redirect to verify code page after showing success message
       setTimeout(() => {
-        router.push("/login");
-      }, 3000);
+        router.push(`/verify-code?email=${encodeURIComponent(email)}&type=verify`);
+      }, 1500);
     } catch (err: any) {
       console.error('Registration error:', err);
       const errorMessage = err.response?.data?.message || err.message || t('auth.registerFailed');
@@ -168,7 +168,7 @@ export default function RegisterPage() {
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <input 
             type="text" 
-            placeholder="Name" 
+            placeholder={t('auth.name')}
             className="px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 dark:focus:ring-orange-400 bg-white/90 dark:bg-gray-700/90 text-gray-700 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300" 
             autoComplete="name" 
             required 
