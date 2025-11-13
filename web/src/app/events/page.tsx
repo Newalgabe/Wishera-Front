@@ -20,7 +20,8 @@ import {
   MagnifyingGlassIcon,
   ChatBubbleLeftRightIcon,
   EllipsisVerticalIcon,
-  ArrowRightOnRectangleIcon
+  ArrowRightOnRectangleIcon,
+  Bars3Icon
 } from "@heroicons/react/24/outline";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { useAuth } from "../../hooks/useAuth";
@@ -104,16 +105,16 @@ function CreateEventModal({ isOpen, onClose, onCreateEvent, friends }: CreateEve
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto"
       >
-        <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">{t('events.createEvent')}</h2>
+        <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-900 dark:text-white">{t('events.createEvent')}</h2>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               {t('events.eventTitle')} *
@@ -141,7 +142,7 @@ function CreateEventModal({ isOpen, onClose, onCreateEvent, friends }: CreateEve
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {t('events.eventDate')} *
@@ -235,18 +236,18 @@ function CreateEventModal({ isOpen, onClose, onCreateEvent, friends }: CreateEve
             </div>
           </div>
 
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-3 sm:pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+              className="px-4 py-2 text-sm sm:text-base text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
               {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-2 text-sm sm:text-base bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
               {isSubmitting ? t('events.creating') : t('events.createEvent')}
             </button>
@@ -398,7 +399,7 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="group glass-card rounded-2xl p-6 cursor-pointer hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-[1.02] relative overflow-hidden"
+      className="group glass-card rounded-xl sm:rounded-2xl p-4 sm:p-6 cursor-pointer hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-[1.02] relative overflow-hidden"
       onClick={() => router.push(`/events/${event.id}`)}
     >
       {/* Gradient overlay */}
@@ -407,74 +408,74 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
       {/* Content */}
       <div className="relative z-10">
         {/* Header */}
-        <div className="mb-4">
-          <div className="flex justify-between items-start gap-3 mb-2">
-            <h3 className="text-xl font-bold text-gradient bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent flex-1">
+        <div className="mb-3 sm:mb-4">
+          <div className="flex justify-between items-start gap-2 sm:gap-3 mb-2">
+            <h3 className="text-lg sm:text-xl font-bold text-gradient bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent flex-1 break-words">
               {event.title}
             </h3>
             {event.isCancelled && (
-              <span className="px-3 py-1.5 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-semibold rounded-full shadow-lg flex-shrink-0">
+              <span className="px-2 sm:px-3 py-1 sm:py-1.5 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-semibold rounded-full shadow-lg flex-shrink-0 whitespace-nowrap">
                 {t('events.cancelled')}
               </span>
             )}
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{t('events.by')} {event.creatorUsername}</p>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium">{t('events.by')} {event.creatorUsername}</p>
         </div>
 
         {/* Description */}
         {event.description && (
-          <p className="text-gray-700 dark:text-gray-300 mb-5 leading-relaxed line-clamp-2">{event.description}</p>
+          <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 mb-4 sm:mb-5 leading-relaxed line-clamp-2">{event.description}</p>
         )}
 
         {/* Event Details */}
-        <div className="space-y-3 mb-5">
-          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 bg-white/50 dark:bg-gray-800/50 rounded-xl p-3 backdrop-blur-sm">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center mr-3">
-              <CalendarIcon className="h-4 w-4 text-white" />
+        <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-5">
+          <div className="flex items-center text-xs sm:text-sm text-gray-600 dark:text-gray-400 bg-white/50 dark:bg-gray-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 backdrop-blur-sm">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+              <CalendarIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
             </div>
-            <span className="font-medium">{formatDate(event.eventDate)}</span>
+            <span className="font-medium break-words">{formatDate(event.eventDate)}</span>
           </div>
           {event.eventTime && (
-            <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 bg-white/50 dark:bg-gray-800/50 rounded-xl p-3 backdrop-blur-sm">
-              <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center mr-3">
-                <ClockIcon className="h-4 w-4 text-white" />
+            <div className="flex items-center text-xs sm:text-sm text-gray-600 dark:text-gray-400 bg-white/50 dark:bg-gray-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 backdrop-blur-sm">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+                <ClockIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
               </div>
               <span className="font-medium">{formatTime(event.eventTime)}</span>
             </div>
           )}
           {event.location && (
-            <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 bg-white/50 dark:bg-gray-800/50 rounded-xl p-3 backdrop-blur-sm">
-              <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center mr-3">
-                <MapPinIcon className="h-4 w-4 text-white" />
+            <div className="flex items-center text-xs sm:text-sm text-gray-600 dark:text-gray-400 bg-white/50 dark:bg-gray-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 backdrop-blur-sm">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+                <MapPinIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
               </div>
-              <span className="font-medium">{event.location}</span>
+              <span className="font-medium break-words">{event.location}</span>
             </div>
           )}
         </div>
 
         {/* Additional Notes */}
         {event.additionalNotes && (
-          <div className="mb-5 p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-xl border border-amber-200 dark:border-amber-800/30">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
+          <div className="mb-4 sm:mb-5 p-3 sm:p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-lg sm:rounded-xl border border-amber-200 dark:border-amber-800/30">
+            <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
               <span className="font-semibold text-amber-700 dark:text-amber-300">{t('events.notes')}:</span> {event.additionalNotes}
             </p>
           </div>
         )}
 
         {/* Response Stats */}
-        <div className="mb-6">
-          <div className="flex flex-wrap items-center gap-3 mb-3">
-            <div className="flex items-center bg-white/60 dark:bg-gray-800/60 rounded-full px-3 py-1.5 backdrop-blur-sm">
-              <CheckIcon className="h-4 w-4 mr-1.5 text-green-500" />
-              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{event.acceptedCount}</span>
+        <div className="mb-4 sm:mb-6">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <div className="flex items-center bg-white/60 dark:bg-gray-800/60 rounded-full px-2 sm:px-3 py-1 sm:py-1.5 backdrop-blur-sm">
+              <CheckIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 text-green-500 flex-shrink-0" />
+              <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">{event.acceptedCount}</span>
             </div>
-            <div className="flex items-center bg-white/60 dark:bg-gray-800/60 rounded-full px-3 py-1.5 backdrop-blur-sm">
-              <XMarkIcon className="h-4 w-4 mr-1.5 text-red-500" />
-              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{event.declinedCount}</span>
+            <div className="flex items-center bg-white/60 dark:bg-gray-800/60 rounded-full px-2 sm:px-3 py-1 sm:py-1.5 backdrop-blur-sm">
+              <XMarkIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 text-red-500 flex-shrink-0" />
+              <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">{event.declinedCount}</span>
             </div>
-            <div className="flex items-center bg-white/60 dark:bg-gray-800/60 rounded-full px-3 py-1.5 backdrop-blur-sm">
-              <ExclamationTriangleIcon className="h-4 w-4 mr-1.5 text-yellow-500" />
-              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{event.pendingCount}</span>
+            <div className="flex items-center bg-white/60 dark:bg-gray-800/60 rounded-full px-2 sm:px-3 py-1 sm:py-1.5 backdrop-blur-sm">
+              <ExclamationTriangleIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 text-yellow-500 flex-shrink-0" />
+              <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">{event.pendingCount}</span>
             </div>
           </div>
 
@@ -490,16 +491,16 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
         {/* Action Buttons */}
         <div className="flex justify-end">
         {isOwner ? (
-          <div className="flex flex-wrap gap-2 justify-end">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-end w-full">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit?.(event);
               }}
-              className="px-4 py-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 text-white text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex items-center gap-2"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 text-white text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex items-center gap-1.5 sm:gap-2 flex-1 sm:flex-initial min-w-0"
             >
-              <PencilIcon className="h-4 w-4" />
-              <span>{t('common.edit')}</span>
+              <PencilIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="truncate">{t('common.edit')}</span>
             </button>
             {!event.isCancelled && (
               <button
@@ -507,9 +508,9 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
                   e.stopPropagation();
                   onCancel?.(event.id);
                 }}
-                className="px-4 py-2 bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-600 text-white text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-600 text-white text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex-1 sm:flex-initial min-w-0"
               >
-                {t('common.cancel')}
+                <span className="truncate">{t('common.cancel')}</span>
               </button>
             )}
             <button
@@ -517,10 +518,10 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
                 e.stopPropagation();
                 onDelete?.(event.id);
               }}
-              className="px-4 py-2 bg-gradient-to-r from-red-500 via-pink-500 to-red-600 text-white text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex items-center gap-2"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-red-500 via-pink-500 to-red-600 text-white text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex items-center gap-1.5 sm:gap-2 flex-1 sm:flex-initial min-w-0"
             >
-              <TrashIcon className="h-4 w-4" />
-              <span>{t('common.delete')}</span>
+              <TrashIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="truncate">{t('common.delete')}</span>
             </button>
           </div>
         ) : (
@@ -533,33 +534,33 @@ function EventCard({ event, onEdit, onCancel, onDelete, onRespond, isOwner }: Ev
               
               {/* Show buttons only if no response yet, otherwise show 3-dots menu */}
               {event.userResponse === undefined ? (
-                <div className="flex flex-wrap gap-2 justify-end">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-end w-full">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       onRespond?.(event.id, InvitationStatus.Accepted);
                     }}
-                    className="px-4 py-2 bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 text-white text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex-1 min-w-0"
+                    className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 text-white text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex-1 min-w-0"
                   >
-                    Accept
+                    <span className="truncate">Accept</span>
                   </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       onRespond?.(event.id, InvitationStatus.Declined);
                     }}
-                    className="px-4 py-2 bg-gradient-to-r from-red-500 via-pink-500 to-red-600 text-white text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex-1 min-w-0"
+                    className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-red-500 via-pink-500 to-red-600 text-white text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex-1 min-w-0"
                   >
-                    Decline
+                    <span className="truncate">Decline</span>
                   </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       onRespond?.(event.id, InvitationStatus.Maybe);
                     }}
-                    className="px-4 py-2 bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-600 text-white text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex-1 min-w-0"
+                    className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-600 text-white text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex-1 min-w-0"
                   >
-                    Maybe
+                    <span className="truncate">Maybe</span>
                   </button>
                 </div>
               ) : (
@@ -656,6 +657,7 @@ export default function EventsPage() {
   const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
   const [showBirthdayNotification, setShowBirthdayNotification] = useState(true);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -985,29 +987,35 @@ export default function EventsPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Top Navigation Bar */}
       <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 fixed top-0 left-0 right-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-14 sm:h-16 gap-2 sm:gap-4">
             {/* Logo */}
-            <WisheraLogo size="md" />
+            <div className="flex-shrink-0">
+              <WisheraLogo size="md" />
+            </div>
 
-            {/* Search Bar */}
-            <div className="flex-1 max-w-md mx-8">
-              <div className="relative search-container">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            {/* Search Bar - Hidden on mobile, shown on tablet+ */}
+            <div className="hidden md:flex flex-1 max-w-md mx-4 lg:mx-8">
+              <div className="relative search-container w-full">
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Search events, people..."
                 />
               </div>
             </div>
 
             {/* Right side buttons */}
-            <div className="flex items-center space-x-4">
-              <LanguageSelector />
-              <ThemeToggle />
+            <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 lg:gap-4">
+              <div className="hidden sm:block">
+                <LanguageSelector />
+              </div>
+              <div className="hidden sm:block">
+                <ThemeToggle />
+              </div>
               
               {/* Notifications */}
               <div className="relative">
@@ -1025,70 +1033,120 @@ export default function EventsPage() {
               {/* Chat */}
               <button
                 onClick={() => router.push('/chat')}
-                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+                aria-label="Chat"
               >
-                <ChatBubbleLeftRightIcon className="h-6 w-6" />
+                <ChatBubbleLeftRightIcon className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
               
               {/* Logout */}
               <button
                 onClick={logout}
-                className="p-2 text-gray-600 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                 title="Logout"
+                aria-label="Logout"
               >
-                <ArrowRightOnRectangleIcon className="h-6 w-6" />
+                <ArrowRightOnRectangleIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+              </button>
+
+              {/* Mobile menu button for sidebar */}
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="xl:hidden p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                aria-label="Toggle sidebar"
+              >
+                <Bars3Icon className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
             </div>
           </div>
         </div>
       </nav>
 
-      {/* Left Sidebar */}
-      <div className="w-64 bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-r border-gray-200 dark:border-gray-700 fixed left-0 top-16 bottom-0 overflow-y-auto">
-        <div className="p-6">
-          <nav className="space-y-3">
+      {/* Mobile Search Bar */}
+      <div className="md:hidden fixed top-14 left-0 right-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-3 py-2">
+        <div className="relative">
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Search events, people..."
+          />
+        </div>
+      </div>
+
+      {/* Left Sidebar - Hidden on mobile, shown on xl+ or when sidebarOpen */}
+      <div className={`xl:block fixed left-0 top-14 sm:top-16 bottom-0 w-64 bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-y-auto z-40 transition-transform duration-300 ${
+        sidebarOpen ? 'block' : 'hidden'
+      }`}>
+        <div className="p-4 sm:p-6">
+          <nav className="space-y-2 sm:space-y-3">
             <button
-              onClick={() => router.push('/dashboard')}
-              className="w-full flex items-center px-4 py-4 text-left rounded-xl transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md"
+              onClick={() => {
+                router.push('/dashboard');
+                setSidebarOpen(false);
+              }}
+              className="w-full flex items-center px-3 sm:px-4 py-3 sm:py-4 text-left rounded-xl transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md text-sm sm:text-base"
             >
-              <HomeIcon className="h-5 w-5 mr-3" />
+              <HomeIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 flex-shrink-0" />
               <span className="font-medium">{t('dashboard.home')}</span>
             </button>
             <button
-              onClick={() => router.push('/dashboard')}
-              className="w-full flex items-center px-4 py-4 text-left rounded-xl transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md"
+              onClick={() => {
+                router.push('/dashboard');
+                setSidebarOpen(false);
+              }}
+              className="w-full flex items-center px-3 sm:px-4 py-3 sm:py-4 text-left rounded-xl transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md text-sm sm:text-base"
             >
-              <UserIcon className="h-5 w-5 mr-3" />
+              <UserIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 flex-shrink-0" />
               <span className="font-medium">{t('dashboard.profile')}</span>
             </button>
             <button
-              onClick={() => router.push('/dashboard')}
-              className="w-full flex items-center px-4 py-4 text-left rounded-xl transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md"
+              onClick={() => {
+                router.push('/dashboard');
+                setSidebarOpen(false);
+              }}
+              className="w-full flex items-center px-3 sm:px-4 py-3 sm:py-4 text-left rounded-xl transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md text-sm sm:text-base"
             >
-              <GiftIcon className="h-5 w-5 mr-3" />
+              <GiftIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 flex-shrink-0" />
               <span className="font-medium">{t('dashboard.myGifts')}</span>
             </button>
             <button
-              onClick={() => router.push('/events')}
-              className="w-full flex items-center px-4 py-4 text-left rounded-xl transition-all duration-200 bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg"
+              onClick={() => {
+                router.push('/events');
+                setSidebarOpen(false);
+              }}
+              className="w-full flex items-center px-3 sm:px-4 py-3 sm:py-4 text-left rounded-xl transition-all duration-200 bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg text-sm sm:text-base"
             >
-              <CalendarIcon className="h-5 w-5 mr-3" />
+              <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 flex-shrink-0" />
               <span className="font-medium">Events</span>
             </button>
             <button
-              onClick={() => router.push('/dashboard')}
-              className="w-full flex items-center px-4 py-4 text-left rounded-xl transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md"
+              onClick={() => {
+                router.push('/dashboard');
+                setSidebarOpen(false);
+              }}
+              className="w-full flex items-center px-3 sm:px-4 py-3 sm:py-4 text-left rounded-xl transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md text-sm sm:text-base"
             >
-              <HeartIcon className="h-5 w-5 mr-3" />
+              <HeartIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 flex-shrink-0" />
               <span className="font-medium">Liked</span>
             </button>
           </nav>
         </div>
       </div>
 
+      {/* Sidebar overlay for mobile */}
+      {sidebarOpen && (
+        <div 
+          className="xl:hidden fixed inset-0 bg-black/50 z-30"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Main Content */}
-      <div className="ml-0 xl:ml-64 mr-0 xl:mr-80 pt-16 min-h-screen">
-        <div className="p-3 sm:p-4 lg:p-6">
+      <div className="xl:ml-64 xl:mr-80 pt-28 sm:pt-20 md:pt-16 min-h-screen">
+        <div className="p-3 sm:p-4 md:p-5 lg:p-6">
           {/* Birthday Banner */}
           {showBirthdayNotification && (
             <BirthdayCountdownBanner onClose={() => setShowBirthdayNotification(false)} />

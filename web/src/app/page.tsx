@@ -422,14 +422,14 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col transition-colors duration-300">
       <Navbar />
       {/* Hero Section */}
-      <section className="relative flex flex-col-reverse md:flex-row items-center justify-center py-16 sm:py-24 px-4 sm:px-8 bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-hidden w-full transition-colors duration-300">
+      <section className="relative flex flex-col-reverse md:flex-row items-center justify-center py-12 sm:py-16 md:py-20 lg:py-24 px-3 sm:px-4 md:px-6 lg:px-8 bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-hidden w-full transition-colors duration-300">
         <AnimatedBlobs />
         <div className="relative z-10 flex-1 flex flex-col items-center md:items-start text-center md:text-left w-full max-w-xl">
           <motion.h1
             initial={{ opacity: 0, y: -40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
-            className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 dark:text-gray-100 mb-6 tracking-tight drop-shadow-lg w-full transition-colors duration-300"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 dark:text-gray-100 mb-4 sm:mb-6 tracking-tight drop-shadow-lg w-full transition-colors duration-300"
           >
             <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 dark:from-purple-400 dark:via-indigo-400 dark:to-purple-500 bg-clip-text text-transparent">
               {t('home.heroTitle')}
@@ -439,7 +439,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-lg sm:text-2xl text-gray-600 dark:text-gray-300 max-w-2xl mb-8 w-full transition-colors duration-300 leading-relaxed"
+            className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-600 dark:text-gray-300 max-w-2xl mb-6 sm:mb-8 w-full transition-colors duration-300 leading-relaxed px-2 sm:px-0"
           >
             {t('home.heroSubtitle')}
           </motion.p>
@@ -448,47 +448,47 @@ export default function Home() {
           <motion.div
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
-            className="inline-block mt-6"
+            className="inline-block mt-4 sm:mt-6"
           >
             <Link
               href="/about"
-              className="inline-block px-8 py-4 rounded-2xl bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-600 dark:from-orange-500 dark:via-yellow-500 dark:to-orange-600 text-white font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:from-yellow-500 hover:via-orange-600 hover:to-yellow-700 dark:hover:from-orange-600 dark:hover:via-yellow-600 dark:hover:to-orange-700"
+              className="inline-block px-6 sm:px-8 py-3 sm:py-4 rounded-2xl bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-600 dark:from-orange-500 dark:via-yellow-500 dark:to-orange-600 text-white font-bold text-base sm:text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:from-yellow-500 hover:via-orange-600 hover:to-yellow-700 dark:hover:from-orange-600 dark:hover:via-yellow-600 dark:hover:to-orange-700"
             >
               {t('home.learnMore')}
             </Link>
           </motion.div>
         </div>
-        <div className="relative z-10 flex-1 flex justify-center mb-8 md:mb-0 w-full max-w-md">
+        <div className="relative z-10 flex-1 flex justify-center mb-6 sm:mb-8 md:mb-0 w-full max-w-md px-2 sm:px-0">
           <StatisticsDisplay />
         </div>
         <ScrollIndicator />
       </section>
       {/* Features Section */}
-      <section id="features" className="relative flex flex-col gap-16 sm:gap-20 py-12 sm:py-24 px-4 sm:px-8 max-w-7xl mx-auto w-full">
+      <section id="features" className="relative flex flex-col gap-12 sm:gap-16 md:gap-20 py-10 sm:py-16 md:py-20 lg:py-24 px-3 sm:px-4 md:px-6 lg:px-8 max-w-7xl mx-auto w-full">
         <FeaturesBackground />
         <motion.div 
-          className="text-center mb-12"
+          className="text-center mb-8 sm:mb-10 md:mb-12"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
         >
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">
             <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 dark:from-purple-400 dark:via-indigo-400 dark:to-purple-500 bg-clip-text text-transparent">
               {t('home.featuresTitle')}
             </span>
           </h2>
-          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto px-2 sm:px-0">
             {t('home.featuresSubtitle')}
           </p>
         </motion.div>
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {features.map((feature, idx) => {
             const Icon = feature.icon;
             return (
               <motion.div
                 key={feature.titleKey}
-                className="glass-card rounded-3xl shadow-xl flex flex-col items-center text-center p-8 min-h-[360px] w-full max-w-md mx-auto relative overflow-hidden transition-all duration-300 hover:shadow-2xl group"
+                className="glass-card rounded-2xl sm:rounded-3xl shadow-xl flex flex-col items-center text-center p-6 sm:p-8 min-h-[320px] sm:min-h-[360px] w-full max-w-md mx-auto relative overflow-hidden transition-all duration-300 hover:shadow-2xl group"
                 initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.5 }}

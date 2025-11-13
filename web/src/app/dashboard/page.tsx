@@ -17,7 +17,9 @@ import {
   ArrowRightOnRectangleIcon,
   CalendarIcon,
   Cog6ToothIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  Bars3Icon,
+  XMarkIcon
 } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartIconSolid } from "@heroicons/react/24/solid";
 import { useLanguage } from "../../contexts/LanguageContext";
@@ -154,6 +156,8 @@ export default function Dashboard() {
   // Notification state
   const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
   const [showBirthdayNotification, setShowBirthdayNotification] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   // Debug birthday notification state
   useEffect(() => {
@@ -762,15 +766,17 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Top Navigation Bar */}
       <nav className="backdrop-blur-lg bg-white/90 dark:bg-gray-800/90 border-b border-gray-200/50 dark:border-gray-700/50 fixed top-0 left-0 right-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-14">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-14 gap-2 sm:gap-4">
             {/* Logo */}
-            <WisheraLogo size="md" />
+            <div className="flex-shrink-0">
+              <WisheraLogo size="md" />
+            </div>
 
-            {/* Search Bar */}
-            <div className="flex-1 max-w-md mx-8">
+            {/* Search Bar - Hidden on mobile, shown on tablet+ */}
+            <div className="hidden md:flex flex-1 max-w-md mx-2 lg:mx-4 xl:mx-8">
               <div className="relative search-container">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                 <input
                   type="text"
                   value={searchQuery}
@@ -800,7 +806,7 @@ export default function Dashboard() {
                     }
                   }}
                   placeholder={t('dashboard.searchPlaceholder')}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50/80 dark:bg-gray-700/80 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-200"
+                  className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 text-sm sm:text-base border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50/80 dark:bg-gray-700/80 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-200"
                 />
                 
                 {/* Search Results Dropdown */}
@@ -854,11 +860,20 @@ export default function Dashboard() {
             </div>
 
             {/* Right Controls: Theme + Language */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="hidden sm:flex items-center space-x-2">
                 <LanguageSelector />
                 <ThemeToggle />
               </div>
+              {/* Calendar button for mobile */}
+              <button
+                onClick={() => setCalendarOpen(true)}
+                className="xl:hidden p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+                title="Birthday Calendar"
+                aria-label="Open Birthday Calendar"
+              >
+                <CalendarIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+              </button>
               <div className="relative">
                 <NotificationBadge 
                   onClick={() => setShowNotificationDropdown(!showNotificationDropdown)}
@@ -871,24 +886,39 @@ export default function Dashboard() {
               </div>
               <button
                 onClick={() => router.push('/chat')}
-                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
                 title="Messages"
+                aria-label="Chat"
               >
-                <ChatBubbleLeftRightIcon className="h-6 w-6" />
+                <ChatBubbleLeftRightIcon className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
               <button
                 onClick={() => router.push('/settings')}
-                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+                className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
                 title="Settings"
+                aria-label="Settings"
               >
-                <Cog6ToothIcon className="h-6 w-6" />
+                <Cog6ToothIcon className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
               <button
                 onClick={logout}
-                className="p-2 text-gray-600 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                 title="Logout"
+                aria-label="Logout"
               >
-                <ArrowRightOnRectangleIcon className="h-6 w-6" />
+                <ArrowRightOnRectangleIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+              </button>
+              {/* Mobile menu button for sidebar */}
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="xl:hidden p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                aria-label="Toggle sidebar"
+              >
+                {sidebarOpen ? (
+                  <XMarkIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+                ) : (
+                  <Bars3Icon className="h-5 w-5 sm:h-6 sm:w-6" />
+                )}
               </button>
             </div>
           </div>
@@ -904,68 +934,175 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Mobile Search Bar */}
+      <div className="md:hidden fixed top-14 left-0 right-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-3 py-2">
+        <div className="relative">
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={async (e) => {
+              const q = e.target.value;
+              setSearchQuery(q);
+              try {
+                if (q.trim().length >= 2) {
+                  console.log('Searching for:', q);
+                  const users = await searchUsers(q, 1, 5);
+                  console.log('Search results:', users);
+                  setSuggestedUsers(users);
+                  setShowSearchDropdown(true);
+                } else {
+                  setShowSearchDropdown(false);
+                  if (currentUserId) {
+                    const users = await getFollowing(currentUserId, 1, 5);
+                    setSuggestedUsers(users);
+                  } else {
+                    setSuggestedUsers([]);
+                  }
+                }
+              } catch (error) {
+                console.error('Search error:', error);
+                setSuggestedUsers([]);
+                setShowSearchDropdown(false);
+              }
+            }}
+            onFocus={() => setShowSearchDropdown(true)}
+            onBlur={() => setTimeout(() => setShowSearchDropdown(false), 200)}
+            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50/80 dark:bg-gray-700/80 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-200"
+            placeholder={t('dashboard.searchPlaceholder')}
+          />
+          
+          {/* Search Results Dropdown for Mobile */}
+          {showSearchDropdown && searchQuery.trim().length >= 2 && suggestedUsers.length > 0 && (
+            <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl max-h-60 overflow-y-auto">
+              {suggestedUsers.map((user, index) => (
+                <div
+                  key={user.id}
+                  onClick={() => {
+                    router.push(`/user/${user.id}`);
+                    setSearchQuery("");
+                    setSuggestedUsers([]);
+                    setShowSearchDropdown(false);
+                  }}
+                  className="flex items-center p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                >
+                  <img
+                    src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.username)}`}
+                    alt={user.username}
+                    className="w-10 h-10 rounded-full border-2 border-gray-200 dark:border-gray-600"
+                  />
+                  <div className="ml-3 flex-1">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-medium text-gray-900 dark:text-white">
+                        {user.username}
+                      </h3>
+                      {user.isFollowing && (
+                        <span className="text-xs text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/20 px-2 py-1 rounded-full">
+                          Following
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {user.isFollowing ? 'You are following this user' : 'Not following'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* No Results Message for Mobile */}
+          {showSearchDropdown && searchQuery.trim().length >= 2 && suggestedUsers.length === 0 && (
+            <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-3">
+              <p className="text-gray-500 dark:text-gray-400 text-sm text-center">
+                No users found for "{searchQuery}"
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
 
-      <div className="flex pt-14">
-        {/* Left Sidebar */}
-        <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 fixed left-0 top-14 bottom-0 overflow-y-auto">
-          <div className="p-6">
-            <nav className="space-y-3">
+      <div className="flex pt-14 md:pt-14">
+        {/* Left Sidebar - Hidden on mobile, shown on xl+ or when sidebarOpen */}
+        <div className={`xl:block fixed left-0 top-14 md:top-14 bottom-0 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto z-40 transition-transform duration-300 ${
+          sidebarOpen ? 'block' : 'hidden'
+        }`}>
+          <div className="p-4 sm:p-6">
+            <nav className="space-y-2 sm:space-y-3">
               <button
-                onClick={() => setActiveTab('home')}
-                className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-all duration-200 ${
+                onClick={() => {
+                  setActiveTab('home');
+                  setSidebarOpen(false);
+                }}
+                className={`w-full flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-left rounded-lg transition-all duration-200 text-sm sm:text-base ${
                   activeTab === 'home' 
                     ? 'bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 text-indigo-600 dark:text-indigo-400 border-l-4 border-indigo-600 dark:border-indigo-400' 
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-50 hover:to-indigo-50/30 dark:hover:from-gray-800/50 dark:hover:to-indigo-900/10 hover:translate-x-1 border-l-4 border-transparent'
                 }`}
               >
-                <HomeIcon className="h-5 w-5 mr-3" />
+                <HomeIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 flex-shrink-0" />
                 <span className="font-medium">{t('dashboard.home')}</span>
               </button>
               <button
-                 onClick={() => setActiveTab('profile')}
-                className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-all duration-200 ${
+                 onClick={() => {
+                   setActiveTab('profile');
+                   setSidebarOpen(false);
+                 }}
+                className={`w-full flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-left rounded-lg transition-all duration-200 text-sm sm:text-base ${
                   activeTab === 'profile' 
                     ? 'bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 text-purple-600 dark:text-purple-400 border-l-4 border-purple-600 dark:border-purple-400' 
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-50 hover:to-purple-50/30 dark:hover:from-gray-800/50 dark:hover:to-purple-900/10 hover:translate-x-1 border-l-4 border-transparent'
                 }`}
               >
-                <UserIcon className="h-5 w-5 mr-3" />
+                <UserIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 flex-shrink-0" />
                 <span className="font-medium">{t('dashboard.profile')}</span>
               </button>
               <button
-                onClick={() => setActiveTab('my-gifts')}
-                className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-all duration-200 ${
+                onClick={() => {
+                  setActiveTab('my-gifts');
+                  setSidebarOpen(false);
+                }}
+                className={`w-full flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-left rounded-lg transition-all duration-200 text-sm sm:text-base ${
                   activeTab === 'my-gifts' 
                     ? 'bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-900/20 dark:to-rose-900/20 text-pink-600 dark:text-pink-400 border-l-4 border-pink-600 dark:border-pink-400' 
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-50 hover:to-pink-50/30 dark:hover:from-gray-800/50 dark:hover:to-pink-900/10 hover:translate-x-1 border-l-4 border-transparent'
                 }`}
               >
-                <GiftIcon className="h-5 w-5 mr-3" />
+                <GiftIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 flex-shrink-0" />
                 <span className="font-medium">{t('dashboard.myGifts')}</span>
               </button>
               <button
-                onClick={() => router.push('/reserved-gifts')}
-                className="w-full flex items-center px-4 py-3 text-left rounded-lg transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:translate-x-1 border-l-4 border-transparent"
+                onClick={() => {
+                  router.push('/reserved-gifts');
+                  setSidebarOpen(false);
+                }}
+                className="w-full flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-left rounded-lg transition-all duration-200 text-sm sm:text-base text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:translate-x-1 border-l-4 border-transparent"
               >
-                <CheckCircleIcon className="h-5 w-5 mr-3 flex-shrink-0" />
+                <CheckCircleIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 flex-shrink-0" />
                 <span className="font-medium break-words">{t('reservedGifts.title')}</span>
               </button>
               <button
-                onClick={() => router.push('/events')}
-                className="w-full flex items-center px-4 py-3 text-left rounded-lg transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:translate-x-1 border-l-4 border-transparent"
+                onClick={() => {
+                  router.push('/events');
+                  setSidebarOpen(false);
+                }}
+                className="w-full flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-left rounded-lg transition-all duration-200 text-sm sm:text-base text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:translate-x-1 border-l-4 border-transparent"
               >
-                <CalendarIcon className="h-5 w-5 mr-3" />
+                <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 flex-shrink-0" />
                 <span className="font-medium">{t('navigation.events')}</span>
               </button>
               <button
-                onClick={() => setActiveTab('liked')}
-                className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-all duration-200 ${
+                onClick={() => {
+                  setActiveTab('liked');
+                  setSidebarOpen(false);
+                }}
+                className={`w-full flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-left rounded-lg transition-all duration-200 text-sm sm:text-base ${
                   activeTab === 'liked' 
                     ? 'bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 text-red-600 dark:text-red-400 border-l-4 border-red-600 dark:border-red-400' 
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-50 hover:to-red-50/30 dark:hover:from-gray-800/50 dark:hover:to-red-900/10 hover:translate-x-1 border-l-4 border-transparent'
                 }`}
               >
-                <HeartIcon className="h-5 w-5 mr-3" />
+                <HeartIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 flex-shrink-0" />
                 <span className="font-medium">{t('dashboard.liked')}</span>
               </button>
             </nav>
@@ -986,8 +1123,16 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Sidebar overlay for mobile */}
+        {sidebarOpen && (
+          <div 
+            className="xl:hidden fixed inset-0 bg-black/50 z-30"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
         {/* Main Content */}
-        <div className="flex-1 ml-64 mr-80 px-4 py-6">
+        <div className="flex-1 xl:ml-64 xl:mr-80 px-3 sm:px-4 md:px-6 pt-20 md:pt-6 pb-4 sm:pb-6">
           <div className={`mx-auto ${activeTab === 'liked' ? 'w-full' : 'max-w-3xl'}`}>
 
             {/* Birthday Countdown Banner */}
@@ -2022,13 +2167,39 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Right Sidebar */}
-        <div className="w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 fixed right-0 top-14 bottom-0 overflow-y-auto">
-          <div className="p-6">
+        {/* Right Sidebar - Hidden on mobile/tablet, shown on xl+ */}
+        <div className="hidden xl:block w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 fixed right-0 top-14 bottom-0 overflow-y-auto">
+          <div className="p-4 sm:p-6">
             {/* Birthday Calendar */}
             <BirthdayCalendar className="mb-6" />
           </div>
         </div>
+
+        {/* Calendar Modal for Mobile/Tablet */}
+        {calendarOpen && (
+          <div className="xl:hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+            >
+              <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between z-10">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Birthday Calendar</h3>
+                <button
+                  onClick={() => setCalendarOpen(false)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  aria-label="Close calendar"
+                >
+                  <XMarkIcon className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                </button>
+              </div>
+              <div className="p-4">
+                <BirthdayCalendar />
+              </div>
+            </motion.div>
+          </div>
+        )}
 
         {/* Create Wishlist Modal */}
         {isCreateOpen && (

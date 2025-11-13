@@ -20,7 +20,9 @@ import {
   VideoCameraIcon,
   ArrowLeftIcon,
   UserPlusIcon,
-  MicrophoneIcon
+  MicrophoneIcon,
+  Bars3Icon,
+  XMarkIcon
 } from "@heroicons/react/24/outline";
 
 type ChatMessage = { 
@@ -1310,33 +1312,43 @@ export default function ChatPage() {
 
   return (
     <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-slate-900 dark:to-gray-900 flex overflow-hidden">
-      {/* Sidebar */}
-      <div className={`${showSidebar ? 'w-80 block' : 'w-0 hidden'} md:w-80 md:block transition-all duration-300 ease-in-out bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-700/50 flex flex-col shadow-xl relative z-10 h-full overflow-hidden`}>
+      {/* Sidebar - Hidden on mobile by default, shown on md+ or when showSidebar is true */}
+      <div className={`${showSidebar ? 'block' : 'hidden'} md:block w-full md:w-80 transition-all duration-300 ease-in-out bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-700/50 flex flex-col shadow-xl relative z-30 md:z-10 h-full overflow-hidden`}>
         {/* Header */}
-        <div className="p-6 border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-indigo-500 to-purple-600">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-white">{t('chat.messages')}</h1>
-              <p className="text-indigo-100 text-sm mt-1">{t('chat.connectWithFriends')}</p>
+        <div className="p-4 sm:p-6 border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-indigo-500 to-purple-600">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold text-white truncate">{t('chat.messages')}</h1>
+              <p className="text-indigo-100 text-xs sm:text-sm mt-1 truncate">{t('chat.connectWithFriends')}</p>
             </div>
-            <button className="p-3 rounded-2xl bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-all duration-200 hover:scale-105 shadow-lg">
-              <PlusIcon className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2 ml-2">
+              <button className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-all duration-200 hover:scale-105 shadow-lg flex-shrink-0">
+                <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+              {/* Close button for mobile */}
+              <button
+                onClick={() => setShowSidebar(false)}
+                className="md:hidden p-2 rounded-xl bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-all duration-200 shadow-lg flex-shrink-0"
+                aria-label="Close sidebar"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
           </div>
           
           {/* Search */}
           <div className="relative">
-            <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <MagnifyingGlassIcon className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
             <input
               type="text"
               placeholder={t('chat.searchUsers')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 rounded-2xl border-0 bg-white/90 dark:bg-gray-700/90 backdrop-blur-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-white/50 focus:outline-none transition-all duration-200 shadow-lg"
+              className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-xl sm:rounded-2xl border-0 bg-white/90 dark:bg-gray-700/90 backdrop-blur-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-white/50 focus:outline-none transition-all duration-200 shadow-lg"
             />
             {isSearching && (
-              <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-indigo-500 border-t-transparent"></div>
+              <div className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-2 border-indigo-500 border-t-transparent"></div>
               </div>
             )}
           </div>
@@ -1345,36 +1357,39 @@ export default function ChatPage() {
         {/* Search Results */}
         {showSearchResults && searchResults.length > 0 && (
           <div className="border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800/50 dark:to-slate-800/50">
-            <div className="p-4">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
-                <MagnifyingGlassIcon className="w-4 h-4 mr-2" />
-                {t('chat.searchResults')}
+            <div className="p-3 sm:p-4">
+              <h3 className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 sm:mb-3 flex items-center">
+                <MagnifyingGlassIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 flex-shrink-0" />
+                <span>{t('chat.searchResults')}</span>
               </h3>
             </div>
             {searchResults.map((user) => (
               <div
                 key={user.id}
-                onClick={() => handleSearchResultSelect(user)}
-                className="flex items-center p-4 hover:bg-white/60 dark:hover:bg-gray-700/60 cursor-pointer transition-all duration-200 hover:shadow-md border-b border-gray-100/50 dark:border-gray-600/50 group"
+                onClick={() => {
+                  handleSearchResultSelect(user);
+                  setShowSidebar(false); // Close sidebar on mobile after selection
+                }}
+                className="flex items-center p-3 sm:p-4 hover:bg-white/60 dark:hover:bg-gray-700/60 cursor-pointer transition-all duration-200 hover:shadow-md border-b border-gray-100/50 dark:border-gray-600/50 group"
               >
-                <div className="relative">
+                <div className="relative flex-shrink-0">
                   <img
                     src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.username)}`}
                     alt={user.username}
-                    className="w-12 h-12 rounded-2xl border-2 border-white dark:border-gray-600 shadow-lg group-hover:scale-105 transition-transform duration-200"
+                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl border-2 border-white dark:border-gray-600 shadow-lg group-hover:scale-105 transition-transform duration-200"
                   />
-                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full border-2 border-white dark:border-gray-800"></div>
+                  <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full border-2 border-white dark:border-gray-800"></div>
                 </div>
-                <div className="ml-4 flex-1">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{user.username}</h3>
+                <div className="ml-3 sm:ml-4 flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">{user.username}</h3>
                     {!user.isFollowing && (
-                      <button className="p-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 hover:scale-105 shadow-lg">
-                        <UserPlusIcon className="w-4 h-4" />
+                      <button className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 hover:scale-105 shadow-lg flex-shrink-0">
+                        <UserPlusIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       </button>
                     )}
                   </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5 sm:mt-1 truncate">
                     {user.isFollowing ? t('chat.following') : t('chat.notFollowing')}
                   </p>
                 </div>
@@ -1386,54 +1401,57 @@ export default function ChatPage() {
         {/* Contacts List */}
         <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
           {contacts.length === 0 ? (
-            <div className="p-8 text-center">
-              <div className="w-20 h-20 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <UserPlusIcon className="w-10 h-10 text-indigo-500 dark:text-indigo-400" />
+            <div className="p-6 sm:p-8 text-center">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-2xl sm:rounded-3xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-lg">
+                <UserPlusIcon className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-500 dark:text-indigo-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('chat.noContactsYet')}</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t('chat.searchForUsers')}</p>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('chat.noContactsYet')}</h3>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{t('chat.searchForUsers')}</p>
             </div>
           ) : (
             <>
-              <div className="p-4 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800/50 dark:to-slate-800/50 border-b border-gray-200/50 dark:border-gray-700/50">
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center">
-                  <div className="w-2 h-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full mr-2"></div>
-                  {t('chat.yourContacts')}
+              <div className="p-3 sm:p-4 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800/50 dark:to-slate-800/50 border-b border-gray-200/50 dark:border-gray-700/50">
+                <h3 className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center">
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full mr-1.5 sm:mr-2 flex-shrink-0"></div>
+                  <span>{t('chat.yourContacts')}</span>
                 </h3>
               </div>
               {contacts.map((contact) => (
                 <div
                   key={contact.id}
-                  onClick={() => handleContactSelect(contact)}
-                  className={`flex items-center p-4 hover:bg-white/60 dark:hover:bg-gray-700/60 cursor-pointer transition-all duration-200 hover:shadow-md border-b border-gray-100/50 dark:border-gray-700/50 group ${
+                  onClick={() => {
+                    handleContactSelect(contact);
+                    setShowSidebar(false); // Close sidebar on mobile after selection
+                  }}
+                  className={`flex items-center p-3 sm:p-4 hover:bg-white/60 dark:hover:bg-gray-700/60 cursor-pointer transition-all duration-200 hover:shadow-md border-b border-gray-100/50 dark:border-gray-700/50 group ${
                     selectedContact?.id === contact.id 
                       ? 'bg-indigo-50/50 dark:bg-indigo-900/20 border-l-4 border-indigo-500' 
                       : ''
                   }`}
                 >
-                  <div className="relative">
+                  <div className="relative flex-shrink-0">
                     <img
                       src={contact.avatar}
                       alt={contact.name}
-                      className="w-14 h-14 rounded-2xl border-2 border-white dark:border-gray-600 shadow-lg group-hover:scale-105 transition-transform duration-200"
+                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl border-2 border-white dark:border-gray-600 shadow-lg group-hover:scale-105 transition-transform duration-200"
                     />
                     {contact.isOnline && (
-                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full border-2 border-white dark:border-gray-800 shadow-lg">
+                      <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-4 h-4 sm:w-5 sm:h-5 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full border-2 border-white dark:border-gray-800 shadow-lg">
                         <div className="w-full h-full bg-green-400 rounded-full animate-pulse"></div>
                       </div>
                     )}
                   </div>
-                  <div className="ml-4 flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-semibold text-gray-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{contact.name}</h3>
+                  <div className="ml-3 sm:ml-4 flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1 gap-2">
+                      <h3 className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{contact.name}</h3>
                       {contact.lastMessageTime && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">{contact.lastMessageTime}</span>
+                        <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full flex-shrink-0 whitespace-nowrap">{contact.lastMessageTime}</span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 truncate">{contact.lastMessage}</p>
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 truncate">{contact.lastMessage}</p>
                   </div>
                   {(contact.unreadCount ?? 0) > 0 && (
-                    <div className="ml-3 w-6 h-6 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg animate-pulse">
+                    <div className="ml-2 sm:ml-3 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-[10px] sm:text-xs font-bold rounded-full flex items-center justify-center shadow-lg animate-pulse flex-shrink-0">
                       {contact.unreadCount}
                     </div>
                   )}
@@ -1447,19 +1465,31 @@ export default function ChatPage() {
       {/* Mobile Overlay */}
       {showSidebar && (
         <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-20 md:hidden"
+          className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-20"
           onClick={() => setShowSidebar(false)}
         />
       )}
 
       {/* Main Chat Area */}
       <div className="flex-1 min-h-0 flex flex-col bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/30 dark:from-gray-900 dark:via-slate-900 dark:to-gray-900 relative z-0">
+        {/* Mobile menu button - shown when no contact selected */}
+        {!selectedContact && (
+          <div className="md:hidden fixed top-4 left-4 z-40">
+            <button
+              onClick={() => setShowSidebar(true)}
+              className="p-2 rounded-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-all duration-200"
+              aria-label="Open conversations"
+            >
+              <Bars3Icon className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+            </button>
+          </div>
+        )}
         {selectedContact ? (
           <>
             {/* Chat Header */}
-            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 p-4 shadow-lg relative z-20">
-              <div className="flex items-center justify-between px-4">
-                <div className="flex items-center">
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 p-3 sm:p-4 shadow-lg relative z-20">
+              <div className="flex items-center justify-between px-2 sm:px-4 gap-2 sm:gap-3">
+                <div className="flex items-center flex-1 min-w-0">
                   <button
                     onClick={() => {
                       setShowSidebar(true);
@@ -1469,46 +1499,48 @@ export default function ChatPage() {
                       setReplyTo(null);
                       setEditingId(null);
                     }}
-                    className="mr-3 p-2 rounded-2xl hover:bg-gray-100/80 dark:hover:bg-gray-700/80 transition-all duration-200 shadow-lg"
+                    className="mr-2 sm:mr-3 p-1.5 sm:p-2 rounded-xl sm:rounded-2xl hover:bg-gray-100/80 dark:hover:bg-gray-700/80 transition-all duration-200 shadow-lg flex-shrink-0"
+                    aria-label="Back to contacts"
                   >
-                    <ArrowLeftIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                    <ArrowLeftIcon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-400" />
                   </button>
-                  <div className="relative">
+                  <div className="relative flex-shrink-0">
                     <img
                       src={selectedContact.avatar}
                       alt={selectedContact.name}
-                      className="w-12 h-12 rounded-2xl border-2 border-white dark:border-gray-600 shadow-xl"
+                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl border-2 border-white dark:border-gray-600 shadow-xl"
                     />
                     {selectedContact.isOnline && (
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full border-2 border-white dark:border-gray-800 shadow-lg">
+                      <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full border-2 border-white dark:border-gray-800 shadow-lg">
                         <div className="w-full h-full bg-green-400 rounded-full animate-pulse"></div>
                       </div>
                     )}
                   </div>
-                  <div className="ml-3">
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">{selectedContact.name}</h2>
-                    <div className="flex items-center mt-1 space-x-4">
+                  <div className="ml-2 sm:ml-3 flex-1 min-w-0">
+                    <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">{selectedContact.name}</h2>
+                    <div className="flex items-center mt-0.5 sm:mt-1 space-x-2 sm:space-x-4 flex-wrap">
                       <div className="flex items-center">
-                        <div className={`w-2 h-2 rounded-full mr-2 ${selectedContact.isOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                        <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full mr-1.5 sm:mr-2 flex-shrink-0 ${selectedContact.isOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
+                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium whitespace-nowrap">
                           {selectedContact.isOnline ? t('chat.online') : t('chat.offline')}
                         </p>
                       </div>
                       <div className="flex items-center">
-                        <div className={`w-2 h-2 rounded-full mr-2 ${getConnectionStatusColor(chat.connectionState)} ${chat.connectionState === 'Reconnecting' ? 'animate-pulse' : ''}`}></div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full mr-1.5 sm:mr-2 flex-shrink-0 ${getConnectionStatusColor(chat.connectionState)} ${chat.connectionState === 'Reconnecting' ? 'animate-pulse' : ''}`}></div>
+                        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 truncate">
                           {getConnectionStatusText(chat.connectionState)}
                         </p>
                       </div>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
               <div className="relative">
                     <button
                       onClick={() => setShowWallpaperPicker(v => !v)}
-                      className="p-2 rounded-2xl hover:bg-gradient-to-r hover:from-indigo-500 hover:to-purple-600 text-gray-600 dark:text-gray-400 hover:text-white transition-all duration-200 shadow-lg"
+                      className="p-1.5 sm:p-2 rounded-xl sm:rounded-2xl hover:bg-gradient-to-r hover:from-indigo-500 hover:to-purple-600 text-gray-600 dark:text-gray-400 hover:text-white transition-all duration-200 shadow-lg text-base sm:text-lg"
                       title="Change wallpaper"
+                      aria-label="Change wallpaper"
                     >
                       🎨
                     </button>
@@ -1678,26 +1710,29 @@ export default function ChatPage() {
                 {/* Pins toggle */}
                 <button
                   onClick={() => setShowPinsPanel(v => !v)}
-                  className="p-2 rounded-2xl hover:bg-gray-100/80 dark:hover:bg-gray-700/80 text-gray-600 dark:text-gray-400 transition-all duration-200 shadow-lg"
+                  className="p-1.5 sm:p-2 rounded-xl sm:rounded-2xl hover:bg-gray-100/80 dark:hover:bg-gray-700/80 text-gray-600 dark:text-gray-400 transition-all duration-200 shadow-lg text-base sm:text-lg flex-shrink-0"
                   title="Pinned messages"
+                  aria-label="Pinned messages"
                 >
                   📌
                 </button>
                   <button 
                     onClick={handleStartAudioCall}
                     disabled={!selectedContact || !!currentCall}
-                    className="p-2 rounded-2xl hover:bg-gradient-to-r hover:from-green-500 hover:to-emerald-600 text-gray-600 dark:text-gray-400 hover:text-white transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-1.5 sm:p-2 rounded-xl sm:rounded-2xl hover:bg-gradient-to-r hover:from-green-500 hover:to-emerald-600 text-gray-600 dark:text-gray-400 hover:text-white transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                     title="Start audio call"
+                    aria-label="Start audio call"
                   >
-                    <PhoneIcon className="w-5 h-5" />
+                    <PhoneIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
                   <button 
                     onClick={handleStartVideoCall}
                     disabled={!selectedContact || !!currentCall}
-                    className="p-2 rounded-2xl hover:bg-gradient-to-r hover:from-blue-500 hover:to-indigo-600 text-gray-600 dark:text-gray-400 hover:text-white transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-1.5 sm:p-2 rounded-xl sm:rounded-2xl hover:bg-gradient-to-r hover:from-blue-500 hover:to-indigo-600 text-gray-600 dark:text-gray-400 hover:text-white transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                     title="Start video call"
+                    aria-label="Start video call"
                   >
-                    <VideoCameraIcon className="w-5 h-5" />
+                    <VideoCameraIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
                 </div>
               </div>
@@ -1721,9 +1756,9 @@ export default function ChatPage() {
 
               <div 
                 ref={listRef}
-                className="h-full overflow-y-auto p-4 md:p-5 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent"
+                className="h-full overflow-y-auto p-3 sm:p-4 md:p-5 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent"
               >
-              <div className="max-w-3xl mx-auto space-y-4 md:space-y-5">
+              <div className="max-w-3xl mx-auto space-y-3 sm:space-y-4 md:space-y-5">
               {currentMessages.length === 0 ? (
                 <div className="text-center text-gray-500 dark:text-gray-400 mt-12">
                   <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl">
@@ -1739,7 +1774,7 @@ export default function ChatPage() {
                     ref={el => { messageRefs.current[message.id] = el; }}
                     className={`flex ${message.userId === currentUserId ? 'justify-end' : 'justify-start'} group`}
                   >
-                    <div className={`max-w-[80%] md:max-w-[65%] lg:max-w-[60%] ${message.userId === currentUserId ? 'order-2' : 'order-1'}`}>
+                    <div className={`max-w-[85%] sm:max-w-[80%] md:max-w-[65%] lg:max-w-[60%] ${message.userId === currentUserId ? 'order-2' : 'order-1'}`}>
                       {message.replyToMessageId && (() => {
                         // Find the original message being replied to
                         const originalMessage = currentMessages.find(m => m.id === message.replyToMessageId);
@@ -1808,7 +1843,7 @@ export default function ChatPage() {
                         </div>
                       )}
                       <div
-                        className={`px-4 py-3 rounded-3xl text-sm shadow-lg backdrop-blur-sm ${
+                        className={`px-3 sm:px-4 py-2 sm:py-3 rounded-2xl sm:rounded-3xl text-xs sm:text-sm shadow-lg backdrop-blur-sm ${
                           message.userId === currentUserId
                             ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-br-lg'
                             : 'bg-white/90 dark:bg-gray-800/90 text-gray-900 dark:text-white border border-gray-200/50 dark:border-gray-700/50 rounded-bl-lg'
@@ -1914,7 +1949,7 @@ export default function ChatPage() {
 
             {/* Pinned messages side panel */}
             {showPinsPanel && currentConversationId && (
-              <div className="absolute right-3 top-20 bottom-28 w-72 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-2xl p-3 z-30">
+              <div className="absolute right-2 sm:right-3 top-16 sm:top-20 bottom-24 sm:bottom-28 w-64 sm:w-72 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-xl sm:rounded-2xl shadow-2xl p-2 sm:p-3 z-30">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('chat.pinned')}</span>
                   <button className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" onClick={() => setShowPinsPanel(false)}>{t('common.close')}</button>
@@ -1983,15 +2018,16 @@ export default function ChatPage() {
                   onCancel={handleCancelVoiceRecording}
                 />
               ) : (
-                <div className="p-4">
-                  <div className="max-w-3xl mx-auto flex items-center space-x-3 px-2">
-                <div className="relative">
+                <div className="p-3 sm:p-4">
+                  <div className="max-w-3xl mx-auto flex items-center space-x-2 sm:space-x-3 px-1 sm:px-2">
+                <div className="relative flex-shrink-0">
                   <button
-                    className="p-2 rounded-2xl hover:bg-gradient-to-r hover:from-indigo-500 hover:to-purple-600 text-gray-600 dark:text-gray-400 hover:text-white transition-all duration-200 shadow-lg"
+                    className="p-1.5 sm:p-2 rounded-xl sm:rounded-2xl hover:bg-gradient-to-r hover:from-indigo-500 hover:to-purple-600 text-gray-600 dark:text-gray-400 hover:text-white transition-all duration-200 shadow-lg"
                     onClick={() => setShowAttachMenu(v => !v)}
                     title="Attach"
+                    aria-label="Attach file"
                   >
-                    <PlusIcon className="w-5 h-5" />
+                    <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
                   {showAttachMenu && (
                     <div className="absolute bottom-full mb-3 left-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-2xl p-3 z-50 w-56">
@@ -2025,7 +2061,7 @@ export default function ChatPage() {
                     </div>
                   )}
                 </div>
-                <div className="flex-1 relative">
+                <div className="flex-1 relative min-w-0">
                   <input
                     ref={inputRef}
                     type="text"
@@ -2033,7 +2069,7 @@ export default function ChatPage() {
                     value={input}
                     onChange={onInputChange}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
-                    className="w-full px-5 py-3 rounded-3xl border-0 bg-gray-100/80 dark:bg-gray-700/80 backdrop-blur-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none transition-all duration-200 shadow-lg pr-20"
+                    className="w-full px-3 sm:px-5 py-2 sm:py-3 text-sm sm:text-base rounded-2xl sm:rounded-3xl border-0 bg-gray-100/80 dark:bg-gray-700/80 backdrop-blur-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none transition-all duration-200 shadow-lg pr-16 sm:pr-20"
                   />
                   <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
                     <EmojiGifPicker
@@ -2105,10 +2141,11 @@ export default function ChatPage() {
                 {!input.trim() && !pendingAttachment && (
                   <button
                     onClick={() => setIsRecordingVoice(true)}
-                    className="p-3 rounded-3xl bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-xl"
+                    className="p-2 sm:p-3 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-xl flex-shrink-0"
                     title="Record voice message"
+                    aria-label="Record voice message"
                   >
-                    <MicrophoneIcon className="w-5 h-5" />
+                    <MicrophoneIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
                 )}
                 {/* Send button */}
@@ -2116,9 +2153,10 @@ export default function ChatPage() {
                   <button
                     onClick={handleSend}
                     disabled={!input.trim() && !pendingAttachment}
-                    className="p-3 rounded-3xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-xl"
+                    className="p-2 sm:p-3 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-xl flex-shrink-0"
+                    aria-label="Send message"
                   >
-                    <PaperAirplaneIcon className="w-5 h-5" />
+                    <PaperAirplaneIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
                 )}
               </div>
@@ -2167,15 +2205,15 @@ export default function ChatPage() {
         ) : (
           /* Welcome Screen */
           <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-slate-900 dark:to-gray-900">
-            <div className="text-center max-w-md mx-auto px-6">
-              <div className="w-32 h-32 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 dark:from-indigo-900/30 dark:via-purple-900/30 dark:to-pink-900/30 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl">
-                <PaperAirplaneIcon className="w-16 h-16 text-indigo-600 dark:text-indigo-400" />
+            <div className="text-center max-w-md mx-auto px-4 sm:px-6">
+              <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 dark:from-indigo-900/30 dark:via-purple-900/30 dark:to-pink-900/30 rounded-2xl sm:rounded-3xl flex items-center justify-center mx-auto mb-6 sm:mb-8 shadow-2xl">
+                <PaperAirplaneIcon className="w-12 h-12 sm:w-16 sm:h-16 text-indigo-600 dark:text-indigo-400" />
               </div>
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Welcome to Chat</h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-8 text-lg leading-relaxed">Search for users or select a contact to start messaging and connect with your friends</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">Welcome to Chat</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6 sm:mb-8 text-base sm:text-lg leading-relaxed px-2">Search for users or select a contact to start messaging and connect with your friends</p>
               <button
                 onClick={() => setShowSidebar(true)}
-                className="px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-2xl hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 hover:scale-105 shadow-xl font-semibold"
+                className="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl sm:rounded-2xl hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 hover:scale-105 shadow-xl font-semibold text-sm sm:text-base"
               >
                 Open Conversations
               </button>

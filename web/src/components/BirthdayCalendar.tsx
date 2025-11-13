@@ -192,14 +192,14 @@ export default function BirthdayCalendar({ className = '' }: BirthdayCalendarPro
 
 
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 ${className}`}>
+    <div className={`bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4 ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-          <CalendarIcon className="w-5 h-5" />
-          {t('calendar.title')}
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-1.5 sm:gap-2">
+          <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+          <span>{t('calendar.title')}</span>
         </h3>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <button
             onClick={loadBirthdays}
             className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
@@ -229,24 +229,24 @@ export default function BirthdayCalendar({ className = '' }: BirthdayCalendarPro
       </div>
 
       {/* Month/Year */}
-      <div className="text-center mb-4">
-        <h4 className="text-xl font-bold text-gray-900 dark:text-white">
+      <div className="text-center mb-3 sm:mb-4">
+        <h4 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
           {formatDate(currentDate)}
         </h4>
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-1 mb-4">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-3 sm:mb-4">
         {/* Day Headers */}
         {dayNames.map(day => (
-          <div key={day} className="text-center text-xs font-semibold text-gray-600 dark:text-gray-400 py-1">
+          <div key={day} className="text-center text-[10px] sm:text-xs font-semibold text-gray-600 dark:text-gray-400 py-0.5 sm:py-1">
             {day}
           </div>
         ))}
         
         {/* Empty Days */}
         {emptyDays.map((_, index) => (
-          <div key={`empty-${index}`} className="h-7"></div>
+          <div key={`empty-${index}`} className="h-6 sm:h-7"></div>
         ))}
         
         {/* Calendar Days */}
@@ -260,7 +260,7 @@ export default function BirthdayCalendar({ className = '' }: BirthdayCalendarPro
             <button
               key={day}
               onClick={() => setSelectedDate(date)}
-              className={`h-7 w-7 rounded-lg text-xs transition-all duration-200 flex items-center justify-center relative ${
+              className={`h-6 w-6 sm:h-7 sm:w-7 rounded-md sm:rounded-lg text-[10px] sm:text-xs transition-all duration-200 flex items-center justify-center relative ${
                 isToday(date)
                   ? 'bg-indigo-600 text-white font-bold shadow-md'
                   : isSelected(date)
@@ -285,8 +285,8 @@ export default function BirthdayCalendar({ className = '' }: BirthdayCalendarPro
 
       {/* Selected Date Birthdays */}
       {selectedDate && (
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-          <h5 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-3 sm:pt-4">
+          <h5 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white mb-2">
             {selectedDate.toLocaleDateString('en-US', { 
               weekday: 'long', 
               month: 'long', 
@@ -345,8 +345,8 @@ export default function BirthdayCalendar({ className = '' }: BirthdayCalendarPro
       )}
 
       {/* Quick Stats */}
-      <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
-        <div className="flex items-center justify-between text-sm">
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-3 sm:pt-4 mt-3 sm:mt-4">
+        <div className="flex items-center justify-between text-xs sm:text-sm">
           <span className="text-gray-500 dark:text-gray-400">
             {t('calendar.upcomingBirthdays')}
           </span>
