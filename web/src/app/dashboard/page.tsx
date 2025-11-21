@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { 
   HomeIcon, 
@@ -158,6 +158,10 @@ export default function Dashboard() {
   const [showBirthdayNotification, setShowBirthdayNotification] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  
+  // Ref for search input to maintain focus
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Debug birthday notification state
   useEffect(() => {
@@ -494,6 +498,69 @@ export default function Dashboard() {
     };
   }, [activeDropdown, showSearchDropdown]);
 
+  // Memoized search input handler to prevent unnecessary re-renders
+  const handleSearchInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const q = e.target.value;
+    setSearchQuery(q); // Update input immediately for responsive typing
+    // Search will be performed via debounced effect
+  }, []);
+
+  // Debounce search query to avoid reloading on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Perform search when debounced query changes
+  useEffect(() => {
+    let isMounted = true;
+    
+    const performSearch = async () => {
+      if (!isMounted) return;
+      
+      try {
+        if (debouncedSearchQuery.trim().length >= 2) {
+          console.log('Searching for:', debouncedSearchQuery);
+          const users = await searchUsers(debouncedSearchQuery, 1, 5);
+          console.log('Search results:', users);
+          if (isMounted) {
+            setSuggestedUsers(users);
+            setShowSearchDropdown(true);
+          }
+        } else {
+          if (isMounted) {
+            setShowSearchDropdown(false);
+            if (currentUserId) {
+              const users = await getFollowing(currentUserId, 1, 5);
+              if (isMounted) {
+                setSuggestedUsers(users);
+              }
+            } else {
+              if (isMounted) {
+                setSuggestedUsers([]);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+        if (isMounted) {
+          setSuggestedUsers([]);
+          setShowSearchDropdown(false);
+        }
+      }
+    };
+
+    performSearch();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [debouncedSearchQuery, currentUserId]);
+
   const handleLike = async (wishlistId: string) => {
     setWishlists(prev => prev.map(w => w.id === wishlistId ? { ...w, isLiked: !w.isLiked, likes: w.isLiked ? w.likes - 1 : w.likes + 1 } : w));
     try {
@@ -780,37 +847,17 @@ export default function Dashboard() {
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={async (e) => {
+                  onChange={(e) => {
                     const q = e.target.value;
-                    setSearchQuery(q);
-                    try {
-                      if (q.trim().length >= 2) {
-                        console.log('Searching for:', q);
-                        const users = await searchUsers(q, 1, 5);
-                        console.log('Search results:', users);
-                        setSuggestedUsers(users);
-                        setShowSearchDropdown(true);
-                      } else {
-                        setShowSearchDropdown(false);
-                        if (currentUserId) {
-                          const users = await getFollowing(currentUserId, 1, 5);
-                          setSuggestedUsers(users);
-                        } else {
-                          setSuggestedUsers([]);
-                        }
-                      }
-                    } catch (error) {
-                      console.error('Search error:', error);
-                      setSuggestedUsers([]);
-                      setShowSearchDropdown(false);
-                    }
+                    setSearchQuery(q); // Update input immediately for responsive typing
+                    // Search will be performed via debounced effect
                   }}
                   placeholder={t('dashboard.searchPlaceholder')}
                   className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 text-sm sm:text-base border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50/80 dark:bg-gray-700/80 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-200"
                 />
                 
                 {/* Search Results Dropdown */}
-                {showSearchDropdown && searchQuery.trim().length >= 2 && suggestedUsers.length > 0 && (
+                {showSearchDropdown && debouncedSearchQuery.trim().length >= 2 && suggestedUsers.length > 0 && (
                   <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl max-h-60 overflow-y-auto">
                     {suggestedUsers.map((user, index) => (
                       <div
@@ -849,7 +896,7 @@ export default function Dashboard() {
                 )}
                 
                 {/* No Results Message */}
-                {showSearchDropdown && searchQuery.trim().length >= 2 && suggestedUsers.length === 0 && (
+                {showSearchDropdown && debouncedSearchQuery.trim().length >= 2 && suggestedUsers.length === 0 && (
                   <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-3">
                     <p className="text-gray-500 dark:text-gray-400 text-sm text-center">
                       No users found for "{searchQuery}"
@@ -934,47 +981,42 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Mobile Search Bar */}
-      <div className="md:hidden fixed top-14 left-0 right-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-3 py-2">
-        <div className="relative">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+      {/* Mobile Search Bar - Highest z-index to appear above everything */}
+      <div className="md:hidden fixed top-14 left-0 right-0 z-[9999] bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-3 py-2 shadow-md">
+        <div className="relative search-container">
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 z-10" />
           <input
+            ref={searchInputRef}
             type="text"
             value={searchQuery}
-            onChange={async (e) => {
-              const q = e.target.value;
-              setSearchQuery(q);
-              try {
-                if (q.trim().length >= 2) {
-                  console.log('Searching for:', q);
-                  const users = await searchUsers(q, 1, 5);
-                  console.log('Search results:', users);
-                  setSuggestedUsers(users);
-                  setShowSearchDropdown(true);
-                } else {
-                  setShowSearchDropdown(false);
-                  if (currentUserId) {
-                    const users = await getFollowing(currentUserId, 1, 5);
-                    setSuggestedUsers(users);
-                  } else {
-                    setSuggestedUsers([]);
-                  }
-                }
-              } catch (error) {
-                console.error('Search error:', error);
-                setSuggestedUsers([]);
-                setShowSearchDropdown(false);
+            onChange={handleSearchInputChange}
+            onFocus={() => {
+              if (searchQuery.trim().length >= 2 || suggestedUsers.length > 0) {
+                setShowSearchDropdown(true);
               }
             }}
-            onFocus={() => setShowSearchDropdown(true)}
-            onBlur={() => setTimeout(() => setShowSearchDropdown(false), 200)}
-            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50/80 dark:bg-gray-700/80 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-200"
+            className="w-full pl-9 pr-3 py-2.5 text-sm border-2 border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-200"
             placeholder={t('dashboard.searchPlaceholder')}
           />
           
-          {/* Search Results Dropdown for Mobile */}
-          {showSearchDropdown && searchQuery.trim().length >= 2 && suggestedUsers.length > 0 && (
-            <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl max-h-60 overflow-y-auto">
+          {/* Search Results Dropdown for Mobile - Highest z-index to appear above everything */}
+          {showSearchDropdown && debouncedSearchQuery.trim().length >= 2 && suggestedUsers.length > 0 && (
+            <div className="absolute z-[10000] w-full mt-2 left-0 right-0 bg-white dark:bg-gray-800 border-2 border-indigo-200 dark:border-indigo-700 rounded-xl shadow-2xl max-h-[70vh] overflow-y-auto">
+              <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-2 flex items-center justify-between">
+                <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  Search Results
+                </span>
+                <button
+                  onClick={() => {
+                    setShowSearchDropdown(false);
+                    setSearchQuery("");
+                  }}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  aria-label="Close search"
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                </button>
+              </div>
               {suggestedUsers.map((user, index) => (
                 <div
                   key={user.id}
@@ -984,25 +1026,25 @@ export default function Dashboard() {
                     setSuggestedUsers([]);
                     setShowSearchDropdown(false);
                   }}
-                  className="flex items-center p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                  className="flex items-center p-4 cursor-pointer active:bg-gray-100 dark:active:bg-gray-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all duration-200 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
                 >
                   <img
                     src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.username)}`}
                     alt={user.username}
-                    className="w-10 h-10 rounded-full border-2 border-gray-200 dark:border-gray-600"
+                    className="w-12 h-12 rounded-full border-2 border-indigo-200 dark:border-indigo-600 shadow-sm"
                   />
-                  <div className="ml-3 flex-1">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium text-gray-900 dark:text-white">
+                  <div className="ml-3 flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="font-semibold text-gray-900 dark:text-white text-base truncate">
                         {user.username}
                       </h3>
                       {user.isFollowing && (
-                        <span className="text-xs text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/20 px-2 py-1 rounded-full">
+                        <span className="text-xs text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full font-medium flex-shrink-0">
                           Following
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                       {user.isFollowing ? 'You are following this user' : 'Not following'}
                     </p>
                   </div>
@@ -1011,18 +1053,40 @@ export default function Dashboard() {
             </div>
           )}
           
-          {/* No Results Message for Mobile */}
-          {showSearchDropdown && searchQuery.trim().length >= 2 && suggestedUsers.length === 0 && (
-            <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-3">
-              <p className="text-gray-500 dark:text-gray-400 text-sm text-center">
-                No users found for "{searchQuery}"
-              </p>
+          {/* No Results Message for Mobile - Highest z-index */}
+          {showSearchDropdown && debouncedSearchQuery.trim().length >= 2 && suggestedUsers.length === 0 && (
+            <div className="absolute z-[10000] w-full mt-2 left-0 right-0 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  No Results
+                </span>
+                <button
+                  onClick={() => {
+                    setShowSearchDropdown(false);
+                    setSearchQuery("");
+                  }}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  aria-label="Close search"
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                </button>
+              </div>
+                <p className="text-gray-500 dark:text-gray-400 text-sm text-center">
+                  No users found for "<span className="font-semibold">{debouncedSearchQuery}</span>"
+                </p>
             </div>
           )}
         </div>
       </div>
 
       <div className="flex pt-14 md:pt-14">
+        {/* Backdrop for mobile search dropdown - Below dropdown but above everything else */}
+        {showSearchDropdown && (
+          <div 
+            className="md:hidden fixed inset-0 bg-black/40 z-[9998] top-[66px] backdrop-blur-sm"
+            onClick={() => setShowSearchDropdown(false)}
+          />
+        )}
         {/* Left Sidebar - Hidden on mobile, shown on xl+ or when sidebarOpen */}
         <div className={`xl:block fixed left-0 top-14 md:top-14 bottom-0 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto z-40 transition-transform duration-300 ${
           sidebarOpen ? 'block' : 'hidden'
@@ -1132,12 +1196,12 @@ export default function Dashboard() {
         )}
 
         {/* Main Content */}
-        <div className="flex-1 xl:ml-64 xl:mr-80 px-3 sm:px-4 md:px-6 pt-20 md:pt-6 pb-4 sm:pb-6">
+        <div className="flex-1 xl:ml-64 xl:mr-80 px-3 sm:px-4 md:px-6 pt-20 md:pt-6 pb-4 sm:pb-6 relative z-10">
           <div className={`mx-auto ${activeTab === 'liked' ? 'w-full' : 'max-w-3xl'}`}>
 
-            {/* Birthday Countdown Banner */}
-            {showBirthdayNotification && (
-              <div className="mb-6">
+            {/* Birthday Countdown Banner - Hidden when search dropdown is open, lower z-index */}
+            {showBirthdayNotification && !showSearchDropdown && (
+              <div className="mb-6 relative z-10">
                 <BirthdayCountdownBanner 
                   onClose={() => {
                     console.log('Birthday banner closed');
