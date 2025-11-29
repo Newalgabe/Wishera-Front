@@ -8,6 +8,7 @@ interface EmojiGifPickerModalProps {
   onGifSelect: (gifUrl: string, gifTitle: string) => void;
   onClose: () => void;
   isOpen: boolean;
+  initialTab?: 'emoji' | 'gif';
 }
 
 interface GifData {
@@ -117,8 +118,15 @@ function GifItem({ gif, onSelect }: { gif: GifData; onSelect: () => void }) {
   );
 }
 
-export default function EmojiGifPickerModal({ onEmojiSelect, onGifSelect, onClose, isOpen }: EmojiGifPickerModalProps) {
-  const [activeTab, setActiveTab] = useState<'emoji' | 'gif'>('emoji');
+export default function EmojiGifPickerModal({ onEmojiSelect, onGifSelect, onClose, isOpen, initialTab = 'emoji' }: EmojiGifPickerModalProps) {
+  const [activeTab, setActiveTab] = useState<'emoji' | 'gif'>(initialTab);
+  
+  // Reset to initial tab when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialTab);
+    }
+  }, [isOpen, initialTab]);
   const [searchQuery, setSearchQuery] = useState('');
   const [gifs, setGifs] = useState<GifData[]>([]);
   const [loading, setLoading] = useState(false);
@@ -300,10 +308,11 @@ export default function EmojiGifPickerModal({ onEmojiSelect, onGifSelect, onClos
   if (!isOpen) return null;
 
   return (
-    <div
-      ref={pickerRef}
-      className="absolute bottom-full mb-2 left-0 w-96 h-96 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 flex flex-col"
-    >
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999]">
+      <div
+        ref={pickerRef}
+        className="w-96 h-96 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 flex flex-col"
+      >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -495,6 +504,7 @@ export default function EmojiGifPickerModal({ onEmojiSelect, onGifSelect, onClos
           </p>
         </div>
       )}
+      </div>
     </div>
   );
 }

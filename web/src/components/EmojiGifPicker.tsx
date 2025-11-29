@@ -13,7 +13,7 @@ export default function EmojiGifPicker({ onEmojiSelect, onGifSelect }: EmojiGifP
 
   const handleEmojiSelect = (emoji: string) => {
     onEmojiSelect(emoji);
-    setShowPicker(false);
+    // Keep picker open for multiple emoji selections
   };
 
   const handleGifSelect = (gifUrl: string, gifTitle: string) => {

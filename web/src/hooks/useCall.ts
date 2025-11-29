@@ -437,6 +437,25 @@ export function useCall(currentUserId: string | null, chat: ChatConnection, hand
   }, [currentUserId, chat]);
 
   // End a call
+  // Clean up resources
+  const cleanup = useCallback(() => {
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => track.stop());
+      localStreamRef.current = null;
+      setLocalStream(null);
+    }
+    setRemoteStream(null);
+    
+    if (peerConnectionRef.current) {
+      peerConnectionRef.current.close();
+      peerConnectionRef.current = null;
+    }
+    
+    setTimeout(() => {
+      setCurrentCall(null);
+    }, 1000);
+  }, []);
+
   const endCall = useCallback(() => {
     if (!currentCall || !currentUserId) return;
 
@@ -444,20 +463,28 @@ export function useCall(currentUserId: string | null, chat: ChatConnection, hand
       ? currentCall.calleeUserId 
       : currentCall.callerUserId;
 
+    // Notify the other side that the call is ending
     chat.endCall?.(otherUserId, currentCall.callId);
+    
+    // Update local state
+    const callToEnd = currentCall;
     setCurrentCall(prev => prev ? { ...prev, state: "ended" } : null);
     
     // Call the handler if it exists
     setTimeout(() => {
-      const call = currentCall;
-      if (call) {
-        handlersRef.current.onCallEnded?.(call);
+      if (callToEnd) {
+        handlersRef.current.onCallEnded?.(callToEnd);
       }
     }, 100);
 
-    // Clean up
+    // Clean up resources immediately
     cleanup();
-  }, [currentCall, currentUserId, chat]);
+    
+    // Clear the call state after cleanup
+    setTimeout(() => {
+      setCurrentCall(null);
+    }, 200);
+  }, [currentCall, currentUserId, chat, cleanup]);
 
   // Toggle mute
   const toggleMute = useCallback(() => {
@@ -481,32 +508,15 @@ export function useCall(currentUserId: string | null, chat: ChatConnection, hand
     }
   }, []);
 
-  // Clean up resources
-  const cleanup = useCallback(() => {
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach(track => track.stop());
-      localStreamRef.current = null;
-      setLocalStream(null);
-    }
-    setRemoteStream(null);
-    
-    if (peerConnectionRef.current) {
-      peerConnectionRef.current.close();
-      peerConnectionRef.current = null;
-    }
-    
-    setTimeout(() => {
-      setCurrentCall(null);
-    }, 1000);
-  }, []);
-
   // Register call handlers when connection is established
   useEffect(() => {
     console.log("=== CALL HANDLERS useEffect RUNNING ===");
     console.log("Setting up call signal handlers...");
     console.log("Chat connected:", chat.connected);
+    console.log("Chat connection state:", chat.connectionState);
     console.log("Current user ID:", currentUserId);
     console.log("Chat object:", chat);
+    console.log("Chat has onCallInitiated:", typeof chat.onCallInitiated === 'function');
     
     if (!currentUserId) {
       console.log("Not setting up handlers - no user ID");
@@ -514,7 +524,13 @@ export function useCall(currentUserId: string | null, chat: ChatConnection, hand
     }
     
     if (!chat.connected) {
-      console.log("Not setting up handlers - chat not connected");
+      console.log("Not setting up handlers - chat not connected. Connection state:", chat.connectionState);
+      return;
+    }
+    
+    // Ensure the SignalR connection is ready
+    if (!chat.onCallInitiated) {
+      console.error("onCallInitiated method not available on chat object!");
       return;
     }
     
@@ -523,8 +539,12 @@ export function useCall(currentUserId: string | null, chat: ChatConnection, hand
     const handleCallInitiated = (payload: any) => {
       console.log("Call initiated received:", payload);
       console.log("Current user ID:", currentUserId);
+      console.log("Caller user ID:", payload.callerUserId);
       console.log("Callee user ID:", payload.calleeUserId);
-      console.log("Is incoming call:", payload.calleeUserId === currentUserId);
+      
+      // Determine if this is an incoming call (we are the callee)
+      const isIncoming = payload.calleeUserId === currentUserId;
+      console.log("Is incoming call:", isIncoming);
       
       const callInfo: CallInfo = {
         callId: payload.callId,
@@ -532,19 +552,25 @@ export function useCall(currentUserId: string | null, chat: ChatConnection, hand
         calleeUserId: payload.calleeUserId,
         callType: payload.callType,
         state: "ringing",
-        timestamp: new Date(payload.timestamp),
-        isIncoming: payload.calleeUserId === currentUserId,
+        timestamp: new Date(payload.timestamp || Date.now()),
+        isIncoming: isIncoming,
       };
 
-      if (callInfo.isIncoming) {
-        console.log("Setting incoming call state");
+      if (isIncoming) {
+        console.log("Setting incoming call state - showing notification");
         setCurrentCall(callInfo);
         // Call the handler if it exists
         setTimeout(() => {
           handlersRef.current.onCallInitiated?.(callInfo);
         }, 100);
       } else {
-        console.log("This is an outgoing call, not handling");
+        console.log("This is an outgoing call from us, not handling as incoming");
+        // For outgoing calls, we might want to set the call state too
+        // But only if we don't already have a call in progress
+        if (!currentCall) {
+          console.log("Setting outgoing call state");
+          setCurrentCall(callInfo);
+        }
       }
     };
 
@@ -552,18 +578,38 @@ export function useCall(currentUserId: string | null, chat: ChatConnection, hand
       console.log("Call accepted received:", payload);
       console.log("Current call:", currentCall);
       console.log("Call ID match:", currentCall?.callId === payload.callId);
+      console.log("Payload callId:", payload.callId);
+      console.log("Current user ID:", currentUserId);
+      console.log("Payload callerUserId:", payload.callerUserId);
+      console.log("Payload calleeUserId:", payload.calleeUserId);
       
-      // Use a timeout to ensure currentCall is set
+      // Check if this call is relevant to us (we're either the caller or callee)
+      const isCaller = payload.callerUserId === currentUserId;
+      const isCallee = payload.calleeUserId === currentUserId;
+      
+      if (!isCaller && !isCallee) {
+        console.log("Call accepted event is not for us, ignoring");
+        return;
+      }
+      
+      // Use a timeout to ensure currentCall is set, but also handle case where call might not be in state yet
       setTimeout(() => {
         const call = currentCall;
-        if (call && call.callId === payload.callId) {
+        const callIdMatches = call && call.callId === payload.callId;
+        
+        // If we have a matching call, update it
+        if (callIdMatches) {
           console.log("Call accepted - updating state to connecting");
           setCurrentCall(prev => prev ? { ...prev, state: "connecting" } : null);
           
           // If we're the caller, create an offer
-          if (call.callerUserId === currentUserId && peerConnectionRef.current) {
+          if (isCaller && peerConnectionRef.current) {
             console.log("We are the caller, creating offer...");
             createOffer();
+          } else if (isCallee) {
+            console.log("We are the callee, waiting for offer...");
+            // Callee should already have peer connection set up from acceptCall
+            // Just ensure we're in connecting state
           } else {
             console.log("We are not the caller or no peer connection");
           }
@@ -573,7 +619,28 @@ export function useCall(currentUserId: string | null, chat: ChatConnection, hand
             handlersRef.current.onCallAccepted?.(call);
           }, 100);
         } else {
-          console.log("Call ID mismatch or no current call");
+          // If call ID doesn't match but we're part of this call, try to create/update call state
+          console.log("Call ID mismatch or no current call, but we're part of this call");
+          console.log("Attempting to handle call accepted anyway");
+          
+          // Create call info from payload
+          const callInfo: CallInfo = {
+            callId: payload.callId,
+            callerUserId: payload.callerUserId,
+            calleeUserId: payload.calleeUserId,
+            callType: payload.callType || 'audio',
+            state: "connecting",
+            timestamp: new Date(payload.timestamp || Date.now()),
+            isIncoming: !isCaller,
+          };
+          
+          setCurrentCall(callInfo);
+          
+          // If we're the caller, create an offer
+          if (isCaller && peerConnectionRef.current) {
+            console.log("We are the caller, creating offer after state update...");
+            setTimeout(() => createOffer(), 200);
+          }
         }
       }, 100);
     };
@@ -596,18 +663,28 @@ export function useCall(currentUserId: string | null, chat: ChatConnection, hand
 
     const handleCallEnded = (payload: any) => {
       console.log("Call ended received:", payload);
-      // Use a timeout to ensure currentCall is set
+      console.log("Current call before ending:", currentCall);
+      
+      // Always clean up when we receive a callended event, regardless of callId match
+      // This ensures both sides end the call properly
+      const call = currentCall;
+      if (call) {
+        // Update call state to ended
+        setCurrentCall(prev => prev ? { ...prev, state: "ended" } : null);
+        
+        // Call the handler if it exists
+        setTimeout(() => {
+          handlersRef.current.onCallEnded?.(call);
+        }, 100);
+      }
+      
+      // Always clean up resources (streams, peer connection, etc.)
+      cleanup();
+      
+      // Clear the call state after a short delay to ensure UI updates
       setTimeout(() => {
-        const call = currentCall;
-        if (call && call.callId === payload.callId) {
-          setCurrentCall(prev => prev ? { ...prev, state: "ended" } : null);
-          // Call the handler if it exists
-          setTimeout(() => {
-            handlersRef.current.onCallEnded?.(call);
-          }, 100);
-          cleanup();
-        }
-      }, 100);
+        setCurrentCall(null);
+      }, 200);
     };
 
     const handleCallSignal = (payload: any) => {

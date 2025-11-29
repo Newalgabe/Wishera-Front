@@ -28,7 +28,8 @@
     "signup": "Регистрация",
     "logout": "Выйти",
     "wishlistApp": "Wishera",
-    "events": "События"
+    "events": "События",
+    "dashboard": "Панель управления"
   },
   "auth": {
     "loginTitle": "Войти в Wishera",

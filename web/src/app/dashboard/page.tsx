@@ -56,6 +56,7 @@ import {
     cancelGiftReservation,
     type GiftDTO,
     getSuggestedUsers,
+    addGiftToWishlist,
 } from "../api";
 import { useRouter } from "next/navigation";
 import ThemeToggle from "../../components/ThemeToggle";
@@ -721,7 +722,7 @@ export default function Dashboard() {
       const details = await getWishlistDetails(deletingWishlist.id);
       if (details.items && details.items.length > 0) {
         const confirmDelete = window.confirm(
-          `This wishlist contains ${details.items.length} gift(s). Deleting it will remove all associated gifts. Are you sure you want to continue?`
+          `This wishlist contains ${details.items.length} gift(s). Deleting it will unlink these gifts from the wishlist, but the gifts will remain in your account. Are you sure you want to continue?`
         );
         if (!confirmDelete) {
           setIsDeleteWishlistOpen(false);
@@ -729,9 +730,15 @@ export default function Dashboard() {
           return;
         }
       }
-    } catch (error) {
-      console.error('Failed to check wishlist details before deletion:', error);
-      // Continue with deletion even if we can't check details
+    } catch (error: any) {
+      // If wishlist not found (404) or other error, just log and continue
+      // The wishlist might have been deleted already, or there's a network issue
+      if (error.response?.status === 404) {
+        console.log('Wishlist not found when checking details - may have been deleted already');
+      } else {
+        console.error('Failed to check wishlist details before deletion:', error);
+      }
+      // Continue with deletion attempt - backend will handle validation
     }
     
     setDeleteWishlistLoading(true);
@@ -1735,56 +1742,11 @@ export default function Dashboard() {
                                 hasImage: !!giftForm.imageFile
                               });
                               
-                              // Get user's wishlists to associate the gift with one
-                              let wishlistId: string | undefined;
-                              try {
-                                const userWishlists = await getUserWishlists(currentUserId || '');
-                                if (userWishlists.length > 0) {
-                                  // Use the first wishlist (prefer non-default if multiple exist)
-                                  const defaultWishlist = userWishlists.find(w => 
-                                    w.title === 'My Wishlist' && w.description === 'Default wishlist for my gifts'
-                                  );
-                                  wishlistId = defaultWishlist ? defaultWishlist.id : userWishlists[0].id;
-                                  console.log('Associating gift with wishlist:', wishlistId);
-                                } else {
-                                  // Create a default wishlist for the user only if none exists
-                                  console.log('No wishlists found, creating default wishlist');
-                                  const defaultWishlist = await createWishlist({
-                                    title: 'My Wishlist',
-                                    description: 'Default wishlist for my gifts',
-                                    category: 'General',
-                                    isPublic: false,
-                                    allowedViewerIds: []
-                                  });
-                                  wishlistId = defaultWishlist.id;
-                                  console.log('Created default wishlist:', wishlistId);
-                                  // Refresh the feed to show the new wishlist
-                                  const refreshedWishlists = await getFeed(1, 20);
-                                  const mapped: UIWishlist[] = refreshedWishlists.map(w => ({
-                                    id: w.id,
-                                    user: { id: w.userId, name: w.username, avatar: w.avatarUrl || "", username: formatUsername(w.username) },
-                                    title: w.title,
-                                    description: w.description,
-                                    category: w.category,
-                                    isPublic: w.isPublic,
-                                    gifts: w.gifts || [], // Use gifts from feed if available
-                                    likes: w.likeCount,
-                                    isLiked: w.isLiked,
-                                    isBookmarked: false,
-                                    createdAt: new Date(w.createdAt).toLocaleString()
-                                  }));
-                                  setWishlists(mapped);
-                                }
-                              } catch (error) {
-                                console.error('Failed to get/create wishlist:', error);
-                                // Continue without wishlistId - gift will be orphaned but created
-                              }
-                              
+                              // Create gift without automatically creating or associating with a wishlist
                               await createGift({
                                 name: giftForm.name.trim(),
                                 price: priceNumber,
                                 category: giftForm.category.trim() || 'General',
-                                wishlistId: wishlistId,
                                 imageFile: giftForm.imageFile || undefined,
                               });
                               setGiftForm({ name: '', price: '', category: '', imageFile: null });
@@ -2524,30 +2486,15 @@ export default function Dashboard() {
                         const existingGift = availableGifts.find(g => g.id === giftId);
                         if (existingGift) {
                           try {
-                            // Update the existing gift to link it to this wishlist
-                            const giftResponse = await fetch(`${process.env.NEXT_PUBLIC_GIFT_API_URL || 'http://localhost:5003/api'}/gifts/${giftId}`, {
-                              method: 'PUT',
-                              headers: {
-                                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                                'Content-Type': 'application/json'
-                              },
-                              body: JSON.stringify({
-                                name: existingGift.name,
-                                price: existingGift.price,
-                                category: existingGift.category,
-                                wishlistId: created.id
-                              })
+                            // Assign the existing gift to this wishlist using the proper endpoint
+                            await addGiftToWishlist(giftId, created.id);
+                            addedGifts.push({
+                              id: existingGift.id,
+                              name: existingGift.name,
+                              price: existingGift.price,
+                              category: existingGift.category,
+                              imageUrl: existingGift.imageUrl
                             });
-                            
-                            if (giftResponse.ok) {
-                              addedGifts.push({
-                                id: existingGift.id,
-                                name: existingGift.name,
-                                price: existingGift.price,
-                                category: existingGift.category,
-                                imageUrl: existingGift.imageUrl
-                              });
-                            }
                           } catch (giftError) {
                             console.error('Failed to add existing gift:', giftError);
                             // Continue with other gifts even if one fails

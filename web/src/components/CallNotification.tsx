@@ -9,12 +9,14 @@ import { CallInfo } from "@/hooks/useCall";
 
 interface CallNotificationProps {
   callInfo: CallInfo;
+  callerName?: string;
   onAccept: () => void;
   onReject: () => void;
 }
 
 export default function CallNotification({
   callInfo,
+  callerName,
   onAccept,
   onReject,
 }: CallNotificationProps) {
@@ -40,7 +42,7 @@ export default function CallNotification({
             Incoming {callInfo.callType === "video" ? "Video" : "Audio"} Call
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            From User {callInfo.callerUserId}
+            {callerName || `User ${callInfo.callerUserId}`}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-500">
             {callInfo.timestamp.toLocaleTimeString()}

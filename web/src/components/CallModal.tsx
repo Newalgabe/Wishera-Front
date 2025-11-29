@@ -19,6 +19,7 @@ interface CallModalProps {
   remoteStream: MediaStream | null;
   isMuted: boolean;
   isVideoEnabled: boolean;
+  contactName?: string;
   onAccept: () => void;
   onReject: () => void;
   onEnd: () => void;
@@ -34,6 +35,7 @@ export default function CallModal({
   remoteStream,
   isMuted,
   isVideoEnabled,
+  contactName,
   onAccept,
   onReject,
   onEnd,
@@ -140,7 +142,7 @@ export default function CallModal({
               </div>
               <div>
                 <h2 className="text-2xl font-bold">
-                  {isIncoming ? "Incoming Call" : "Outgoing Call"}
+                  {contactName || (isIncoming ? "Incoming Call" : "Outgoing Call")}
                 </h2>
                 <p className="text-blue-100">
                   {callInfo.callType === "video" ? "Video Call" : "Audio Call"}

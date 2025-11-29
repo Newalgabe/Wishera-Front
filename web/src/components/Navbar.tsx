@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { HomeIcon, ArrowRightOnRectangleIcon, SparklesIcon, CalendarIcon, Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, ArrowRightOnRectangleIcon, Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
 import WisheraLogo from "./WisheraLogo";
@@ -68,17 +68,6 @@ export default function Navbar() {
               {t('navigation.about')}
             </Link>
           </motion.div>
-          {isAuthenticated && (
-            <motion.div whileHover={{ y: -2 }} transition={{ type: "spring", stiffness: 300 }}>
-              <Link 
-                href="/events" 
-                className="flex items-center gap-2 hover:text-indigo-500 dark:hover:text-purple-400 transition-colors duration-200 group"
-              >
-                <CalendarIcon className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
-                Events
-              </Link>
-            </motion.div>
-          )}
         </div>
 
         {/* Desktop Language selector, Theme toggle and Auth buttons */}
@@ -93,8 +82,8 @@ export default function Navbar() {
                   href="/dashboard" 
                   className="px-3 lg:px-4 py-1.5 lg:py-2 rounded-xl bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 dark:from-emerald-500 dark:via-green-500 dark:to-emerald-600 text-white font-semibold text-xs lg:text-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:from-green-600 hover:via-emerald-600 hover:to-green-700 dark:hover:from-emerald-600 dark:hover:via-green-600 dark:hover:to-emerald-700 whitespace-nowrap"
                 >
-                  <span className="hidden xl:inline">Dashboard</span>
-                  <span className="xl:hidden">Dash</span>
+                  <span className="hidden xl:inline">{t('navigation.dashboard')}</span>
+                  <span className="xl:hidden">{t('navigation.dashboard').substring(0, 4)}</span>
                 </Link>
               </motion.div>
               <motion.button
@@ -176,19 +165,11 @@ export default function Navbar() {
               {isAuthenticated && (
                 <>
                   <Link 
-                    href="/events" 
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 group"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <CalendarIcon className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
-                    <span className="font-medium">Events</span>
-                  </Link>
-                  <Link 
                     href="/dashboard" 
                     className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 text-white font-semibold shadow-lg"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <span>Dashboard</span>
+                    <span>{t('navigation.dashboard')}</span>
                   </Link>
                   <button
                     onClick={() => {

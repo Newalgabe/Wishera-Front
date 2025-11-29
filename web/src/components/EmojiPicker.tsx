@@ -51,7 +51,7 @@ export default function EmojiPicker({ onEmojiSelect, onClose, isOpen }: EmojiPic
   return (
     <div
       ref={pickerRef}
-      className="absolute bottom-full mb-2 left-0 w-80 h-96 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 flex flex-col"
+      className="relative w-80 h-96 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 flex flex-col"
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
@@ -100,7 +100,6 @@ export default function EmojiPicker({ onEmojiSelect, onClose, isOpen }: EmojiPic
               key={index}
               onClick={() => {
                 onEmojiSelect(emoji);
-                onClose();
               }}
               className="w-8 h-8 flex items-center justify-center text-lg hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               title={emoji}

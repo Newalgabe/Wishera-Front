@@ -28,7 +28,8 @@
     "signup": "Qeydiyyat",
     "logout": "Çıxış",
     "wishlistApp": "Wishera",
-    "events": "Hadisələr"
+    "events": "Hadisələr",
+    "dashboard": "İdarəetmə paneli"
   },
   "auth": {
     "loginTitle": "Wishera-ya daxil ol",

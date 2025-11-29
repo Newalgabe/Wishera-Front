@@ -46,7 +46,8 @@
     "signup": "Sign Up",
     "logout": "Logout",
     "wishlistApp": "Wishera",
-    "events": "Events"
+    "events": "Events",
+    "dashboard": "Dashboard"
   },
   "auth": {
     "loginTitle": "Login to Wishera",

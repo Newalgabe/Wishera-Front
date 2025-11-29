@@ -1,11 +1,13 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useSignalRChat } from "@/hooks/useSignalRChat";
 import { useCall } from "@/hooks/useCall";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { createChatToken, createOrJoinChatChannel, sendChatMessage, searchUsers, getFollowing, getChatHistory, editChatMessage, deleteChatMessage, getConversationWallpaper, setConversationWallpaper, getWallpaperCatalog, getConversationWallpaperPref, setConversationWallpaperPref, chatAssetUrl, uploadChatMedia, getPinnedMessages, pinChatMessage, unpinChatMessage, uploadCustomWallpaper, getCustomWallpapers, deleteCustomWallpaper, type WallpaperCatalogItemDTO, type UserSearchDTO, type PinnedMessageDTO, type PinScope, type CustomWallpaperUploadDTO } from "../api";
 import EmojiGifPicker from "@/components/EmojiGifPicker";
+import EmojiGifPickerModal from "@/components/EmojiGifPickerModal";
 import EmojiPicker from "@/components/EmojiPicker";
 import CallModal from "@/components/CallModal";
 import CallNotification from "@/components/CallNotification";
@@ -33,9 +35,13 @@ type ChatMessage = {
   username?: string;
   replyToMessageId?: string | null;
   reactions?: Record<string, string[]>;
-  messageType?: 'text' | 'voice' | 'image' | 'video';
+  messageType?: 'text' | 'voice' | 'image' | 'video' | 'call';
   audioUrl?: string;
   audioDuration?: number;
+  // Call-specific fields
+  callType?: 'audio' | 'video';
+  callStatus?: 'answered' | 'ended' | 'rejected' | 'missed';
+  callDuration?: number;
 };
 
 type ChatContact = {
@@ -85,7 +91,13 @@ export default function ChatPage() {
 
   // Helper functions for conversation management
   const getConversationId = (contactId: string) => {
-    return `conv_${currentUserId}_${contactId}`;
+    if (!currentUserId || !contactId) return '';
+    // Use the same format as backend: string.CompareOrdinal(a, b) < 0 ? a:b : b:a
+    // JavaScript string comparison (< operator) matches C# string.CompareOrdinal for simple strings
+    const a = currentUserId.trim();
+    const b = contactId.trim();
+    // Compare strings lexicographically (same as C# CompareOrdinal)
+    return a < b ? `${a}:${b}` : `${b}:${a}`;
   };
 
   const saveConversationToCache = (conversationId: string, messages: ChatMessage[]) => {
@@ -199,6 +211,7 @@ export default function ChatPage() {
   const [pinMenuForId, setPinMenuForId] = useState<string | null>(null);
   const [pendingAttachment, setPendingAttachment] = useState<{ url: string; mediaType: 'image' | 'video' | 'file'; name?: string } | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showGifPicker, setShowGifPicker] = useState(false);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const REACTIONS = ["👍","❤️","😂","🎉","👏","😮","😢","🔥","✅","❌","👌","😁","🙏","🤔","😎" ,"💖", "🍑", "🍆", "🍒"];
 
@@ -374,6 +387,18 @@ export default function ChatPage() {
   }, [getFilenameFromUrl, looksLikeImageUrl, looksLikeVideoUrl]);
 
   // Render message content: support markdown image ![...](url), GIFs, emojis, and @url shorthand
+  // Format call duration helper
+  const formatCallDuration = useCallback((seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  }, []);
+
   const renderMessageContent = useCallback((text: string, opts?: { compact?: boolean }) => {
     // Check for GIF format: ![GIF](url)
     const gifMatch = text.match(/!\[GIF\]\((https?:[^)\s]+)\)/i);
@@ -732,11 +757,16 @@ export default function ChatPage() {
         return; // do not add this hint as a chat message
       }
 
-      // Extract custom data for voice messages
+      // Extract custom data for voice messages and call messages
       const customData = typeof payload === 'object' ? payload?.customData : null;
       const messageType = customData?.messageType || 'text';
       const audioUrl = customData?.audioUrl;
       const audioDuration = customData?.audioDuration;
+      
+      // Extract call-specific fields if this is a call message
+      const callType = typeof payload === 'object' ? (payload?.callType || customData?.callType) : undefined;
+      const callStatus = typeof payload === 'object' ? (payload?.callStatus || customData?.callStatus) : undefined;
+      const callDuration = typeof payload === 'object' ? (payload?.callDuration !== undefined ? payload.callDuration : (customData?.callDuration !== undefined ? customData.callDuration : undefined)) : undefined;
 
       const newMessage: ChatMessage = {
         id,
@@ -746,7 +776,13 @@ export default function ChatPage() {
         replyToMessageId,
         messageType,
         ...(audioUrl && { audioUrl }),
-        ...(audioDuration && { audioDuration })
+        ...(audioDuration && { audioDuration }),
+        // Include call-specific fields if this is a call message
+        ...(messageType === 'call' && {
+          callType: callType as 'audio' | 'video' | undefined,
+          callStatus: callStatus as 'answered' | 'ended' | 'rejected' | 'missed' | undefined,
+          callDuration: callDuration
+        })
       };
 
       // Determine which conversation this message belongs to
@@ -863,6 +899,13 @@ export default function ChatPage() {
       
       if (editingId) {
         const newText = input.trim();
+        // Prevent editing GIF messages
+        if (newText.match(/!\[GIF\]\(/i)) {
+          setError('Cannot edit GIF messages');
+          setEditingId(null);
+          setInput("");
+          return;
+        }
         setInput("");
         setEditingId(null);
         // Optimistic update
@@ -1142,6 +1185,11 @@ export default function ChatPage() {
             }
             messageType = messageType || 'text';
             
+            // Extract call-specific fields if this is a call message
+            const callType = m.callType ?? (m as any).callType ?? (m.customData as any)?.callType;
+            const callStatus = m.callStatus ?? (m as any).callStatus ?? (m.customData as any)?.callStatus;
+            const callDuration = m.callDuration !== undefined ? m.callDuration : ((m as any).callDuration !== undefined ? (m as any).callDuration : ((m.customData as any)?.callDuration));
+            
             let audioUrl = m.audioUrl ?? 
                             (m as any).audioUrl ?? 
                             (m.customData as any)?.audioUrl ?? 
@@ -1174,10 +1222,16 @@ export default function ChatPage() {
               userId: m.senderUserId,
               createdAt: m.sentAt, // Use server timestamp
               replyToMessageId: replyToMessageId,
-              messageType: messageType as 'text' | 'voice' | 'image' | 'video',
+              messageType: messageType as 'text' | 'voice' | 'image' | 'video' | 'call',
               ...(audioUrl && { audioUrl }),
               ...(audioDuration && { audioDuration }),
-              reactions: m.reactions || (m as any).reactions || {}
+              reactions: m.reactions || (m as any).reactions || {},
+              // Include call-specific fields if this is a call message
+              ...(messageType === 'call' && {
+                callType: callType as 'audio' | 'video' | undefined,
+                callStatus: callStatus as 'answered' | 'ended' | 'rejected' | 'missed' | undefined,
+                callDuration: callDuration
+              })
             };
             
             // Debug log for messages with replies
@@ -1849,7 +1903,45 @@ export default function ChatPage() {
                             : 'bg-white/90 dark:bg-gray-800/90 text-gray-900 dark:text-white border border-gray-200/50 dark:border-gray-700/50 rounded-bl-lg'
                         }`}
                       >
-                        {message.messageType === 'voice' && message.audioUrl ? (
+                        {message.messageType === 'call' ? (
+                          (() => {
+                            const callType = message.callType || 'audio';
+                            const callStatus = message.callStatus || 'ended';
+                            const callDuration = message.callDuration || 0;
+                            const isOwnMessage = message.userId === currentUserId;
+                            const isVideoCall = callType === 'video';
+                            const callIcon = isVideoCall ? '📹' : '📞';
+                            
+                            let statusText = '';
+                            let statusColor = '#6b7280'; // gray-500
+                            
+                            if (callStatus === 'answered' || callStatus === 'ended') {
+                              const durationText = callDuration > 0 ? ` (${formatCallDuration(callDuration)})` : '';
+                              statusText = isOwnMessage ? `Outgoing ${callType} call${durationText}` : `Incoming ${callType} call${durationText}`;
+                              statusColor = '#34c759'; // green
+                            } else if (callStatus === 'rejected') {
+                              statusText = isOwnMessage ? 'Call declined' : 'Declined call';
+                              statusColor = '#ff3b30'; // red
+                            } else if (callStatus === 'missed') {
+                              statusText = 'Missed call';
+                              statusColor = '#ff3b30'; // red
+                            }
+                            
+                            return (
+                              <div className="w-full">
+                                <div 
+                                  className="flex items-center gap-3 px-4 py-3 rounded-xl backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 border-l-4"
+                                  style={{ borderLeftColor: statusColor }}
+                                >
+                                  <span className="text-xl">{callIcon}</span>
+                                  <span className="flex-1 font-medium" style={{ color: statusColor }}>
+                                    {statusText}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })()
+                        ) : message.messageType === 'voice' && message.audioUrl ? (
                           <VoiceMessagePlayer
                             audioUrl={message.audioUrl}
                             duration={message.audioDuration || 0}
@@ -1919,7 +2011,9 @@ export default function ChatPage() {
                           <button onClick={() => setReplyTo(message)} className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors">{t('common.reply')}</button>
                           {message.userId === currentUserId && (
                             <>
-                              <button onClick={() => { setEditingId(message.id); setInput(message.text); inputRef.current?.focus(); }} className="text-[11px] text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">{t('chat.edit')}</button>
+                              {!message.text.match(/!\[GIF\]\(/i) && (
+                                <button onClick={() => { setEditingId(message.id); setInput(message.text); inputRef.current?.focus(); }} className="text-[11px] text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">{t('chat.edit')}</button>
+                              )}
                               <button onClick={async () => {
                                 try {
                                   await deleteChatMessage(message.id);
@@ -2058,6 +2152,16 @@ export default function ChatPage() {
                           setShowAttachMenu(false);
                         }} />
                       </label>
+                      <button 
+                        onClick={() => {
+                          setShowAttachMenu(false);
+                          setShowGifPicker(true);
+                        }}
+                        className="w-full flex items-center gap-2 cursor-pointer px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+                      >
+                        <span className="text-lg">🎞️</span>
+                        <span className="text-sm">GIF</span>
+                      </button>
                     </div>
                   )}
                 </div>
@@ -2071,71 +2175,6 @@ export default function ChatPage() {
                     onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
                     className="w-full px-3 sm:px-5 py-2 sm:py-3 text-sm sm:text-base rounded-2xl sm:rounded-3xl border-0 bg-gray-100/80 dark:bg-gray-700/80 backdrop-blur-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none transition-all duration-200 shadow-lg pr-16 sm:pr-20"
                   />
-                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                    <EmojiGifPicker
-                      onEmojiSelect={(emoji) => {
-                        // Remove the colon if it was typed for the shortcut
-                        const newInput = input.endsWith(':') ? input.slice(0, -1) + emoji : input + emoji;
-                        setInput(newInput);
-                        setShowEmojiPicker(false);
-                        inputRef.current?.focus();
-                      }}
-                      onGifSelect={async (gifUrl, gifTitle) => {
-                        // Send GIF immediately using the same pattern as handleSend
-                        const gifMessage = `![GIF](${gifUrl})`;
-                        if (!currentUserId || !selectedContact?.id) return;
-                        
-                        // Check connection status before sending
-                        if (!chat.connected) {
-                          setError('Connection lost. Please wait for reconnection...');
-                          return;
-                        }
-                        
-                        try {
-                          const id = crypto.randomUUID();
-                          const newMessage: ChatMessage = {
-                            id,
-                            text: gifMessage,
-                            userId: currentUserId,
-                            createdAt: new Date().toISOString(),
-                            username: currentUserId
-                          };
-                          
-                          // Add to local conversation immediately
-                          if (currentConversationId) {
-                            addMessageToConversation(currentConversationId, newMessage);
-                          }
-                          
-                          // Send via SignalR
-                          await chat.sendToUserWithMeta(selectedContact.id, gifMessage, undefined, id);
-                          
-                          setInput('');
-                          setShowEmojiPicker(false);
-                        } catch (error) {
-                          console.error('Failed to send GIF:', error);
-                          // Fallback: put in input field if send fails
-                          setInput(gifMessage);
-                          setShowEmojiPicker(false);
-                          inputRef.current?.focus();
-                        }
-                      }}
-                    />
-                  </div>
-                  {/* Show emoji picker when colon is typed */}
-                  {showEmojiPicker && (
-                    <div className="absolute bottom-full mb-2 left-0 right-0 z-50">
-                      <EmojiPicker
-                        onEmojiSelect={(emoji) => {
-                          const newInput = input.endsWith(':') ? input.slice(0, -1) + emoji : input + emoji;
-                          setInput(newInput);
-                          setShowEmojiPicker(false);
-                          inputRef.current?.focus();
-                        }}
-                        onClose={() => setShowEmojiPicker(false)}
-                        isOpen={showEmojiPicker}
-                      />
-                    </div>
-                  )}
                 </div>
                 {/* Voice message button */}
                 {!input.trim() && !pendingAttachment && (
@@ -2263,13 +2302,19 @@ export default function ChatPage() {
       )}
 
       {/* Call Components */}
-      {currentCall && (
+      {/* Show CallModal for active calls (not incoming ringing calls) */}
+      {currentCall && !(currentCall.isIncoming && currentCall.state === "ringing") && (
         <CallModal
           callInfo={currentCall}
           localStream={localStream}
           remoteStream={remoteStream}
           isMuted={isMuted}
           isVideoEnabled={isVideoEnabled}
+          contactName={
+            currentCall.isIncoming
+              ? contacts.find(c => c.id === currentCall.callerUserId)?.name || selectedContact?.name
+              : selectedContact?.name || contacts.find(c => c.id === currentCall.calleeUserId)?.name
+          }
           onAccept={handleAcceptCall}
           onReject={handleRejectCall}
           onEnd={handleEndCall}
@@ -2280,13 +2325,79 @@ export default function ChatPage() {
         />
       )}
 
-      {/* Call Notification for incoming calls */}
+      {/* Call Notification for incoming calls in ringing state */}
       {currentCall && currentCall.isIncoming && currentCall.state === "ringing" && (
         <CallNotification
           callInfo={currentCall}
+          callerName={contacts.find(c => c.id === currentCall.callerUserId)?.name || `User ${currentCall.callerUserId}`}
           onAccept={handleAcceptCall}
           onReject={handleRejectCall}
         />
+      )}
+
+      {/* Emoji Picker - positioned on the left side near the + button */}
+      {showEmojiPicker && typeof window !== 'undefined' && createPortal(
+        <div className="fixed bottom-24 left-4 md:left-80 z-[9999]">
+          <EmojiPicker
+            onEmojiSelect={(emoji) => {
+              const newInput = input.endsWith(':') ? input.slice(0, -1) + emoji : input + emoji;
+              setInput(newInput);
+              inputRef.current?.focus();
+            }}
+            onClose={() => setShowEmojiPicker(false)}
+            isOpen={showEmojiPicker}
+          />
+        </div>,
+        document.body
+      )}
+
+      {/* GIF Picker Modal */}
+      {showGifPicker && typeof window !== 'undefined' && createPortal(
+        <EmojiGifPickerModal
+          onEmojiSelect={(emoji) => {
+            const newInput = input.endsWith(':') ? input.slice(0, -1) + emoji : input + emoji;
+            setInput(newInput);
+            inputRef.current?.focus();
+          }}
+          onGifSelect={async (gifUrl, gifTitle) => {
+            const gifMessage = `![GIF](${gifUrl})`;
+            if (!currentUserId || !selectedContact?.id) return;
+            
+            if (!chat.connected) {
+              setError('Connection lost. Please wait for reconnection...');
+              return;
+            }
+            
+            try {
+              const id = crypto.randomUUID();
+              const newMessage: ChatMessage = {
+                id,
+                text: gifMessage,
+                userId: currentUserId,
+                createdAt: new Date().toISOString(),
+                username: currentUserId
+              };
+              
+              if (currentConversationId) {
+                addMessageToConversation(currentConversationId, newMessage);
+              }
+              
+              await chat.sendToUserWithMeta(selectedContact.id, gifMessage, undefined, id);
+              
+              setInput('');
+              setShowGifPicker(false);
+            } catch (error) {
+              console.error('Failed to send GIF:', error);
+              setInput(gifMessage);
+              setShowGifPicker(false);
+              inputRef.current?.focus();
+            }
+          }}
+          onClose={() => setShowGifPicker(false)}
+          isOpen={showGifPicker}
+          initialTab="gif"
+        />,
+        document.body
       )}
     </div>
   );
